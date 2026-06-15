@@ -27,12 +27,10 @@
             --text-soft: #334155;
             --muted: #64748b;
             --border: #e2e8f0;
-            --green: #14532d;
 
             --shadow-sm: 0 10px 28px rgba(15, 23, 42, .07);
             --shadow-md: 0 18px 46px rgba(15, 23, 42, .10);
             --shadow-lg: 0 28px 70px rgba(15, 23, 42, .15);
-            --shadow-blue: 0 24px 70px rgba(6, 47, 95, .25);
         }
 
         * {
@@ -220,123 +218,250 @@
         }
 
         .news-panel {
+            position: relative;
+            z-index: 10;
             border-radius: 30px;
             background: rgba(255, 255, 255, .94);
             border: 1px solid rgba(226, 232, 240, .95);
             box-shadow: var(--shadow-lg);
-            overflow: hidden;
+            overflow: visible !important;
         }
 
         .news-toolbar {
-            display: flex;
-            flex-wrap: nowrap; 
-            gap: 24px;
-            align-items: center; 
+            position: relative;
+            z-index: 100;
+            display: grid;
+            grid-template-columns: minmax(0, auto) minmax(260px, 360px);
+            gap: 14px;
+            align-items: center;
             justify-content: space-between;
-            padding: 22px 26px;
+            padding: 18px 22px;
             background:
                 linear-gradient(135deg, rgba(6, 47, 95, .05), rgba(45, 156, 219, .05)),
                 #ffffff;
             border-bottom: 1px solid rgba(226, 232, 240, .95);
+            border-radius: 30px 30px 0 0;
+            overflow: visible !important;
         }
 
         .filter-wrap {
+            position: relative;
+            z-index: 120;
             display: flex;
-            flex-wrap: nowrap;
-            gap: 16px;
-            flex: 0 0 auto; 
-        }
-
-        .dropdown-group {
-            display: flex;
-            flex-direction: row; 
             align-items: center;
             gap: 10px;
-            flex: 0 0 auto;
+            min-width: 0;
+            width: fit-content;
         }
 
-        /* Ikon Membulat */
-        .toolbar-label {
-            display: inline-flex;
+        /* ================= CUSTOM DROPDOWN ================= */
+
+        .compact-dropdown {
+            position: relative;
+            z-index: 130;
+            min-width: 0;
+        }
+
+        .compact-dropdown.open {
+            z-index: 999;
+        }
+
+        .compact-dropdown.category-filter {
+            width: 178px;
+        }
+
+        .compact-dropdown.sort-filter {
+            width: 132px;
+        }
+
+        .dropdown-trigger {
+            width: 100%;
+            height: 40px;
+            min-width: 0;
+            display: grid;
+            grid-template-columns: 18px minmax(0, 1fr) 14px;
             align-items: center;
-            justify-content: center;
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            color: #fff;
-            background: linear-gradient(135deg, var(--primary), var(--blue));
-            box-shadow: 0 10px 22px rgba(6, 47, 95, .20);
-            font-size: 14px;
-            flex-shrink: 0;
-            margin-bottom: 0;
-            cursor: pointer;
-        }
-
-        /* Dropdown Membulat (Pill Shape) */
-        .styled-select {
-            width: 170px; 
-            height: 44px;
-            border: 1px solid rgba(6, 47, 95, .15);
+            gap: 7px;
+            border: 1px solid rgba(6, 47, 95, .14);
             border-radius: 999px;
-            background: #fff;
+            background: #ffffff;
             color: var(--primary);
-            font-weight: 800;
-            font-size: 14px;
-            padding: 0 32px 0 16px;
+            padding: 0 12px;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, .04);
             cursor: pointer;
-            box-shadow: 0 8px 20px rgba(15, 23, 42, .04);
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2307457d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 14px center;
-            background-size: 16px;
+            font-family: inherit;
             transition: .22s ease;
-            flex-shrink: 0;
-            /* Mencegah teks kepanjangan melar ke luar batas */
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
-        .styled-select:focus,
-        .styled-select:hover {
-            border-color: var(--blue);
-            box-shadow: 0 12px 24px rgba(6, 47, 95, .12);
+        .dropdown-trigger:hover,
+        .dropdown-trigger:focus,
+        .compact-dropdown.open .dropdown-trigger {
+            border-color: rgba(11, 95, 159, .55);
+            box-shadow: 0 10px 24px rgba(6, 47, 95, .10);
             outline: none;
         }
 
-        /* Pembungkus Kolom Pencarian */
+        .dropdown-trigger .left-icon {
+            color: var(--yellow);
+            font-size: 12px;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .dropdown-trigger .selected-text {
+            display: block;
+            min-width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            color: var(--primary);
+            font-size: 13px;
+            font-weight: 900;
+            text-align: left;
+            pointer-events: none;
+        }
+
+        .dropdown-trigger .chevron-icon {
+            color: var(--primary-soft);
+            font-size: 11px;
+            transition: .22s ease;
+            pointer-events: none;
+        }
+
+        .compact-dropdown.open .chevron-icon {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            width: 100%;
+            max-height: 210px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 6px;
+            border-radius: 16px;
+            background: #ffffff;
+            border: 1px solid rgba(6, 47, 95, .13);
+            box-shadow: 0 18px 42px rgba(15, 23, 42, .18);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translateY(-6px) scale(.98);
+            transform-origin: top center;
+            transition: .18s ease;
+            z-index: 9999;
+        }
+
+        .compact-dropdown.open .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(0) scale(1);
+        }
+
+        .dropdown-menu::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .dropdown-menu::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 999px;
+        }
+
+        .dropdown-menu::-webkit-scrollbar-thumb {
+            background: rgba(6, 47, 95, .35);
+            border-radius: 999px;
+        }
+
+        .dropdown-option {
+            width: 100%;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 0;
+            border-radius: 11px;
+            background: transparent;
+            color: var(--text-soft);
+            padding: 9px 10px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1.35;
+            text-align: left;
+            transition: .18s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .dropdown-option span {
+            display: block;
+            min-width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            pointer-events: none;
+        }
+
+        .dropdown-option i {
+            width: 14px;
+            color: var(--yellow);
+            font-size: 10px;
+            opacity: 0;
+            flex-shrink: 0;
+            pointer-events: none;
+        }
+
+        .dropdown-option:hover {
+            color: var(--primary);
+            background: #f8fafc;
+        }
+
+        .dropdown-option.active {
+            color: var(--primary);
+            background: rgba(247, 181, 0, .14);
+        }
+
+        .dropdown-option.active i {
+            opacity: 1;
+        }
+
         .news-search-wrap {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 5px;
+            gap: 8px;
+            min-width: 0;
+            width: 100%;
+            max-width: 360px;
+            height: 40px;
+            padding: 3px 4px;
             border-radius: 999px;
             background: #fff;
-            border: 1px solid rgba(6, 47, 95, .15);
-            box-shadow: 0 12px 30px rgba(15, 23, 42, .06);
-            flex: 1 1 auto; 
-            max-width: 320px; 
+            border: 1px solid rgba(6, 47, 95, .14);
+            box-shadow: 0 8px 18px rgba(15, 23, 42, .04);
             transition: .22s ease;
         }
 
         .news-search-wrap:focus-within {
-            border-color: var(--blue);
-            box-shadow: 0 12px 24px rgba(6, 47, 95, .12);
+            border-color: rgba(11, 95, 159, .55);
+            box-shadow: 0 10px 24px rgba(6, 47, 95, .10);
         }
 
-        /* Input Pencarian */
         .search-box {
             width: 100%;
-            height: 34px;
+            height: 32px;
             min-width: 0;
             border: 0;
             border-radius: 999px;
             background: transparent;
-            padding: 0 10px 0 16px;
+            padding: 0 8px 0 14px;
             outline: none;
             color: var(--primary);
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 800;
         }
 
@@ -344,21 +469,20 @@
             color: #94a3b8;
         }
 
-        /* Tombol Pencarian */
         .search-icon-btn {
-            width: 36px;
-            height: 36px;
-            flex: 0 0 36px;
+            width: 32px;
+            height: 32px;
+            flex: 0 0 32px;
             border: 0;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--primary), var(--blue));
             color: #fff;
-            font-size: 15px;
+            font-size: 13px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: 0 10px 20px rgba(7, 43, 87, .18);
+            box-shadow: 0 8px 18px rgba(7, 43, 87, .16);
             transition: .22s ease;
         }
 
@@ -369,7 +493,11 @@
         }
 
         .news-content {
+            position: relative;
+            z-index: 1;
             padding: 26px;
+            background: rgba(255, 255, 255, .94);
+            border-radius: 0 0 30px 30px;
         }
 
         .news-page-grid {
@@ -720,36 +848,114 @@
             .news-page-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
+
+            .news-toolbar {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-wrap {
+                width: 100%;
+            }
+
+            .compact-dropdown.category-filter {
+                width: min(100%, 190px);
+            }
+
+            .compact-dropdown.sort-filter {
+                width: 140px;
+            }
+
+            .news-search-wrap {
+                max-width: 100%;
+            }
         }
 
         @media(max-width: 768px) {
             .container {
                 width: min(100% - 28px, 1180px);
             }
+
             .news-hero {
                 min-height: 315px;
                 padding: 48px 0 96px;
             }
+
             .news-section {
                 margin-top: -48px;
                 padding-bottom: 70px;
             }
+
             .news-toolbar {
-                padding: 18px 22px;
+                padding: 16px;
+                gap: 12px;
             }
-            .news-search-wrap {
-                max-width: 250px; 
-            }
+
             .news-content {
                 padding: 20px;
             }
+
             .news-page-grid {
                 grid-template-columns: 1fr;
                 gap: 18px;
             }
         }
 
-        /* --- PERBAIKAN TAMPILAN KHUSUS HP (MOBILE) --- */
+        @media(max-width: 560px) {
+            .filter-wrap {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) minmax(112px, .72fr);
+                gap: 8px;
+            }
+
+            .compact-dropdown.category-filter,
+            .compact-dropdown.sort-filter {
+                width: 100%;
+            }
+
+            .dropdown-trigger {
+                height: 38px;
+                grid-template-columns: 16px minmax(0, 1fr) 12px;
+                gap: 6px;
+                border-radius: 13px;
+                padding: 0 10px;
+            }
+
+            .dropdown-trigger .selected-text {
+                font-size: 12px;
+            }
+
+            .dropdown-menu {
+                top: calc(100% + 6px);
+                max-height: 184px;
+                border-radius: 14px;
+            }
+
+            .dropdown-option {
+                min-height: 34px;
+                font-size: 12px;
+                padding: 8px 9px;
+                border-radius: 10px;
+            }
+
+            .news-search-wrap {
+                height: 40px;
+                border-radius: 13px;
+            }
+
+            .search-box {
+                height: 32px;
+                font-size: 13px;
+                padding-left: 12px;
+            }
+
+            .search-icon-btn {
+                width: 32px;
+                height: 32px;
+                flex-basis: 32px;
+                border-radius: 10px;
+            }
+        }
+
         @media(max-width: 480px) {
             .news-hero {
                 min-height: 280px;
@@ -757,64 +963,6 @@
 
             .page-title {
                 font-size: 26px;
-            }
-
-            .news-toolbar {
-                padding: 16px;
-                flex-direction: column;
-                align-items: stretch;
-                gap: 14px;
-            }
-
-            /* Memaksa Dropdown selalu 2 Kolom bersebelahan yang presisi */
-            .filter-wrap {
-                grid-template-columns: 1fr 1fr; 
-                gap: 10px; 
-                display: grid;
-                width: 100%;
-            }
-
-            .dropdown-group {
-                width: 100%;
-                gap: 0;
-            }
-
-            /* Menyembunyikan seluruh Ikon agar Dropdown masuk rata kiri-kanan sempurna */
-            .toolbar-label {
-                display: none;
-            }
-
-            /* Ukuran dropdown di HP */
-            .styled-select {
-                width: 100%;
-                height: 42px; 
-                font-size: 13px; 
-                padding: 0 28px 0 14px; 
-                background-size: 14px; 
-                border-radius: 12px;
-            }
-
-            /* Mengecilkan Kotak Pencarian */
-            .news-search-wrap {
-                width: 100%;
-                max-width: 100%;
-                height: 44px; 
-                padding: 4px; 
-                gap: 6px; 
-                border-radius: 12px;
-            }
-
-            .search-box {
-                height: 34px; 
-                font-size: 13px; 
-            }
-
-            .search-icon-btn {
-                width: 34px; 
-                height: 34px; 
-                flex: 0 0 34px; 
-                font-size: 14px; 
-                border-radius: 10px;
             }
 
             .news-content {
@@ -833,7 +981,6 @@
                 font-size: 16px;
             }
 
-            /* Pagination dipaksa menjadi mutlak 1 Baris dengan menu lompat ke bawahnya */
             .pagination {
                 flex-wrap: wrap !important;
                 gap: 6px;
@@ -853,9 +1000,8 @@
                 margin: 0;
             }
 
-            /* Menu Lompat Halaman agar rapi di HP */
             .page-jump {
-                width: 100%; /* Memaksa turun ke baris baru */
+                width: 100%;
                 justify-content: center;
                 margin-left: 0;
                 border-left: 0;
@@ -875,6 +1021,12 @@
             .page-jump button {
                 height: 38px;
                 border-radius: 10px;
+            }
+        }
+
+        @media(max-width: 380px) {
+            .filter-wrap {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -925,26 +1077,45 @@
             <section class="news-panel">
                 <div class="news-toolbar">
                     <div class="filter-wrap">
-                        
-                        <div class="dropdown-group">
-                            <label class="toolbar-label" for="newsCategorySelect" title="Kategori Berita">
-                                <i class="fas fa-layer-group"></i>
-                            </label>
-                            <select id="newsCategorySelect" class="styled-select" aria-label="Pilih Kategori">
-                                <option value="all">Memuat Kategori...</option>
-                            </select>
+                        <div class="compact-dropdown category-filter" id="categoryDropdown">
+                            <button
+                                class="dropdown-trigger"
+                                type="button"
+                                id="categoryDropdownButton"
+                                aria-label="Pilih Kategori"
+                                aria-expanded="false">
+                                <i class="fas fa-layer-group left-icon"></i>
+                                <span class="selected-text" id="categorySelectedText">Memuat...</span>
+                                <i class="fas fa-chevron-down chevron-icon"></i>
+                            </button>
+
+                            <div class="dropdown-menu" id="categoryDropdownMenu"></div>
                         </div>
 
-                        <div class="dropdown-group">
-                            <label class="toolbar-label" for="newsSortSelect" title="Urutkan Berita">
-                                <i class="fas fa-sort-amount-down"></i>
-                            </label>
-                            <select id="newsSortSelect" class="styled-select" aria-label="Urutkan Berita">
-                                <option value="desc">Terbaru</option>
-                                <option value="asc">Terlama</option>
-                            </select>
-                        </div>
+                        <div class="compact-dropdown sort-filter" id="sortDropdown">
+                            <button
+                                class="dropdown-trigger"
+                                type="button"
+                                id="sortDropdownButton"
+                                aria-label="Urutkan Berita"
+                                aria-expanded="false">
+                                <i class="fas fa-arrow-down-wide-short left-icon"></i>
+                                <span class="selected-text" id="sortSelectedText">Terbaru</span>
+                                <i class="fas fa-chevron-down chevron-icon"></i>
+                            </button>
 
+                            <div class="dropdown-menu" id="sortDropdownMenu">
+                                <button type="button" class="dropdown-option active" data-value="desc" data-label="Terbaru">
+                                    <i class="fas fa-check"></i>
+                                    <span>Terbaru</span>
+                                </button>
+
+                                <button type="button" class="dropdown-option" data-value="asc" data-label="Terlama">
+                                    <i class="fas fa-check"></i>
+                                    <span>Terlama</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="news-search-wrap">
@@ -952,7 +1123,7 @@
                             class="search-box"
                             id="newsSearch"
                             type="search"
-                            placeholder="Cari berita atau agenda...">
+                            placeholder="Cari berita...">
 
                         <button
                             class="search-icon-btn"
@@ -1004,11 +1175,19 @@
             let activeRequestId = 0;
 
             const grid = document.getElementById('newsGrid');
-            const categorySelect = document.getElementById('newsCategorySelect');
-            const sortSelect = document.getElementById('newsSortSelect');
             const pagination = document.getElementById('newsPagination');
             const search = document.getElementById('newsSearch');
             const searchButton = document.getElementById('newsSearchButton');
+
+            const categoryDropdown = document.getElementById('categoryDropdown');
+            const categoryButton = document.getElementById('categoryDropdownButton');
+            const categoryMenu = document.getElementById('categoryDropdownMenu');
+            const categoryText = document.getElementById('categorySelectedText');
+
+            const sortDropdown = document.getElementById('sortDropdown');
+            const sortButton = document.getElementById('sortDropdownButton');
+            const sortMenu = document.getElementById('sortDropdownMenu');
+            const sortText = document.getElementById('sortSelectedText');
 
             function esc(value) {
                 return String(value ?? '').replace(/[&<>'"]/g, function (char) {
@@ -1038,27 +1217,194 @@
 
             function date(value) {
                 if (!value) return '';
+
                 const d = new Date(value);
+
                 if (Number.isNaN(d.getTime())) return String(value);
-                return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+
+                return d.toLocaleDateString('id-ID', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric'
+                });
             }
 
             function img(url) {
                 if (!url) return '';
+
                 url = String(url);
+
                 if (/^https?:\/\//i.test(url)) return url;
                 if (url.startsWith('/')) return API_ORIGIN + url;
+
                 return API_ORIGIN + '/' + url.replace(/^\/+/, '');
             }
 
             async function get(url) {
-                const response = await fetch(url, { headers: { Accept: 'application/json' } });
-                if (!response.ok) throw new Error('failed');
+                const response = await fetch(url, {
+                    headers: {
+                        Accept: 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('failed');
+                }
+
                 return response.json();
             }
 
+            /* ================= DROPDOWN FIX ================= */
+
+            function closeDropdowns(except = null) {
+                [categoryDropdown, sortDropdown].forEach(function (dropdown) {
+                    if (!dropdown) return;
+
+                    if (dropdown !== except) {
+                        dropdown.classList.remove('open');
+
+                        const button = dropdown.querySelector('.dropdown-trigger');
+                        if (button) {
+                            button.setAttribute('aria-expanded', 'false');
+                        }
+                    }
+                });
+            }
+
+            function openDropdown(dropdown) {
+                if (!dropdown) return;
+
+                closeDropdowns(dropdown);
+                dropdown.classList.add('open');
+
+                const button = dropdown.querySelector('.dropdown-trigger');
+                if (button) {
+                    button.setAttribute('aria-expanded', 'true');
+                }
+            }
+
+            function closeDropdown(dropdown) {
+                if (!dropdown) return;
+
+                dropdown.classList.remove('open');
+
+                const button = dropdown.querySelector('.dropdown-trigger');
+                if (button) {
+                    button.setAttribute('aria-expanded', 'false');
+                }
+            }
+
+            function toggleDropdown(dropdown) {
+                if (!dropdown) return;
+
+                if (dropdown.classList.contains('open')) {
+                    closeDropdown(dropdown);
+                } else {
+                    openDropdown(dropdown);
+                }
+            }
+
+            function setActiveOption(menu, value) {
+                if (!menu) return;
+
+                menu.querySelectorAll('.dropdown-option').forEach(function (option) {
+                    option.classList.toggle('active', String(option.dataset.value) === String(value));
+                });
+            }
+
+            function setupDropdownButton(button, dropdown) {
+                if (!button || !dropdown) return;
+
+                button.addEventListener('pointerdown', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    toggleDropdown(dropdown);
+                });
+
+                button.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        toggleDropdown(dropdown);
+                    }
+
+                    if (event.key === 'Escape') {
+                        closeDropdown(dropdown);
+                    }
+                });
+            }
+
+            function setupDropdownArea(dropdown) {
+                if (!dropdown) return;
+
+                dropdown.addEventListener('pointerdown', function (event) {
+                    event.stopPropagation();
+                });
+
+                dropdown.addEventListener('click', function (event) {
+                    event.stopPropagation();
+                });
+            }
+
+            setupDropdownButton(categoryButton, categoryDropdown);
+            setupDropdownButton(sortButton, sortDropdown);
+            setupDropdownArea(categoryDropdown);
+            setupDropdownArea(sortDropdown);
+
+            document.addEventListener('pointerdown', function (event) {
+                const clickedInsideDropdown = event.target.closest('.compact-dropdown');
+
+                if (!clickedInsideDropdown) {
+                    closeDropdowns();
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    closeDropdowns();
+                }
+            });
+
+            categoryMenu?.addEventListener('pointerdown', function (event) {
+                const option = event.target.closest('.dropdown-option');
+                if (!option) return;
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                state.category = option.dataset.value || 'all';
+                state.page = 1;
+
+                categoryText.textContent = option.dataset.label || option.textContent.trim() || 'Semua';
+
+                setActiveOption(categoryMenu, state.category);
+                closeDropdown(categoryDropdown);
+
+                load();
+            });
+
+            sortMenu?.addEventListener('pointerdown', function (event) {
+                const option = event.target.closest('.dropdown-option');
+                if (!option) return;
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                state.sort = option.dataset.value || 'desc';
+                state.page = 1;
+
+                sortText.textContent = option.dataset.label || option.textContent.trim() || 'Terbaru';
+
+                setActiveOption(sortMenu, state.sort);
+                closeDropdown(sortDropdown);
+
+                load();
+            });
+
+            /* ================= NEWS DATA ================= */
+
             function normalize(item) {
                 const category = item?.category || {};
+
                 return {
                     title: String(item?.title ?? 'Tanpa Judul'),
                     slug: String(item?.slug ?? ''),
@@ -1131,12 +1477,16 @@
                             <div class="news-page-body">
                                 <h2 class="news-page-title">${title}</h2>
                                 <p class="news-page-excerpt">${excerpt}</p>
+
                                 <div class="news-page-footer">
                                     <div class="news-page-date">
                                         <i class="fas fa-calendar-alt"></i>
                                         ${newsDate || 'Tanggal belum tersedia'}
                                     </div>
-                                    <div class="read-more">Baca <i class="fas fa-arrow-right"></i></div>
+
+                                    <div class="read-more">
+                                        Baca <i class="fas fa-arrow-right"></i>
+                                    </div>
                                 </div>
                             </div>
                         </a>
@@ -1153,9 +1503,8 @@
                     return;
                 }
 
-                // Pada layar HP hanya memunculkan 3 tombol angka agar muat 1 baris
                 const isMobile = window.innerWidth <= 480;
-                const visiblePages = isMobile ? 3 : 5; 
+                const visiblePages = isMobile ? 3 : 5;
 
                 let start = Math.max(1, current - Math.floor(visiblePages / 2));
                 let end = Math.min(last, start + visiblePages - 1);
@@ -1174,17 +1523,21 @@
                     html += `<span class="page-dots">...</span><button class="page-btn" data-page="${last}">${last}</button>`;
                 }
 
-                html += `<button class="page-btn" data-page="${current + 1}" ${current >= last ? 'disabled' : ''}>›</button>
-                         <div class="page-jump">
-                             <input type="number" min="1" max="${last}" value="${current}" aria-label="Pilih halaman">
-                             <button type="button">Go</button>
-                         </div>`;
+                html += `
+                    <button class="page-btn" data-page="${current + 1}" ${current >= last ? 'disabled' : ''}>›</button>
+
+                    <div class="page-jump">
+                        <input type="number" min="1" max="${last}" value="${current}" aria-label="Pilih halaman">
+                        <button type="button">Go</button>
+                    </div>
+                `;
 
                 pagination.innerHTML = html;
 
                 pagination.querySelectorAll('[data-page]').forEach(function (button) {
                     button.onclick = function () {
                         const page = Number(button.dataset.page);
+
                         if (page >= 1 && page <= last && page !== current) {
                             state.page = page;
                             load();
@@ -1197,6 +1550,7 @@
 
                 function jump() {
                     const page = Number(input.value);
+
                     if (page >= 1 && page <= last && page !== current) {
                         state.page = page;
                         load();
@@ -1204,15 +1558,27 @@
                 }
 
                 button?.addEventListener('click', jump);
-                input?.addEventListener('keydown', function (event) { if (event.key === 'Enter') jump(); });
+
+                input?.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter') {
+                        jump();
+                    }
+                });
             }
 
             async function load() {
                 const requestId = ++activeRequestId;
-                grid.innerHTML = `<div class="loading"><div class="loader"></div><span>Memuat berita...</span></div>`;
+
+                grid.innerHTML = `
+                    <div class="loading">
+                        <div class="loader"></div>
+                        <span>Memuat berita...</span>
+                    </div>
+                `;
 
                 try {
                     const payload = await get(buildUrl(state.page));
+
                     if (requestId !== activeRequestId) return;
 
                     state.lastPage = Number(payload?.meta?.last_page || 1);
@@ -1229,6 +1595,7 @@
                                 <span>Silakan coba muat ulang halaman atau periksa koneksi internet Anda.</span>
                             </div>
                         `;
+
                         pagination.innerHTML = '';
                     }
                 }
@@ -1237,38 +1604,57 @@
             async function loadFilters() {
                 try {
                     const payload = await get(API.category);
-                    
-                    categorySelect.innerHTML = '<option value="all">Kategori (Semua)</option>' + 
-                        arr(payload).map(function (category) {
-                            return `<option value="${esc(category.id)}">${esc(category.name)}</option>`;
-                        }).join('');
 
-                    categorySelect.addEventListener('change', function () {
-                        state.category = this.value;
-                        state.page = 1;
-                        load();
+                    const categoryOptions = [
+                        `<button type="button" class="dropdown-option active" data-value="all" data-label="Semua">
+                            <i class="fas fa-check"></i>
+                            <span>Semua</span>
+                        </button>`
+                    ];
+
+                    arr(payload).forEach(function (category) {
+                        categoryOptions.push(`
+                            <button
+                                type="button"
+                                class="dropdown-option"
+                                data-value="${esc(category.id)}"
+                                data-label="${esc(category.name)}"
+                                title="${esc(category.name)}">
+                                <i class="fas fa-check"></i>
+                                <span>${esc(category.name)}</span>
+                            </button>
+                        `);
                     });
+
+                    categoryMenu.innerHTML = categoryOptions.join('');
+                    categoryText.textContent = 'Semua';
+                    setActiveOption(categoryMenu, state.category);
                 } catch (error) {
-                    categorySelect.innerHTML = '<option value="all">Kategori (Semua)</option>';
+                    categoryMenu.innerHTML = `
+                        <button type="button" class="dropdown-option active" data-value="all" data-label="Semua">
+                            <i class="fas fa-check"></i>
+                            <span>Semua</span>
+                        </button>
+                    `;
+
+                    categoryText.textContent = 'Semua';
+                    setActiveOption(categoryMenu, 'all');
                 }
             }
 
-            sortSelect?.addEventListener('change', function () {
-                state.sort = this.value;
-                state.page = 1;
-                load();
-            });
-
             search.addEventListener('input', function () {
                 clearTimeout(searchTimer);
+
                 state.q = search.value;
                 state.page = 1;
+
                 searchTimer = setTimeout(load, 400);
             });
 
             searchButton?.addEventListener('click', function () {
                 state.q = search.value;
                 state.page = 1;
+
                 search.focus();
                 load();
             });
@@ -1276,10 +1662,13 @@
             loadFilters();
             load();
 
-            // Handle Resize Window agar Paginasi menyesuaikan otomatis
-            window.addEventListener('resize', function() {
+            window.addEventListener('resize', function () {
                 clearTimeout(window.resizeTimer);
-                window.resizeTimer = setTimeout(renderPages, 200);
+
+                window.resizeTimer = setTimeout(function () {
+                    closeDropdowns();
+                    renderPages();
+                }, 200);
             });
         })();
     </script>
