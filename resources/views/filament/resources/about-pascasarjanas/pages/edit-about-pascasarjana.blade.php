@@ -52,16 +52,19 @@
             <p class="custom-section-desc">Upload ikon diproses langsung seperti Organization Structures, tanpa proses temporary upload Livewire.</p>
             <div id="pointsWrapper" class="custom-form-grid">
                 @foreach ($points as $index => $point)
-                    @php($existingIcon = $point['existing_icon'] ?? $point['icon'] ?? null)
+                    @php
+                        $existingIcon = \App\Models\AboutPascasarjana::normalizeImagePath($point['existing_icon'] ?? $point['icon'] ?? null);
+                        $existingIconUrl = \App\Models\AboutPascasarjana::publicImageUrl($existingIcon);
+                    @endphp
                     <div class="custom-point" data-point>
                         <div class="custom-point-head">
                             <span>Poin #{{ $loop->iteration }}</span>
                             <button type="button" class="custom-btn-danger" data-remove-point>Hapus</button>
                         </div>
-                        @if($existingIcon)
+                        @if($existingIcon && $existingIconUrl)
                             <div class="custom-field">
                                 <label>Ikon Saat Ini</label>
-                                <img src="{{ asset('storage/' . $existingIcon) }}" alt="Ikon" class="custom-preview">
+                                <img src="{{ $existingIconUrl }}?v={{ optional($record->updated_at)->timestamp }}" alt="Ikon" class="custom-preview">
                                 <input type="hidden" name="points[{{ $index }}][existing_icon]" value="{{ $existingIcon }}">
                             </div>
                         @endif
@@ -102,11 +105,15 @@
                     </div>
                 </div>
 
-                @if($record->direktur_image)
+                @php
+                    $directorImage = \App\Models\AboutPascasarjana::normalizeImagePath($record->direktur_image);
+                    $directorImageUrl = \App\Models\AboutPascasarjana::publicImageUrl($directorImage);
+                @endphp
+                @if($directorImage && $directorImageUrl)
                     <div class="custom-field">
                         <label>Foto Direktur Saat Ini</label>
-                        <img src="{{ asset('storage/' . $record->direktur_image) }}" alt="Foto Direktur" class="custom-preview custom-director-preview">
-                        <input type="hidden" name="existing_direktur_image" value="{{ $record->direktur_image }}">
+                        <img src="{{ $directorImageUrl }}?v={{ optional($record->updated_at)->timestamp }}" alt="Foto Direktur" class="custom-preview custom-director-preview">
+                        <input type="hidden" name="existing_direktur_image" value="{{ $directorImage }}">
                     </div>
                 @endif
 
