@@ -10,6 +10,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\FileUpload;
+use Illuminate\Support\Facades\Storage;
 
 class AboutPascasarjanaForm
 {
@@ -59,13 +60,18 @@ class AboutPascasarjanaForm
                                             ->visibility('public')
                                             ->maxSize(2048)
                                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'])
-                                            ->imagePreviewHeight('70')
+                                            ->fetchFileInformation(false)
+                                            ->previewable(false)
+                                            ->openable(false)
+                                            ->downloadable(false)
+                                            ->deletable(true)
+                                            ->deleteUploadedFileUsing(fn (?string $file): bool => filled($file) ? Storage::disk('public')->delete($file) : true)
                                             ->panelLayout('compact')
                                             ->loadingIndicatorPosition('right')
                                             ->removeUploadedFileButtonPosition('right')
                                             ->uploadProgressIndicatorPosition('right')
                                             ->label('Upload Ikon')
-                                            ->helperText('Agar upload cepat, gunakan ikon kecil. Maksimal 2 MB.')
+                                            ->helperText('Gambar lama tidak dimuat preview supaya edit lebih cepat. Upload baru akan mengganti file lama.')
                                             ->columnSpan([
                                                 'default' => 4,
                                                 'md' => 1,
@@ -123,13 +129,18 @@ class AboutPascasarjanaForm
                                     ->visibility('public')
                                     ->maxSize(3072)
                                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
-                                    ->imagePreviewHeight('140')
+                                    ->fetchFileInformation(false)
+                                    ->previewable(false)
+                                    ->openable(false)
+                                    ->downloadable(false)
+                                    ->deletable(true)
+                                    ->deleteUploadedFileUsing(fn (?string $file): bool => filled($file) ? Storage::disk('public')->delete($file) : true)
                                     ->panelLayout('compact')
                                     ->loadingIndicatorPosition('right')
                                     ->removeUploadedFileButtonPosition('right')
                                     ->uploadProgressIndicatorPosition('right')
                                     ->label('Foto Direktur (Potret/Berdiri)')
-                                    ->helperText('Agar upload cepat, gunakan foto terkompresi. Maksimal 3 MB.')
+                                    ->helperText('Gambar lama tidak dimuat preview supaya edit lebih cepat. Upload baru akan mengganti file lama.')
                                     ->columnSpan([
                                         'default' => 4,
                                         'md' => 1,
