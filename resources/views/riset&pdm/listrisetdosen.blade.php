@@ -711,35 +711,79 @@
             width: 100%;
         }
 
+        /* Menyembunyikan teks info "Showing X to Y of Z results" bawaan Laravel agar terlihat bersih seperti halaman berita */
+        .rd-pagination nav > div:first-child {
+            display: none !important;
+        }
+
+        /* Menyelaraskan pembungkus tombol utama pagination */
+        .rd-pagination nav > div:last-child,
         .rd-pagination nav > div {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 9px !important;
             flex-wrap: wrap;
         }
 
+        /* Gaya dasar tombol angka & panah (Menyamakan penuh dengan .page-btn) */
         .rd-pagination a,
         .rd-pagination span {
-            border-radius: 12px !important;
-            font-weight: 800 !important;
-            padding: 10px 16px !important;
-        }
-
-        .rd-pagination a {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            height: 42px !important;
+            min-width: 42px !important;
+            border: 1px solid rgba(6, 47, 95, .14) !important;
+            border-radius: 13px !important;
+            background: #fff !important;
             color: var(--primary) !important;
-            transition: .2s ease;
+            font-weight: 900 !important;
+            padding: 0 13px !important;
+            transition: .2s ease !important;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, .04) !important;
+            text-decoration: none !important;
+            cursor: pointer;
+            box-sizing: border-box !important;
         }
 
-        .rd-pagination a:hover {
+        /* Efek Hover untuk Link Aktif & Gaya untuk Halaman yang Sedang Aktif (Current Page) */
+        .rd-pagination a:hover,
+        .rd-pagination span[aria-current="page"],
+        .rd-pagination .active span,
+        .rd-pagination span.active {
+            background: linear-gradient(135deg, var(--primary), var(--blue)) !important;
+            border-color: transparent !important;
             color: #fff !important;
-            background: var(--primary) !important;
-            border-color: var(--primary) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(6, 47, 95, .18) !important;
         }
 
+        /* Gaya untuk Tombol yang Dinonaktifkan (Disabled Previous / Next) */
+        .rd-pagination span[aria-disabled="true"] {
+            opacity: .45 !important;
+            cursor: not-allowed !important;
+            background: #f1f5f9 !important;
+            color: #94a3b8 !important;
+            transform: none !important;
+            box-shadow: none !important;
+            border: 1px solid rgba(6, 47, 95, .14) !important;
+        }
+
+        /* Merapikan elemen tiga titik (...) pemisah halaman jika ada */
+        .rd-pagination span:not([aria-disabled="true"]):not([aria-current="page"]) {
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            color: #94a3b8 !important;
+            font-weight: 900 !important;
+            cursor: default;
+        }
+
+        /* Menyelaraskan ukuran ikon SVG panah bawaan Laravel */
         .rd-pagination svg {
-            width: 18px;
-            height: 18px;
+            width: 16px !important;
+            height: 16px !important;
         }
 
         /* ================= RESPONSIVE ================= */
