@@ -438,3 +438,4 @@
 </footer>
 
 @include('component.frontend-enhancements')
+@include('component.typography')
