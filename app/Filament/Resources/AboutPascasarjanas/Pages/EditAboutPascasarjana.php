@@ -8,6 +8,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class EditAboutPascasarjana extends EditRecord
 {
@@ -32,10 +33,10 @@ class EditAboutPascasarjana extends EditRecord
         $data['points'] = collect($data['points'] ?? [])
             ->map(function (array $point, int $index) use ($oldPoints): array {
                 $oldIcon = AboutPascasarjana::normalizeImagePath(data_get($oldPoints, $index . '.icon'));
-                $upload = AboutPascasarjana::normalizeImagePath($point['icon_upload'] ?? null);
+                $upload = $this->storeUploadFile($point['icon_upload'] ?? null, 'tentang-icons', 'about-icon');
 
                 if ($upload) {
-                    $this->deletePublicFile($oldIcon);
+                    $this->removePublicFile($oldIcon);
                     $point['icon'] = $upload;
                 } else {
                     $point['icon'] = AboutPascasarjana::normalizeImagePath($point['icon'] ?? $oldIcon);
@@ -49,10 +50,10 @@ class EditAboutPascasarjana extends EditRecord
             ->all();
 
         $oldDirectorImage = AboutPascasarjana::normalizeImagePath($this->record->direktur_image);
-        $directorUpload = AboutPascasarjana::normalizeImagePath($data['direktur_image_upload'] ?? null);
+        $directorUpload = $this->storeUploadFile($data['direktur_image_upload'] ?? null, 'direktur-images', 'direktur');
 
         if ($directorUpload) {
-            $this->deletePublicFile($oldDirectorImage);
+            $this->removePublicFile($oldDirectorImage);
             $data['direktur_image'] = $directorUpload;
         } else {
             $data['direktur_image'] = AboutPascasarjana::normalizeImagePath($data['direktur_image'] ?? $oldDirectorImage);
@@ -63,7 +64,32 @@ class EditAboutPascasarjana extends EditRecord
         return $data;
     }
 
-    private function deletePublicFile(?string $path): void
+    private function storeUploadFile(mixed $upload, string $directory, string $prefix): ?string
+    {
+        if (is_array($upload)) {
+            $upload = reset($upload) ?: null;
+        }
+
+        if (! $upload) {
+            return null;
+        }
+
+        if (is_object($upload) && method_exists($upload, 'storeAs')) {
+            $extension = method_exists($upload, 'getClientOriginalExtension')
+                ? $upload->getClientOriginalExtension()
+                : 'jpg';
+
+            return $upload->storeAs(
+                $directory,
+                $prefix . '-' . now()->format('YmdHis') . '-' . Str::random(8) . '.' . strtolower($extension ?: 'jpg'),
+                'public'
+            );
+        }
+
+        return AboutPascasarjana::normalizeImagePath($upload);
+    }
+
+    private function removePublicFile(?string $path): void
     {
         if ($path && Storage::disk('public')->exists($path)) {
             Storage::disk('public')->delete($path);
