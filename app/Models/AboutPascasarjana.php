@@ -84,7 +84,7 @@ class AboutPascasarjana extends Model
             return $path;
         }
 
-        return route('public-storage.file', ['path' => $path]);
+        return url('/storage/' . ltrim($path, '/'));
     }
 
     public static function publicImageExists(mixed $value): bool
