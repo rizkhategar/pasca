@@ -26,6 +26,33 @@ Route::get('/', function () {
 Route::get('/storage/{path}', function (string $path) {
     $path = ltrim($path, '/');
     abort_if(Str::contains($path, ['..', '\\']), 404);
+
+    if (preg_match('#^about-pascasarjanas/(\d+)/director-image#', $path, $matches)) {
+        $record = AboutPascasarjana::findOrFail($matches[1]);
+        $imagePath = AboutPascasarjana::normalizeImagePath($record->direktur_image);
+
+        abort_unless($imagePath && Storage::disk('public')->exists($imagePath), 404);
+
+        return response()->file(Storage::disk('public')->path($imagePath), [
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+        ]);
+    }
+
+    if (preg_match('#^about-pascasarjanas/(\d+)/point-icons/(\d+)#', $path, $matches)) {
+        $record = AboutPascasarjana::findOrFail($matches[1]);
+        $imagePath = AboutPascasarjana::normalizeImagePath(data_get($record->points ?? [], $matches[2] . '.icon'));
+
+        abort_unless($imagePath && Storage::disk('public')->exists($imagePath), 404);
+
+        return response()->file(Storage::disk('public')->path($imagePath), [
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+        ]);
+    }
+
     abort_unless(Storage::disk('public')->exists($path), 404);
     return response()->file(Storage::disk('public')->path($path), ['Cache-Control' => 'public, max-age=31536000']);
 })->where('path', '.*')->name('public-storage.file');
