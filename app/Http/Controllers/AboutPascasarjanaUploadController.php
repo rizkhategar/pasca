@@ -13,31 +13,27 @@ class AboutPascasarjanaUploadController extends Controller
 {
     public function store(Request $request): RedirectResponse
     {
-        $validated = $this->validateRequest($request, true);
+        $validated = $this->validateData($request);
 
-        $data = $this->makeData($request, $validated);
-
-        AboutPascasarjana::create($data);
+        AboutPascasarjana::create($this->makeData($request, $validated));
 
         return redirect()
             ->to(AboutPascasarjanaResource::getUrl('index'))
-            ->with('success', 'About Pascasarjana has been created.');
+            ->with('success', 'About Pascasarjana berhasil dibuat.');
     }
 
     public function update(Request $request, AboutPascasarjana $aboutPascasarjana): RedirectResponse
     {
-        $validated = $this->validateRequest($request, false);
+        $validated = $this->validateData($request);
 
-        $data = $this->makeData($request, $validated, $aboutPascasarjana);
-
-        $aboutPascasarjana->update($data);
+        $aboutPascasarjana->update($this->makeData($request, $validated, $aboutPascasarjana));
 
         return redirect()
             ->to(AboutPascasarjanaResource::getUrl('index'))
-            ->with('success', 'About Pascasarjana has been updated.');
+            ->with('success', 'About Pascasarjana berhasil diperbarui.');
     }
 
-    private function validateRequest(Request $request, bool $isCreate): array
+    private function validateData(Request $request): array
     {
         return $request->validate([
             'subheading' => ['required', 'string', 'max:255'],
@@ -46,67 +42,56 @@ class AboutPascasarjanaUploadController extends Controller
             'points' => ['nullable', 'array'],
             'points.*.title' => ['nullable', 'string', 'max:255'],
             'points.*.description' => ['nullable', 'string'],
-            'points.*.existing_icon' => ['nullable'],
-            'points.*.icon' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,svg', 'max:5120'],
+            'points.*.existing_icon' => ['nullable', 'string'],
+            'points.*.icon' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,svg', 'max:4096'],
             'direktur_heading' => ['nullable', 'string', 'max:255'],
             'direktur_greeting' => ['nullable', 'string', 'max:255'],
             'direktur_name' => ['nullable', 'string', 'max:255'],
             'direktur_title' => ['nullable', 'string', 'max:255'],
             'direktur_message' => ['nullable', 'string'],
-            'existing_direktur_image' => ['nullable'],
-            'direktur_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'existing_direktur_image' => ['nullable', 'string'],
+            'direktur_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ]);
     }
 
     private function makeData(Request $request, array $validated, ?AboutPascasarjana $record = null): array
     {
         $oldPoints = collect($record?->points ?? []);
-        $points = $this->makePoints($request, $oldPoints);
 
-        $direkturImage = AboutPascasarjana::normalizeImagePath($record?->direktur_image);
+        $directorImage = AboutPascasarjana::normalizeImagePath($record?->direktur_image);
 
         if ($request->hasFile('direktur_image')) {
-            $this->deleteIfExists($direkturImage);
-            $direkturImage = $request->file('direktur_image')->storeAs(
-                'direktur-images',
-                $this->makeFileName('direktur', $request->file('direktur_image')->getClientOriginalExtension()),
-                'public'
-            );
+            $this->deleteFile($directorImage);
+            $directorImage = $this->storeFile($request->file('direktur_image'), 'direktur-images', 'direktur');
         }
 
         return [
             'subheading' => $validated['subheading'],
             'heading' => $validated['heading'],
             'description' => $validated['description'],
-            'points' => $points,
+            'points' => $this->makePoints($request, $oldPoints),
             'direktur_heading' => $validated['direktur_heading'] ?? null,
             'direktur_greeting' => $validated['direktur_greeting'] ?? null,
             'direktur_name' => $validated['direktur_name'] ?? null,
             'direktur_title' => $validated['direktur_title'] ?? null,
-            'direktur_message' => $this->formatMessage($validated['direktur_message'] ?? ''),
-            'direktur_image' => $direkturImage,
+            'direktur_message' => $this->formatMessage($validated['direktur_message'] ?? null),
+            'direktur_image' => $directorImage,
         ];
     }
 
     private function makePoints(Request $request, $oldPoints): array
     {
-        $pointsInput = $request->input('points', []);
         $points = [];
         $keptIcons = [];
 
-        foreach ($pointsInput as $index => $point) {
+        foreach ($request->input('points', []) as $index => $point) {
             $title = trim((string) ($point['title'] ?? ''));
             $description = trim((string) ($point['description'] ?? ''));
-            $icon = AboutPascasarjana::normalizeImagePath($point['existing_icon'] ?? null);
+            $icon = AboutPascasarjana::normalizeImagePath($point['existing_icon'] ?? data_get($oldPoints, $index . '.icon'));
 
             if ($request->hasFile("points.{$index}.icon")) {
-                $this->deleteIfExists($icon);
-                $uploadedIcon = $request->file("points.{$index}.icon");
-                $icon = $uploadedIcon->storeAs(
-                    'tentang-icons',
-                    $this->makeFileName('about-icon', $uploadedIcon->getClientOriginalExtension()),
-                    'public'
-                );
+                $this->deleteFile($icon);
+                $icon = $this->storeFile($request->file("points.{$index}.icon"), 'tentang-icons', 'about-icon');
             }
 
             if ($title === '' && $description === '' && ! $icon) {
@@ -126,12 +111,30 @@ class AboutPascasarjanaUploadController extends Controller
 
         $oldPoints
             ->pluck('icon')
-            ->map(fn ($icon) => AboutPascasarjana::normalizeImagePath($icon))
+            ->map(fn ($path) => AboutPascasarjana::normalizeImagePath($path))
             ->filter()
-            ->reject(fn ($icon) => in_array($icon, $keptIcons, true))
-            ->each(fn ($icon) => $this->deleteIfExists($icon));
+            ->reject(fn ($path) => in_array($path, $keptIcons, true))
+            ->each(fn ($path) => $this->deleteFile($path));
 
         return $points;
+    }
+
+    private function storeFile($file, string $directory, string $prefix): string
+    {
+        return $file->storeAs(
+            $directory,
+            $prefix . '-' . now()->format('YmdHis') . '-' . Str::random(8) . '.' . strtolower($file->getClientOriginalExtension() ?: 'jpg'),
+            'public'
+        );
+    }
+
+    private function deleteFile(?string $path): void
+    {
+        $path = AboutPascasarjana::normalizeImagePath($path);
+
+        if ($path && Storage::disk('public')->exists($path)) {
+            Storage::disk('public')->delete($path);
+        }
     }
 
     private function formatMessage(?string $message): ?string
@@ -145,19 +148,5 @@ class AboutPascasarjanaUploadController extends Controller
         return collect(preg_split('/\R{2,}/', $message))
             ->map(fn ($paragraph) => '<p>' . nl2br(e(trim($paragraph))) . '</p>')
             ->implode('');
-    }
-
-    private function deleteIfExists(mixed $path): void
-    {
-        $path = AboutPascasarjana::normalizeImagePath($path);
-
-        if ($path && Storage::disk('public')->exists($path)) {
-            Storage::disk('public')->delete($path);
-        }
-    }
-
-    private function makeFileName(string $prefix, string $extension): string
-    {
-        return $prefix . '-' . now()->format('YmdHis') . '-' . Str::random(8) . '.' . strtolower($extension);
     }
 }

@@ -10,17 +10,18 @@ return [
     'lazy_placeholder' => null,
 
     'temporary_file_upload' => [
-        'disk' => null,
-        'rules' => 'file|max:5120',
-        'directory' => null,
-        'middleware' => 'throttle:60,1',
+        'disk' => 'local',
+        'rules' => 'file|max:10240',
+        'directory' => 'livewire-tmp',
+        'middleware' => 'throttle:120,1',
         'preview_mimes' => [
             'png',
             'jpg',
             'jpeg',
             'webp',
+            'svg',
         ],
-        'max_upload_time' => 5,
+        'max_upload_time' => 30,
         'cleanup' => true,
     ],
 
