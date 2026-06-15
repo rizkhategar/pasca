@@ -30,10 +30,13 @@
     #siteHeader {
         position: sticky !important;
         top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
         width: 100% !important;
         z-index: 9999 !important;
         box-shadow: 0 4px 14px rgba(0, 0, 0, .12) !important;
         font-family: Arial, Helvetica, sans-serif !important;
+        background: var(--light) !important;
     }
 
     #siteHeader .top-header {
@@ -44,7 +47,8 @@
 
     #siteHeader .header-container {
         width: min(100% - 32px, 1120px) !important;
-        margin: 0 auto !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
     }
 
     #siteHeader .brand-wrapper,
@@ -291,96 +295,179 @@
         flex-shrink: 0 !important;
     }
 
-    @media (min-width: 993px) {
-        #siteHeader.nav-collapsed .navbar {
+    @media (max-width: 1200px) {
+        #siteHeader .nav-link {
+            padding: 0 10px !important;
+            font-size: 11px !important;
+        }
+    }
+
+    @media (max-width: 992px) {
+        #siteHeader .top-header {
+            padding: 10px 84px 10px 0 !important;
+        }
+
+        #siteHeader .brand-logo {
+            width: 62px !important;
+            height: 62px !important;
+            min-width: 62px !important;
+            max-width: 62px !important;
+            flex-basis: 62px !important;
+        }
+
+        #siteHeader .brand-main {
+            font-size: 34px !important;
+        }
+
+        #siteHeader .brand-school {
+            font-size: 13px !important;
+        }
+
+        #siteHeader .navbar {
             position: absolute !important;
-            top: 18px !important;
-            right: 24px !important;
+            top: 10px !important;
+            right: 16px !important;
             width: auto !important;
             min-height: 0 !important;
             background: transparent !important;
             box-shadow: none !important;
         }
 
-        #siteHeader.nav-collapsed .header-container {
+        #siteHeader .navbar .header-container {
             width: auto !important;
             margin: 0 !important;
         }
 
-        #siteHeader.nav-collapsed .nav-content {
+        #siteHeader .nav-content {
             min-height: 0 !important;
             justify-content: flex-end !important;
         }
 
-        #siteHeader.nav-collapsed .hamburger {
+        #siteHeader .hamburger {
             display: flex !important;
-            width: 60px !important;
-            height: 60px !important;
+            width: 62px !important;
+            height: 62px !important;
             margin-left: 0 !important;
         }
 
-        #siteHeader.nav-collapsed .nav-menu {
+        #siteHeader .nav-menu {
             display: none !important;
-            position: absolute !important;
-            top: calc(100% + 12px) !important;
+            position: fixed !important;
+            top: 90px !important;
+            left: 0 !important;
             right: 0 !important;
-            width: 285px !important;
+            width: 100% !important;
             height: auto !important;
-            max-height: calc(100vh - 110px) !important;
+            max-height: calc(100vh - 90px) !important;
             overflow-y: auto !important;
             flex-direction: column !important;
             align-items: stretch !important;
-            padding: 8px 0 14px !important;
+            padding: 0 0 12px !important;
             background: var(--primary) !important;
+            z-index: 10050 !important;
         }
 
-        #siteHeader.nav-collapsed .nav-menu.show { display: flex !important; }
-        #siteHeader.nav-collapsed .nav-item { width: 100% !important; height: auto !important; }
-        #siteHeader.nav-collapsed .nav-link { width: 100% !important; height: 48px !important; justify-content: space-between !important; }
-        #siteHeader.nav-collapsed .nav-item::after { display: none !important; }
-        #siteHeader.nav-collapsed .dropdown { position: static !important; min-width: 100% !important; box-shadow: none !important; padding: 5px 0 !important; transform: none !important; opacity: 1 !important; visibility: visible !important; display: none !important; }
-        #siteHeader.nav-collapsed .nav-item:hover .dropdown { display: none !important; }
-        #siteHeader.nav-collapsed .nav-item.open .dropdown { display: block !important; }
-    }
+        #siteHeader .nav-menu.show {
+            display: flex !important;
+        }
 
-    @media (max-width: 1200px) {
-        #siteHeader .nav-link { padding: 0 10px !important; font-size: 11px !important; }
-    }
+        #siteHeader .nav-item {
+            width: 100% !important;
+            height: auto !important;
+        }
 
-    @media (max-width: 992px) {
-        #siteHeader { background: var(--light) !important; }
-        #siteHeader .top-header { padding: 10px 84px 10px 0 !important; }
-        #siteHeader .brand-logo { width: 62px !important; height: 62px !important; min-width: 62px !important; max-width: 62px !important; flex-basis: 62px !important; }
-        #siteHeader .brand-main { font-size: 34px !important; }
-        #siteHeader .brand-school { font-size: 13px !important; }
-        #siteHeader .navbar { position: absolute !important; top: 10px !important; right: 16px !important; width: auto !important; min-height: 0 !important; background: transparent !important; box-shadow: none !important; }
-        #siteHeader .navbar .header-container { width: auto !important; margin: 0 !important; }
-        #siteHeader .nav-content { min-height: 0 !important; justify-content: flex-end !important; }
-        #siteHeader .hamburger { display: flex !important; width: 62px !important; height: 62px !important; margin-left: 0 !important; }
-        #siteHeader .nav-menu { display: none !important; position: fixed !important; top: 90px !important; left: 0 !important; right: 0 !important; width: 100% !important; height: auto !important; max-height: calc(100vh - 90px) !important; overflow-y: auto !important; flex-direction: column !important; align-items: stretch !important; padding: 0 0 12px !important; background: var(--primary) !important; z-index: 10050 !important; }
-        #siteHeader .nav-menu.show { display: flex !important; }
-        #siteHeader .nav-item { width: 100% !important; height: auto !important; }
-        #siteHeader .nav-link { width: 100% !important; height: 50px !important; padding: 0 18px !important; justify-content: space-between !important; font-size: 12px !important; }
-        #siteHeader .nav-item::after { display: none !important; }
-        #siteHeader .nav-item:hover .dropdown { display: none !important; }
-        #siteHeader .nav-item.open .dropdown { display: block !important; }
-        #siteHeader .dropdown { position: static !important; min-width: 100% !important; width: 100% !important; box-shadow: none !important; border-radius: 0 !important; opacity: 1 !important; visibility: visible !important; transform: none !important; display: none !important; padding: 5px 0 !important; }
-        #siteHeader .dropdown a { min-width: 100% !important; padding: 12px 24px !important; white-space: normal !important; }
+        #siteHeader .nav-link {
+            width: 100% !important;
+            height: 50px !important;
+            padding: 0 18px !important;
+            justify-content: space-between !important;
+            font-size: 12px !important;
+        }
+
+        #siteHeader .nav-item::after {
+            display: none !important;
+        }
+
+        #siteHeader .nav-item:hover .dropdown {
+            display: none !important;
+        }
+
+        #siteHeader .nav-item.open .dropdown {
+            display: block !important;
+        }
+
+        #siteHeader .dropdown {
+            position: static !important;
+            min-width: 100% !important;
+            width: 100% !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            transform: none !important;
+            display: none !important;
+            padding: 5px 0 !important;
+        }
+
+        #siteHeader .dropdown a {
+            min-width: 100% !important;
+            padding: 12px 24px !important;
+            white-space: normal !important;
+        }
     }
 
     @media (max-width: 640px) {
-        #siteHeader .header-container { width: min(100% - 28px, 1120px) !important; }
-        #siteHeader .top-header { padding: 9px 76px 9px 0 !important; }
-        #siteHeader .brand-wrapper { gap: 9px !important; }
-        #siteHeader .brand-logo { width: 54px !important; height: 54px !important; min-width: 54px !important; max-width: 54px !important; flex-basis: 54px !important; }
-        #siteHeader .brand-unw { gap: 8px !important; }
-        #siteHeader .brand-main { font-size: 28px !important; }
-        #siteHeader .brand-sub { font-size: 6.5px !important; }
+        #siteHeader .header-container {
+            width: min(100% - 28px, 1120px) !important;
+        }
+
+        #siteHeader .top-header {
+            padding: 9px 76px 9px 0 !important;
+        }
+
+        #siteHeader .brand-wrapper {
+            gap: 9px !important;
+        }
+
+        #siteHeader .brand-logo {
+            width: 54px !important;
+            height: 54px !important;
+            min-width: 54px !important;
+            max-width: 54px !important;
+            flex-basis: 54px !important;
+        }
+
+        #siteHeader .brand-unw {
+            gap: 8px !important;
+        }
+
+        #siteHeader .brand-main {
+            font-size: 28px !important;
+        }
+
+        #siteHeader .brand-sub {
+            font-size: 6.5px !important;
+        }
+
         #siteHeader .brand-divider,
-        #siteHeader .brand-school { display: none !important; }
-        #siteHeader .navbar { top: 7px !important; right: 12px !important; }
-        #siteHeader .hamburger { width: 58px !important; height: 58px !important; }
-        #siteHeader .nav-menu { top: 80px !important; max-height: calc(100vh - 80px) !important; }
+        #siteHeader .brand-school {
+            display: none !important;
+        }
+
+        #siteHeader .navbar {
+            top: 7px !important;
+            right: 12px !important;
+        }
+
+        #siteHeader .hamburger {
+            width: 58px !important;
+            height: 58px !important;
+        }
+
+        #siteHeader .nav-menu {
+            top: 80px !important;
+            max-height: calc(100vh - 80px) !important;
+        }
     }
 </style>
 
@@ -471,10 +558,13 @@
         const navMenu = document.getElementById('navMenu');
         const dropdownTriggers = document.querySelectorAll('#siteHeader .dropdown-trigger');
         const navLinks = document.querySelectorAll('#siteHeader .nav-link');
-        let lastScrollY = window.scrollY;
+
+        if (siteHeader) {
+            siteHeader.classList.remove('nav-collapsed');
+        }
 
         function isCompactMode() {
-            return window.innerWidth <= 992 || siteHeader.classList.contains('nav-collapsed');
+            return window.innerWidth <= 992;
         }
 
         function clearClickActive() {
@@ -497,6 +587,7 @@
         });
 
         window.addEventListener('pageshow', function() {
+            if (siteHeader) siteHeader.classList.remove('nav-collapsed');
             clearClickActive();
             closeNavMenu();
         });
@@ -529,23 +620,12 @@
         });
 
         window.addEventListener('scroll', function() {
-            if (!siteHeader || window.innerWidth <= 992) return;
-            const currentScrollY = window.scrollY;
-
-            if (currentScrollY > lastScrollY && currentScrollY > 120) {
-                siteHeader.classList.add('nav-collapsed');
-                closeNavMenu();
-            } else if (currentScrollY < lastScrollY) {
-                siteHeader.classList.remove('nav-collapsed');
-                closeNavMenu();
-            }
-
-            lastScrollY = currentScrollY;
+            if (siteHeader) siteHeader.classList.remove('nav-collapsed');
         });
 
         window.addEventListener('resize', function() {
             if (!siteHeader) return;
-            if (window.innerWidth <= 992) siteHeader.classList.remove('nav-collapsed');
+            siteHeader.classList.remove('nav-collapsed');
             closeNavMenu();
         });
     });
