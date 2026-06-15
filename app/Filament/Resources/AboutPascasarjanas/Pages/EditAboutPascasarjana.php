@@ -10,7 +10,7 @@ class EditAboutPascasarjana extends Page
 {
     protected static string $resource = AboutPascasarjanaResource::class;
 
-    protected static string $view = 'filament.resources.about-pascasarjanas.pages.edit-about-pascasarjana';
+    protected string $view = 'filament.resources.about-pascasarjanas.pages.edit-about-pascasarjana';
 
     public mixed $record = null;
 
