@@ -84,7 +84,6 @@
         li,
         .page-desc,
         .hero-subtitle,
-        .news-excerpt,
         .news-page-excerpt,
         .contact-subtitle,
         .contact-info p,
@@ -94,6 +93,35 @@
         .footer-links a {
             font-size: max(16px, 1rem) !important;
             line-height: 1.7 !important;
+        }
+
+        .program-card .program-title,
+        .program-section .program-title {
+            font-size: 15px !important;
+            line-height: 1.25 !important;
+            font-weight: 900 !important;
+            letter-spacing: -0.025em !important;
+            margin-bottom: 10px !important;
+        }
+
+        .program-card p,
+        .program-section .program-card p {
+            font-size: 14px !important;
+            line-height: 1.62 !important;
+            font-weight: 500 !important;
+        }
+
+        .news-list .news-excerpt,
+        .info-section .news-excerpt,
+        .news-area .news-excerpt {
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            font-size: 13px !important;
+            line-height: 1.55 !important;
+            margin-top: 7px !important;
+            color: #64748b !important;
         }
 
         .nav-link,
@@ -107,6 +135,27 @@
         .filter-btn,
         .news-filter-btn {
             line-height: 1.35 !important;
+        }
+    }
+
+    @media (max-width: 420px) {
+        .program-card .program-title,
+        .program-section .program-title {
+            font-size: 14px !important;
+            line-height: 1.25 !important;
+        }
+
+        .program-card p,
+        .program-section .program-card p {
+            font-size: 13px !important;
+            line-height: 1.58 !important;
+        }
+
+        .news-list .news-excerpt,
+        .info-section .news-excerpt,
+        .news-area .news-excerpt {
+            -webkit-line-clamp: 2 !important;
+            font-size: 12.5px !important;
         }
     }
 </style>
