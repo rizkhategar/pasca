@@ -46,14 +46,14 @@ class AboutPascasarjanaUploadController extends Controller
             'points' => ['nullable', 'array'],
             'points.*.title' => ['nullable', 'string', 'max:255'],
             'points.*.description' => ['nullable', 'string'],
-            'points.*.existing_icon' => ['nullable', 'string'],
+            'points.*.existing_icon' => ['nullable'],
             'points.*.icon' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,svg', 'max:5120'],
             'direktur_heading' => ['nullable', 'string', 'max:255'],
             'direktur_greeting' => ['nullable', 'string', 'max:255'],
             'direktur_name' => ['nullable', 'string', 'max:255'],
             'direktur_title' => ['nullable', 'string', 'max:255'],
             'direktur_message' => ['nullable', 'string'],
-            'existing_direktur_image' => ['nullable', 'string'],
+            'existing_direktur_image' => ['nullable'],
             'direktur_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
     }
@@ -63,7 +63,7 @@ class AboutPascasarjanaUploadController extends Controller
         $oldPoints = collect($record?->points ?? []);
         $points = $this->makePoints($request, $oldPoints);
 
-        $direkturImage = $record?->direktur_image;
+        $direkturImage = AboutPascasarjana::normalizeImagePath($record?->direktur_image);
 
         if ($request->hasFile('direktur_image')) {
             $this->deleteIfExists($direkturImage);
@@ -97,7 +97,7 @@ class AboutPascasarjanaUploadController extends Controller
         foreach ($pointsInput as $index => $point) {
             $title = trim((string) ($point['title'] ?? ''));
             $description = trim((string) ($point['description'] ?? ''));
-            $icon = $point['existing_icon'] ?? null;
+            $icon = AboutPascasarjana::normalizeImagePath($point['existing_icon'] ?? null);
 
             if ($request->hasFile("points.{$index}.icon")) {
                 $this->deleteIfExists($icon);
@@ -126,6 +126,7 @@ class AboutPascasarjanaUploadController extends Controller
 
         $oldPoints
             ->pluck('icon')
+            ->map(fn ($icon) => AboutPascasarjana::normalizeImagePath($icon))
             ->filter()
             ->reject(fn ($icon) => in_array($icon, $keptIcons, true))
             ->each(fn ($icon) => $this->deleteIfExists($icon));
@@ -146,8 +147,10 @@ class AboutPascasarjanaUploadController extends Controller
             ->implode('');
     }
 
-    private function deleteIfExists(?string $path): void
+    private function deleteIfExists(mixed $path): void
     {
+        $path = AboutPascasarjana::normalizeImagePath($path);
+
         if ($path && Storage::disk('public')->exists($path)) {
             Storage::disk('public')->delete($path);
         }
