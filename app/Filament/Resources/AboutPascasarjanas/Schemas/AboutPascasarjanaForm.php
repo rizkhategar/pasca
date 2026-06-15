@@ -57,9 +57,7 @@ class AboutPascasarjanaForm
 
                                         FileUpload::make('icon_upload')
                                             ->image()
-                                            ->directory('tentang-icons')
-                                            ->disk('public')
-                                            ->visibility('public')
+                                            ->storeFiles(false)
                                             ->maxSize(2048)
                                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'])
                                             ->fetchFileInformation(false)
@@ -125,9 +123,7 @@ class AboutPascasarjanaForm
 
                                 FileUpload::make('direktur_image_upload')
                                     ->image()
-                                    ->directory('direktur-images')
-                                    ->disk('public')
-                                    ->visibility('public')
+                                    ->storeFiles(false)
                                     ->maxSize(3072)
                                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                                     ->fetchFileInformation(false)
