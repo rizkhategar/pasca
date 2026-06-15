@@ -10,7 +10,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\FileUpload;
-use Illuminate\Support\Facades\Storage;
+use Filament\Forms\Components\Hidden;
 
 class AboutPascasarjanaForm
 {
@@ -53,7 +53,9 @@ class AboutPascasarjanaForm
                             ->schema([
                                 Grid::make(4)
                                     ->schema([
-                                        FileUpload::make('icon')
+                                        Hidden::make('icon'),
+
+                                        FileUpload::make('icon_upload')
                                             ->image()
                                             ->directory('tentang-icons')
                                             ->disk('public')
@@ -64,14 +66,12 @@ class AboutPascasarjanaForm
                                             ->previewable(false)
                                             ->openable(false)
                                             ->downloadable(false)
-                                            ->deletable(true)
-                                            ->deleteUploadedFileUsing(fn (?string $file): bool => filled($file) ? Storage::disk('public')->delete($file) : true)
                                             ->panelLayout('compact')
                                             ->loadingIndicatorPosition('right')
                                             ->removeUploadedFileButtonPosition('right')
                                             ->uploadProgressIndicatorPosition('right')
-                                            ->label('Upload Ikon')
-                                            ->helperText('Gambar lama tidak dimuat preview supaya edit lebih cepat. Upload baru akan mengganti file lama.')
+                                            ->label('Upload / Ganti Ikon')
+                                            ->helperText('Kolom ini sengaja kosong saat edit agar tidak menunggu gambar lama. Pilih file baru untuk menimpa ikon lama.')
                                             ->columnSpan([
                                                 'default' => 4,
                                                 'md' => 1,
@@ -122,7 +122,9 @@ class AboutPascasarjanaForm
                             ]),
                         Grid::make(4)
                             ->schema([
-                                FileUpload::make('direktur_image')
+                                Hidden::make('direktur_image'),
+
+                                FileUpload::make('direktur_image_upload')
                                     ->image()
                                     ->directory('direktur-images')
                                     ->disk('public')
@@ -133,14 +135,12 @@ class AboutPascasarjanaForm
                                     ->previewable(false)
                                     ->openable(false)
                                     ->downloadable(false)
-                                    ->deletable(true)
-                                    ->deleteUploadedFileUsing(fn (?string $file): bool => filled($file) ? Storage::disk('public')->delete($file) : true)
                                     ->panelLayout('compact')
                                     ->loadingIndicatorPosition('right')
                                     ->removeUploadedFileButtonPosition('right')
                                     ->uploadProgressIndicatorPosition('right')
-                                    ->label('Foto Direktur (Potret/Berdiri)')
-                                    ->helperText('Gambar lama tidak dimuat preview supaya edit lebih cepat. Upload baru akan mengganti file lama.')
+                                    ->label('Upload / Ganti Foto Direktur')
+                                    ->helperText('Kolom ini sengaja kosong saat edit agar tidak menunggu foto lama. Pilih file baru untuk menimpa foto lama.')
                                     ->columnSpan([
                                         'default' => 4,
                                         'md' => 1,
