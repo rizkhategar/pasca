@@ -3,17 +3,24 @@
 namespace App\Filament\Resources\AboutPascasarjanas\Pages;
 
 use App\Filament\Resources\AboutPascasarjanas\AboutPascasarjanaResource;
-use Filament\Actions\DeleteAction;
-use Filament\Resources\Pages\EditRecord;
+use App\Models\AboutPascasarjana;
+use Filament\Resources\Pages\Page;
 
-class EditAboutPascasarjana extends EditRecord
+class EditAboutPascasarjana extends Page
 {
     protected static string $resource = AboutPascasarjanaResource::class;
 
-    protected function getHeaderActions(): array
+    protected string $view = 'filament.resources.about-pascasarjanas.pages.edit-about-pascasarjana';
+
+    public AboutPascasarjana $record;
+
+    public function mount(AboutPascasarjana $record): void
     {
-        return [
-            DeleteAction::make(),
-        ];
+        $this->record = $record;
+    }
+
+    public function getTitle(): string
+    {
+        return 'Edit About Pascasarjana';
     }
 }

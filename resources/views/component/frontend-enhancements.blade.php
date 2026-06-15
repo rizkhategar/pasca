@@ -1,4 +1,9 @@
 <style>
+    .hero {
+        background: #031a38 !important;
+        overflow: hidden !important;
+    }
+
     .hero .container,
     .hero-content,
     .hero-text {
@@ -14,20 +19,15 @@
     }
 
     .hero .btn-primary {
-        pointer-events: auto;
-    }
-
-    .hero {
-        background: #031a38 !important;
-        overflow: hidden !important;
+        pointer-events: auto !important;
     }
 
     .hero .hero-slider-track {
         position: absolute !important;
         inset: 0 !important;
         display: flex !important;
-        width: 100%;
-        height: 100%;
+        width: 100% !important;
+        height: 100% !important;
         z-index: 1 !important;
         transform: translateX(-100%);
         transition: transform .78s cubic-bezier(.76, 0, .24, 1) !important;
@@ -63,53 +63,48 @@
 
     .program-section .program-card,
     .program-section .program-detail {
-        cursor: pointer
+        cursor: pointer;
     }
 
     .program-grid {
-        display: grid
+        display: grid;
     }
 
     .program-grid .program-card:nth-child(4) {
-        order: 1
+        order: 1;
     }
 
     .program-grid .program-card:nth-child(3) {
-        order: 2
+        order: 2;
     }
 
     .program-grid .program-card:nth-child(2) {
-        order: 3
+        order: 3;
     }
 
     .program-grid .program-card:nth-child(1) {
-        order: 4
+        order: 4;
     }
 
     .news-area {
-        min-width: 0
-    }
-
-    .section-header:has(#apiNewsPagination) {
-        align-items: flex-start;
-        gap: 18px
+        min-width: 0;
     }
 
     .section-title i,
     .news-filter-btn i,
     .news-category i,
     .news-date i {
-        color: var(--yellow)
+        color: var(--yellow);
     }
 
     .section-title i {
-        margin-right: 9px
+        margin-right: 9px;
     }
 
     .news-more-wrap {
         display: flex;
         justify-content: flex-end;
-        margin-top: 18px
+        margin-top: 18px;
     }
 
     .news-more-link {
@@ -126,11 +121,11 @@
         font-weight: 900;
         text-transform: uppercase;
         white-space: nowrap;
-        box-shadow: 0 10px 22px rgba(7, 43, 87, .16)
+        box-shadow: 0 10px 22px rgba(7, 43, 87, .16);
     }
 
     .news-more-link:hover {
-        background: var(--yellow)
+        background: var(--yellow);
     }
 
     .news-filter-bar {
@@ -143,7 +138,7 @@
         background: #fff;
         border: 1px solid rgba(7, 43, 87, .1);
         border-radius: 14px;
-        box-shadow: 0 10px 28px rgba(15, 23, 42, .05)
+        box-shadow: 0 10px 28px rgba(15, 23, 42, .05);
     }
 
     .news-filter-btn {
@@ -159,7 +154,7 @@
         white-space: nowrap;
         display: inline-flex;
         align-items: center;
-        gap: 7px
+        gap: 7px;
     }
 
     .news-filter-btn:hover,
@@ -167,12 +162,12 @@
         background: var(--yellow);
         border-color: var(--yellow);
         color: #fff;
-        box-shadow: 0 8px 18px rgba(247, 181, 0, .25)
+        box-shadow: 0 8px 18px rgba(247, 181, 0, .25);
     }
 
     .news-filter-btn:hover i,
     .news-filter-btn.active i {
-        color: #fff
+        color: #fff;
     }
 
     .news-state {
@@ -182,7 +177,7 @@
         border: 1px solid rgba(7, 43, 87, .12);
         font-size: 14px;
         line-height: 1.6;
-        color: #64748b
+        color: #64748b;
     }
 
     .news-loading {
@@ -192,7 +187,7 @@
         justify-content: center;
         background: #fff;
         border: 1px solid rgba(7, 43, 87, .1);
-        border-radius: 18px
+        border-radius: 18px;
     }
 
     .news-loader {
@@ -201,25 +196,25 @@
         border: 4px solid #e5e7eb;
         border-top-color: var(--yellow);
         border-radius: 50%;
-        animation: newsSpin .8s linear infinite
+        animation: newsSpin .8s linear infinite;
     }
 
     @keyframes newsSpin {
         to {
-            transform: rotate(360deg)
+            transform: rotate(360deg);
         }
     }
 
     .news-list {
         display: grid;
-        gap: 14px
+        gap: 14px;
     }
 
     .news-item {
         border: 0 !important;
         padding: 0 !important;
         width: 100%;
-        overflow: hidden
+        overflow: hidden;
     }
 
     .news-item-link {
@@ -237,17 +232,17 @@
         border-radius: 16px;
         box-shadow: 0 12px 32px rgba(15, 23, 42, .06);
         transition: .24s ease;
-        overflow: hidden
+        overflow: hidden;
     }
 
     .news-item-link:hover {
         transform: translateY(-2px);
         box-shadow: 0 18px 40px rgba(15, 23, 42, .1);
-        border-color: rgba(247, 181, 0, .5)
+        border-color: rgba(247, 181, 0, .5);
     }
 
     .news-item-link:hover .news-title {
-        color: var(--yellow)
+        color: var(--yellow);
     }
 
     .news-thumb {
@@ -261,7 +256,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        grid-column: 1
+        grid-column: 1;
     }
 
     .news-thumb img {
@@ -270,11 +265,11 @@
         object-fit: cover;
         display: block;
         border-radius: inherit;
-        transition: .35s ease
+        transition: .35s ease;
     }
 
     .news-item-link:hover .news-thumb img {
-        transform: scale(1.05)
+        transform: scale(1.05);
     }
 
     .news-content {
@@ -284,7 +279,7 @@
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        justify-content: center
+        justify-content: center;
     }
 
     .news-category {
@@ -295,7 +290,7 @@
         text-overflow: ellipsis;
         display: inline-flex;
         align-items: center;
-        gap: 6px
+        gap: 6px;
     }
 
     .news-title {
@@ -307,7 +302,7 @@
         overflow-wrap: anywhere;
         margin: 7px 0 0;
         line-height: 1.35;
-        max-width: 100%
+        max-width: 100%;
     }
 
     .news-excerpt {
@@ -321,7 +316,7 @@
         color: #64748b;
         word-break: normal;
         overflow-wrap: anywhere;
-        max-width: 100%
+        max-width: 100%;
     }
 
     .news-date {
@@ -332,70 +327,104 @@
         text-overflow: ellipsis;
         display: inline-flex;
         align-items: center;
-        gap: 7px
+        gap: 7px;
     }
 
     .pagination#apiNewsPagination {
-        display: none !important
+        display: none !important;
     }
 
-    @media(max-width:992px) {
+    @media(max-width: 992px) {
         .news-item-link {
-            grid-template-columns: 145px minmax(0, 1fr) !important
+            grid-template-columns: 145px minmax(0, 1fr) !important;
         }
 
         .news-thumb {
             width: 145px !important;
             min-width: 145px !important;
             max-width: 145px !important;
-            height: 118px !important
+            height: 118px !important;
         }
     }
 
-    @media(max-width:768px) {
+    @media(max-width: 768px) {
+        .hero {
+            min-height: 360px !important;
+        }
+
+        .hero .hero-content {
+            min-height: 360px !important;
+            align-items: center !important;
+            padding-top: 24px !important;
+            padding-bottom: 44px !important;
+        }
+
+        .hero .hero-text {
+            margin-left: 0 !important;
+            padding: 42px 44px 58px !important;
+            max-width: 100% !important;
+        }
+
+        .hero .hero-title {
+            font-size: 24px !important;
+            line-height: 1.35 !important;
+            margin-bottom: 14px !important;
+            letter-spacing: .2px !important;
+        }
+
+        .hero .hero-subtitle {
+            font-size: 15px !important;
+            line-height: 1.65 !important;
+            margin-bottom: 24px !important;
+        }
+
+        .hero .btn-primary {
+            margin-top: 4px !important;
+        }
+
         .program-section {
-            padding: 24px 0 !important
+            padding: 24px 0 !important;
         }
 
         .program-grid {
             display: grid !important;
             grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
             gap: 12px !important;
-            overflow: visible !important
+            overflow: visible !important;
         }
 
         .program-card {
             min-width: 0 !important;
             min-height: 118px !important;
-            padding: 14px 8px !important
+            padding: 14px 8px !important;
         }
 
         .program-title {
             font-size: 12px !important;
-            line-height: 1.18 !important
+            line-height: 1.18 !important;
         }
 
         .program-detail {
-            font-size: 11px !important
+            font-size: 11px !important;
         }
 
         .program-icon {
             height: 34px !important;
-            margin-bottom: 9px !important
+            margin-bottom: 9px !important;
         }
 
         .program-icon svg {
             width: 38px !important;
-            height: 38px !important
+            height: 38px !important;
         }
 
         .info-section {
-            padding: 22px 0 42px !important
+            padding: 22px 0 42px !important;
         }
 
         .info-layout {
             grid-template-columns: 1fr !important;
-            gap: 28px !important
+            gap: 28px !important;
         }
 
         .news-area {
@@ -403,77 +432,100 @@
             border-right: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
-            overflow: hidden !important
+            overflow: hidden !important;
         }
 
         .section-header:has(#apiNewsPagination) {
             display: block !important;
-            padding-bottom: 14px !important
+            padding-bottom: 14px !important;
         }
 
         .section-title {
-            font-size: 18px !important
+            font-size: 18px !important;
         }
 
         .news-more-link {
             height: 36px;
             padding: 0 13px;
-            font-size: 11px
+            font-size: 11px;
         }
 
         .news-filter-bar {
             overflow-x: auto;
             flex-wrap: nowrap;
-            scrollbar-width: none
+            scrollbar-width: none;
         }
 
         .news-filter-bar::-webkit-scrollbar {
-            display: none
+            display: none;
         }
 
         .news-filter-btn {
-            flex: 0 0 auto
+            flex: 0 0 auto;
         }
 
         .news-item-link {
             grid-template-columns: 112px minmax(0, 1fr) !important;
             gap: 10px !important;
-            padding: 10px !important
+            padding: 10px !important;
         }
 
         .news-thumb {
             width: 112px !important;
             min-width: 112px !important;
             max-width: 112px !important;
-            height: 92px !important
+            height: 92px !important;
         }
 
         .news-title {
             font-size: 13px !important;
-            -webkit-line-clamp: 2 !important
+            -webkit-line-clamp: 2 !important;
         }
 
         .news-excerpt {
-            display: none !important
+            display: none !important;
         }
 
         .news-category,
         .news-date {
-            font-size: 10px !important
+            font-size: 10px !important;
         }
     }
 
-    @media(max-width:420px) {
+    @media(max-width: 420px) {
+        .hero {
+            min-height: 385px !important;
+        }
+
+        .hero .hero-content {
+            min-height: 385px !important;
+            padding-top: 30px !important;
+            padding-bottom: 58px !important;
+        }
+
+        .hero .hero-text {
+            padding: 46px 38px 68px !important;
+        }
+
+        .hero .hero-title {
+            font-size: 22px !important;
+        }
+
+        .hero .hero-subtitle {
+            font-size: 14px !important;
+            margin-bottom: 24px !important;
+        }
+
         .program-grid {
-            gap: 10px !important
+            gap: 10px !important;
         }
 
         .program-card {
-            min-height: 112px !important
+            min-height: 112px !important;
         }
 
         .section-title {
-            font-size: 16px !important
+            font-size: 16px !important;
         }
     }
 </style>
@@ -536,6 +588,7 @@
             const dots = Array.from(dotsWrapper.querySelectorAll('.hero-dot'));
             let trackIndex = 1;
             let realIndex = 0;
+            let pendingIndex = null;
             let isMoving = false;
             let timer = null;
 
@@ -581,20 +634,28 @@
                 timer = setTimeout(() => move(1), safeDuration(realIndex));
             }
 
-            function move(direction) {
+            function move(direction, targetIndex = null) {
                 if (isMoving || items.length <= 1) return;
                 isMoving = true;
                 clearTimeout(timer);
 
-                realIndex = (realIndex + direction + items.length) % items.length;
-                trackIndex += direction;
-                setText(realIndex);
-                setDots(realIndex);
+                pendingIndex = targetIndex === null ?
+                    (realIndex + direction + items.length) % items.length :
+                    targetIndex;
+                trackIndex = targetIndex === null ? trackIndex + direction : targetIndex + 1;
                 applyTransform();
             }
 
             track.addEventListener('transitionend', function(event) {
                 if (event.propertyName !== 'transform') return;
+
+                if (pendingIndex !== null) {
+                    realIndex = pendingIndex;
+                    pendingIndex = null;
+                    setText(realIndex);
+                    setDots(realIndex);
+                }
+
                 normalizePositionAfterClone();
                 isMoving = false;
                 scheduleNext();
@@ -613,13 +674,7 @@
             dots.forEach((dot, index) => dot.addEventListener('click', function() {
                 if (isMoving || index === realIndex) return;
                 const direction = index > realIndex ? 1 : -1;
-                realIndex = index;
-                trackIndex = index + 1;
-                isMoving = true;
-                clearTimeout(timer);
-                setText(realIndex);
-                setDots(realIndex);
-                applyTransform();
+                move(direction, index);
             }));
 
             setText(0);
@@ -647,18 +702,18 @@
                 '>': '&gt;',
                 "'": '&#039;',
                 '"': '&quot;'
-            } [char]))
+            } [char]));
         }
 
         function stripHtml(value) {
-            return String(value ?? '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
+            return String(value ?? '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
         }
 
         function toArray(payload) {
             if (Array.isArray(payload)) return payload;
             if (Array.isArray(payload?.data)) return payload.data;
             if (Array.isArray(payload?.data?.data)) return payload.data.data;
-            return []
+            return [];
         }
 
         function absUrl(url) {
@@ -667,7 +722,7 @@
             if (/^https?:\/\//i.test(value)) return value;
             if (value.startsWith('//')) return 'https:' + value;
             if (value.startsWith('/')) return API_ORIGIN + value;
-            return API_ORIGIN + '/' + value.replace(/^\/+/, '')
+            return API_ORIGIN + '/' + value.replace(/^\/+/, '');
         }
 
         function formatDate(value) {
@@ -678,7 +733,7 @@
                 day: '2-digit',
                 month: 'long',
                 year: 'numeric'
-            })
+            });
         }
         async function getJson(url) {
             const response = await fetch(url, {
@@ -687,7 +742,7 @@
                 }
             });
             if (!response.ok) throw new Error('API gagal dimuat');
-            return response.json()
+            return response.json();
         }
 
         function normalizeCategory(item) {
@@ -695,7 +750,7 @@
                 id: String(item?.id ?? ''),
                 slug: String(item?.slug ?? ''),
                 name: String(item?.name ?? '').trim()
-            }
+            };
         }
 
         function normalizeNews(item) {
@@ -709,11 +764,11 @@
                 categoryId: String(category?.id ?? item?.category_id ?? ''),
                 categorySlug: String(category?.slug ?? ''),
                 categoryName: String(category?.name ?? 'Artikel').trim()
-            }
+            };
         }
 
         function newsDetailUrl(news) {
-            return news.slug ? '/berita/' + encodeURIComponent(news.slug) : '#'
+            return news.slug ? '/berita/' + encodeURIComponent(news.slug) : '#';
         }
 
         function buildNewsApiUrl(category) {
@@ -722,9 +777,9 @@
             params.set('page', '1');
             if (category && category.id !== 'all') {
                 params.set('category_id', category.id);
-                params.set('category', category.slug || category.id)
+                params.set('category', category.slug || category.id);
             }
-            return API.news + '?' + params.toString()
+            return API.news + '?' + params.toString();
         }
 
         function renderFilters(section, state) {
@@ -745,8 +800,8 @@
                     id: button.dataset.id,
                     slug: button.dataset.slug
                 };
-                loadNews(section, state)
-            }))
+                loadNews(section, state);
+            }));
         }
 
         function renderNews(section, items) {
@@ -754,7 +809,7 @@
             if (!target) return;
             if (!items.length) {
                 target.innerHTML = '<div class="news-state">Belum ada berita/artikel pada kategori ini.</div>';
-                return
+                return;
             }
             target.innerHTML = items.map(news => {
                 const image = news.image ? '<img src="' + esc(absUrl(news.image)) + '" alt="' + esc(news
@@ -767,8 +822,8 @@
                     esc(news.categoryName) + '</div><h3 class="news-title">' + esc(news.title) + '</h3>' + (
                         excerpt ? '<p class="news-excerpt">' + esc(excerpt.slice(0, 155)) + '</p>' : '') +
                     '<div class="news-date"><i class="fas fa-calendar-alt"></i>' + esc(formatDate(news
-                        .date)) + '</div></div></a></article>'
-            }).join('')
+                        .date)) + '</div></div></a></article>';
+            }).join('');
         }
         async function loadNews(section, state) {
             const target = section.querySelector('#apiNewsList');
@@ -776,10 +831,10 @@
             try {
                 const category = state.category?.id === 'all' ? null : state.category;
                 const payload = await getJson(buildNewsApiUrl(category));
-                renderNews(section, toArray(payload).map(normalizeNews))
+                renderNews(section, toArray(payload).map(normalizeNews));
             } catch (error) {
                 if (target) target.innerHTML =
-                    '<div class="news-state">Berita belum dapat dimuat dari API. Periksa koneksi internet atau izin CORS API.</div>'
+                    '<div class="news-state">Berita belum dapat dimuat dari API. Periksa koneksi internet atau izin CORS API.</div>';
             }
         }
         async function initInfoSectionApi() {
@@ -802,11 +857,11 @@
                 const categoryPayload = await getJson(API.category);
                 state.categories = toArray(categoryPayload).map(normalizeCategory).filter(category => category
                     .id && category.name);
-                renderFilters(section, state)
+                renderFilters(section, state);
             } catch (error) {
-                renderFilters(section, state)
+                renderFilters(section, state);
             }
-            loadNews(section, state)
+            loadNews(section, state);
         }
 
         function bindProgramDetailLinks() {
@@ -821,14 +876,14 @@
                 if (detailText && routes[index]) {
                     detailText.dataset.href = routes[index];
                     detailText.setAttribute('role', 'link');
-                    detailText.setAttribute('tabindex', '0')
+                    detailText.setAttribute('tabindex', '0');
                 }
-            })
+            });
         }
 
         function init() {
             bindProgramDetailLinks();
-            initInfoSectionApi()
+            initInfoSectionApi();
         }
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
         else init();

@@ -5,9 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pascasarjana Universitas Ngudi Waluyo</title>
+
     <link rel="icon" href="{{ asset('logo_unwnobg.png') }}" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <style>
         :root {
@@ -19,6 +21,9 @@
             --text: #111827;
             --gold: #d9a935;
             --green: #78927a;
+            --blue: #0b5f9f;
+            --muted: #64748b;
+            --border: #e2e8f0;
         }
 
         * {
@@ -416,66 +421,271 @@
             background: var(--yellow);
         }
 
+        /* ==========================================================================
+           PROGRAM STUDI PASCASARJANA - UPDATED
+           ========================================================================== */
+
         .program-section {
             position: relative;
-            padding: 45px 0 38px;
-            background: #eef5f6;
+            overflow: hidden;
+            padding: 58px 0 64px;
+            background:
+                radial-gradient(circle at 12% 8%, rgba(45, 156, 219, .16), transparent 26%),
+                radial-gradient(circle at 88% 18%, rgba(247, 181, 0, .16), transparent 22%),
+                linear-gradient(180deg, #ffffff 0%, #eef5f6 100%);
+        }
+
+        .program-section::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(7, 43, 87, .045) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(7, 43, 87, .045) 1px, transparent 1px);
+            background-size: 42px 42px;
+            opacity: .7;
+            pointer-events: none;
+        }
+
+        .program-section::after {
+            content: "";
+            position: absolute;
+            right: -180px;
+            top: -220px;
+            width: 520px;
+            height: 520px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(7, 43, 87, .12), transparent 68%);
+            pointer-events: none;
+        }
+
+        .program-head {
+            position: relative;
+            z-index: 2;
+            max-width: 780px;
+            margin: 0 auto 34px;
+            text-align: center;
+        }
+
+        .program-kicker {
+            width: fit-content;
+            margin: 0 auto 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            padding: 9px 14px;
+            border-radius: 999px;
+            color: var(--primary);
+            background: #ffffff;
+            border: 1px solid rgba(7, 43, 87, .10);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, .06);
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .7px;
+        }
+
+        .program-kicker i {
+            color: var(--yellow);
+        }
+
+        .program-head h2 {
+            margin: 0 0 12px;
+            color: var(--primary);
+            font-size: clamp(26px, 3.4vw, 40px);
+            line-height: 1.18;
+            font-weight: 800;
+            letter-spacing: -.7px;
+            text-transform: uppercase;
+        }
+
+        .program-head p {
+            max-width: 660px;
+            margin: 0 auto;
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.7;
+            font-weight: 500;
         }
 
         .program-grid {
+            position: relative;
+            z-index: 2;
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 22px;
         }
 
         .program-card {
-            background: var(--white);
-            min-height: 145px;
-            border-radius: 6px;
-            box-shadow: 0 5px 18px rgba(0, 0, 0, 0.20);
+            position: relative;
+            overflow: hidden;
+            min-height: 238px;
             display: flex;
-            align-items: center;
-            justify-content: center;
             flex-direction: column;
-            text-align: center;
-            padding: 18px 14px;
-            transition: 0.25s ease;
+            justify-content: space-between;
+            padding: 24px 22px 20px;
+            border-radius: 24px;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, .96), rgba(255, 255, 255, .90)),
+                #ffffff;
+            border: 1px solid rgba(226, 232, 240, .95);
+            box-shadow: 0 16px 38px rgba(15, 23, 42, .09);
+            text-align: left;
+            transition: .28s ease;
+            isolation: isolate;
+        }
+
+        .program-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 82% 12%, rgba(247, 181, 0, .18), transparent 26%),
+                radial-gradient(circle at 12% 90%, rgba(45, 156, 219, .14), transparent 28%);
+            opacity: .9;
+            z-index: -2;
+        }
+
+        .program-card::after {
+            content: "";
+            position: absolute;
+            right: -34px;
+            top: -34px;
+            width: 118px;
+            height: 118px;
+            border-radius: 50%;
+            background: rgba(7, 43, 87, .07);
+            transition: .28s ease;
+            z-index: -1;
         }
 
         .program-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+            transform: translateY(-8px);
+            border-color: rgba(247, 181, 0, .55);
+            box-shadow: 0 24px 56px rgba(7, 43, 87, .18);
+        }
+
+        .program-card:hover::after {
+            transform: scale(1.55);
+            background: rgba(7, 43, 87, .10);
+        }
+
+        .program-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 24px;
         }
 
         .program-icon {
-            height: 42px;
-            margin-bottom: 12px;
-            color: var(--gold);
+            width: 64px;
+            height: 64px;
+            flex: 0 0 64px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 22px;
+            color: #ffffff;
+            background: linear-gradient(135deg, var(--primary), var(--blue));
+            box-shadow: 0 16px 30px rgba(7, 43, 87, .24);
+            transition: .28s ease;
+        }
+
+        .program-card:hover .program-icon {
+            transform: rotate(-4deg) scale(1.05);
+            background: linear-gradient(135deg, var(--yellow), #f4a900);
+            color: var(--primary);
         }
 
         .program-icon svg {
-            width: 48px;
-            height: 48px;
+            width: 34px;
+            height: 34px;
             fill: currentColor;
         }
 
-        .program-title {
-            font-size: 15px;
-            line-height: 1.12;
+        .program-number {
+            min-width: 38px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            color: var(--primary);
+            background: rgba(247, 181, 0, .16);
+            border: 1px solid rgba(247, 181, 0, .28);
+            font-size: 12px;
             font-weight: 800;
-            color: #050505;
-            margin-bottom: 9px;
         }
 
-        .program-detail {
-            font-size: 12px;
-            color: #6d8a65;
+        .program-title {
+            margin: 0 0 14px;
+            color: var(--primary);
+            font-size: 19px;
+            line-height: 1.28;
+            font-weight: 800;
+            letter-spacing: -.2px;
+        }
+
+        .program-desc {
+            margin: 0 0 22px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.65;
             font-weight: 500;
         }
 
+        .program-detail {
+            width: fit-content;
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            margin-top: auto;
+            padding: 10px 13px;
+            border-radius: 999px;
+            color: var(--primary);
+            background: #f8fafc;
+            border: 1px solid rgba(7, 43, 87, .10);
+            font-size: 12px;
+            line-height: 1;
+            font-weight: 800;
+            transition: .25s ease;
+        }
+
+        .program-detail i {
+            color: var(--yellow);
+            font-size: 11px;
+            transition: .25s ease;
+        }
+
+        .program-card:hover .program-detail {
+            color: #ffffff;
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .program-card:hover .program-detail i {
+            transform: translateX(4px);
+        }
+
+        .program-scroll-hint {
+            display: none;
+            position: relative;
+            z-index: 2;
+            margin-top: 14px;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .program-scroll-hint i {
+            color: var(--yellow);
+        }
+
         /* ----------------------------------------------------
-           BAGIAN BERITA DAN LAYANAN MAHASISWA (UPDATED)
+           BAGIAN BERITA DAN LAYANAN MAHASISWA
            ---------------------------------------------------- */
+
         .info-section {
             background: #ffffff;
             padding: 18px 0 52px;
@@ -484,7 +694,6 @@
         .info-layout {
             display: grid;
             grid-template-columns: 1.8fr 1fr;
-            /* Kolom berita lebih mendominasi lebar */
             gap: 48px;
             align-items: start;
         }
@@ -514,7 +723,6 @@
             margin: 0;
         }
 
-        /* Styling Pagination Baru (Modern & Rapi) */
         .pagination {
             display: flex;
             align-items: center;
@@ -570,7 +778,6 @@
             padding: 0 4px;
         }
 
-        /* Filter Kategori */
         .category-filters {
             display: flex;
             flex-wrap: wrap;
@@ -603,7 +810,6 @@
             width: 100%;
         }
 
-        /* Flexbox News Item (Mencegah teks terhimpit) */
         .news-item {
             display: flex;
             align-items: flex-start;
@@ -615,10 +821,8 @@
 
         .news-thumb {
             width: 220px;
-            /* Ukuran lebar gambar yang fix */
             height: 140px;
             flex-shrink: 0;
-            /* Mencegah gambar mengecil */
             border-radius: 10px;
             background: #f1f6f7;
             display: flex;
@@ -636,9 +840,7 @@
 
         .news-content {
             flex: 1;
-            /* Membuat teks mengambil SISA RUANG seluruhnya */
             min-width: 0;
-            /* Sangat krusial agar flex item tidak overflow keluar container */
             display: flex;
             flex-direction: column;
         }
@@ -667,11 +869,9 @@
             font-weight: 800;
             color: #111827;
             margin-bottom: 10px;
-            /* Memastikan teks bisa melebar sempurna */
             width: 100%;
         }
 
-        /* Class tambahan jika Anda ingin menampilkan deksripsi singkat berita */
         .news-excerpt {
             font-size: 14px;
             line-height: 1.6;
@@ -691,7 +891,6 @@
             font-size: 13px;
             font-weight: 600;
             margin-top: auto;
-            /* Mendorong tanggal ke paling bawah (jika judul pendek) */
         }
 
         .news-date svg {
@@ -700,7 +899,6 @@
             fill: currentColor;
         }
 
-        /* --- Sisi Layanan Mahasiswa --- */
         .service-area {
             position: relative;
             width: 100%;
@@ -1038,7 +1236,11 @@
             }
 
             .program-grid {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .program-card {
+                min-height: 220px;
             }
 
             .info-layout {
@@ -1130,11 +1332,53 @@
             }
 
             .program-section {
-                padding: 34px 0;
+                padding: 42px 0 46px;
+            }
+
+            .program-head {
+                text-align: left;
+                margin-bottom: 22px;
+            }
+
+            .program-kicker {
+                margin-left: 0;
+                margin-right: 0;
+            }
+
+            .program-head h2 {
+                font-size: 25px;
+            }
+
+            .program-head p {
+                margin-left: 0;
+                font-size: 14px;
+            }
+
+            .program-grid {
+                display: flex !important;
+                gap: 16px !important;
+                overflow-x: auto !important;
+                scroll-snap-type: x mandatory !important;
+                padding: 8px 2px 18px !important;
+                margin: 0 -2px;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .program-grid::-webkit-scrollbar {
+                display: none !important;
             }
 
             .program-card {
-                min-height: 138px;
+                flex: 0 0 270px !important;
+                min-height: 222px;
+                scroll-snap-align: start !important;
+                border-radius: 22px;
+            }
+
+            .program-scroll-hint {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
             }
 
             .info-section {
@@ -1262,15 +1506,6 @@
                 height: 11px;
             }
 
-            .program-grid {
-                grid-template-columns: 1fr;
-                gap: 16px;
-            }
-
-            .program-card {
-                min-height: 130px;
-            }
-
             .section-title {
                 font-size: 21px;
             }
@@ -1350,44 +1585,34 @@
             .hero-arrow.right {
                 right: 8px;
             }
-        }
-
-        /* ==========================================================================
-   PERBAIKAN MOBILE: CARD MAGISTER (SCROLL KE SAMPING)
-   ========================================================================== */
-        @media (max-width: 768px) {
-            .program-grid {
-                display: flex !important;
-                overflow-x: auto !important;
-                scroll-snap-type: x mandatory !important;
-                gap: 16px !important;
-                padding: 10px 4px 20px 4px !important;
-                /* Ruang bawah agar scrollbar tidak menempel */
-                -webkit-overflow-scrolling: touch;
-            }
-
-            /* Sembunyikan scrollbar bawaan browser agar tetap minimalis */
-            .program-grid::-webkit-scrollbar {
-                display: none !important;
-            }
 
             .program-card {
-                flex: 0 0 245px !important;
-                /* Lebar card pas saat digeser ke samping */
-                scroll-snap-align: start !important;
+                flex-basis: 250px !important;
+                padding: 22px 18px 18px;
+            }
+
+            .program-icon {
+                width: 58px;
+                height: 58px;
+                flex-basis: 58px;
+                border-radius: 20px;
+            }
+
+            .program-icon svg {
+                width: 31px;
+                height: 31px;
+            }
+
+            .program-title {
+                font-size: 17px;
             }
         }
 
-        /* ==========================================================================
-   PERBAIKAN MOBILE: PAGINATION BERITA TETAP SATU BARIS
-   ========================================================================== */
         @media (max-width: 640px) {
             .pagination#apiNewsPagination {
                 display: flex !important;
                 flex-wrap: nowrap !important;
-                /* Memaksa tetap satu baris */
                 overflow-x: auto !important;
-                /* Bisa di-scroll halus jika terlalu panjang */
                 justify-content: flex-start !important;
                 white-space: nowrap !important;
                 -webkit-overflow-scrolling: touch;
@@ -1397,7 +1622,6 @@
             .pagination#apiNewsPagination .page-btn,
             .pagination#apiNewsPagination .page-number {
                 flex-shrink: 0 !important;
-                /* Mencegah tombol mengkerut */
             }
 
             .page-jump {
@@ -1410,13 +1634,9 @@
             }
         }
 
-        /* ==========================================================================
-   PERBAIKAN MOBILE: FOOTER TIDAK CENTER (RATA KIRI RAPI)
-   ========================================================================== */
         @media (max-width: 768px) {
             .footer {
                 text-align: left !important;
-                /* Mengubah default dari center ke kiri */
             }
 
             .footer-content {
@@ -1426,7 +1646,6 @@
 
             .footer-item {
                 justify-content: flex-start !important;
-                /* Icon dan teks sejajar di kiri */
             }
 
             .social-icons {
@@ -1435,7 +1654,6 @@
 
             .map-container {
                 margin: 0 !important;
-                /* Reset margin auto bawaan center */
                 max-width: 100% !important;
             }
 
@@ -1451,15 +1669,17 @@
     @include('component.header')
 
     <section class="hero">
-        @if(isset($sliders) && $sliders->count() > 0)
-            @foreach($sliders as $index => $slider)
-                <div class="hero-slide {{ $index === 0 ? 'active' : '' }}" 
-                     style="background-image: url('{{ route('sliders.image', $slider->id) }}');"
-                     data-duration="{{ $slider->duration_ms ?? 3000 }}">
+        @if (isset($sliders) && $sliders->count() > 0)
+            @foreach ($sliders as $index => $slider)
+                <div class="hero-slide {{ $index === 0 ? 'active' : '' }}"
+                    style="background-image: url('{{ route('sliders.image', $slider->id) }}');"
+                    data-duration="{{ $slider->duration_ms ?? 3000 }}">
                 </div>
             @endforeach
         @else
-            <div class="hero-slide active" style="background-image: url('{{ asset('assets/images/hero-campus.png') }}');" data-duration="3000"></div>
+            <div class="hero-slide active"
+                style="background-image: url('{{ asset('assets/images/hero-campus.png') }}');" data-duration="3000">
+            </div>
         @endif
 
         <button class="hero-arrow left" id="prevSlide" type="button" aria-label="Slide sebelumnya">‹</button>
@@ -1476,9 +1696,10 @@
         </div>
 
         <div class="hero-dots" id="heroDots">
-            @if(isset($sliders) && $sliders->count() > 0)
-                @foreach($sliders as $index => $slider)
-                    <button class="hero-dot {{ $index === 0 ? 'active' : '' }}" type="button" aria-label="Slide {{ $index + 1 }}"></button>
+            @if (isset($sliders) && $sliders->count() > 0)
+                @foreach ($sliders as $index => $slider)
+                    <button class="hero-dot {{ $index === 0 ? 'active' : '' }}" type="button"
+                        aria-label="Slide {{ $index + 1 }}"></button>
                 @endforeach
             @else
                 <button class="hero-dot active" type="button" aria-label="Slide 1"></button>
@@ -1488,52 +1709,136 @@
 
     <section class="program-section">
         <div class="container">
+            <div class="program-head">
+                <div class="program-kicker">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>Program Pascasarjana</span>
+                </div>
+
+                <h2>Pilihan Program Magister</h2>
+
+                <p>
+                    Temukan program studi Pascasarjana Universitas Ngudi Waluyo yang sesuai dengan kebutuhan
+                    pengembangan karier dan keilmuan Anda.
+                </p>
+            </div>
+
             <div class="program-grid">
 
-                <a href="{{ route('akademik.show', 'magister-hukum') }}" class="program-card">
-                    <div class="program-icon">
-                        <svg viewBox="0 0 24 24" fill="currentColor">
-                            <path
-                                d="M12 2a1 1 0 0 1 1 1v2h5a1 1 0 1 1 0 2h-1l2.5 5a3.5 3.5 0 0 1-7 0L15 7h-2v11h4a1 1 0 1 1 0 2H7a1 1 0 1 1 0-2h4V7H9l2.5 5a3.5 3.5 0 0 1-7 0L7 7H6a1 1 0 1 1 0-2h5V3a1 1 0 0 1 1-1Zm-4 6-1.6 3h3.2L8 8Zm8 0-1.6 3h3.2L16 8Z" />
-                        </svg>
-                    </div>
-                    <h3 class="program-title">Magister<br>Hukum</h3>
-                    <span class="program-detail">Detail</span>
-                </a>
+                <article class="program-card">
+                    <div>
+                        <div class="program-top">
+                            <div class="program-icon">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M12 2a1 1 0 0 1 1 1v2h5a1 1 0 1 1 0 2h-1l2.5 5a3.5 3.5 0 0 1-7 0L15 7h-2v11h4a1 1 0 1 1 0 2H7a1 1 0 1 1 0-2h4V7H9l2.5 5a3.5 3.5 0 0 1-7 0L7 7H6a1 1 0 1 1 0-2h5V3a1 1 0 0 1 1-1Zm-4 6-1.6 3h3.2L8 8Zm8 0-1.6 3h3.2L16 8Z" />
+                                </svg>
+                            </div>
 
-                <a href="{{ route('akademik.show', 'magister-manajemen-pendidikan') }}" class="program-card">
-                    <div class="program-icon">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M12 3 1 9l11 6 9-4.91V17h2V9L12 3Zm0 14.2L5 13.4V17l7 4 7-4v-3.6l-7 3.8Z" />
-                        </svg>
-                    </div>
-                    <h3 class="program-title">Magister Manajemen<br>Pendidikan</h3>
-                    <span class="program-detail">Detail</span>
-                </a>
+                            <span class="program-number">04</span>
+                        </div>
 
-                <a href="{{ route('akademik.show', 'magister-kesehatan-masyarakat') }}" class="program-card">
-                    <div class="program-icon">
-                        <svg viewBox="0 0 24 24">
-                            <path
-                                d="M12 21s-7.5-4.6-9.7-9.2C.6 8.2 2.6 4 6.5 4c2.2 0 3.7 1.2 4.5 2.6C11.8 5.2 13.3 4 15.5 4c3.9 0 5.9 4.2 4.2 7.8C17.5 16.4 12 21 12 21Zm-1.3-7.7h2.6v-2.1h2.1V8.6h-2.1V6.5h-2.6v2.1H8.6v2.6h2.1v2.1Z" />
-                        </svg>
-                    </div>
-                    <h3 class="program-title">Magister Kesehatan<br>Masyarakat</h3>
-                    <span class="program-detail">Detail</span>
-                </a>
+                        <h3 class="program-title">Magister<br>Hukum</h3>
 
-                <a href="{{ route('akademik.show', 'magister-keperawatan') }}" class="program-card">
-                    <div class="program-icon">
-                        <svg viewBox="0 0 24 24">
-                            <path
-                                d="M12 2 6 4v5c0 3.7 2.5 7.1 6 8 3.5-.9 6-4.3 6-8V4l-6-2Zm1 3v2h2v2h-2v2h-2V9H9V7h2V5h2Zm-8 14c0-2.2 4.7-3.4 7-3.4s7 1.2 7 3.4V22H5v-3Z" />
-                        </svg>
+                        <p class="program-desc">
+                            Program lanjutan untuk penguatan kompetensi hukum, tata kelola, dan penyelesaian persoalan
+                            hukum modern.
+                        </p>
                     </div>
-                    <h3 class="program-title">Magister<br>Keperawatan</h3>
-                    <span class="program-detail">Detail</span>
-                </a>
+
+                    <a href="{{ route('akademik.show', 'magister-hukum') }}" class="program-detail"
+                        aria-label="Detail Program Magister Hukum">
+                        Detail Program
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </article>
+
+                <article class="program-card">
+                    <div>
+                        <div class="program-top">
+                            <div class="program-icon">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M12 3 1 9l11 6 9-4.91V17h2V9L12 3Zm0 14.2L5 13.4V17l7 4 7-4v-3.6l-7 3.8Z" />
+                                </svg>
+                            </div>
+
+                            <span class="program-number">03</span>
+                        </div>
+
+                        <h3 class="program-title">Magister Manajemen<br>Pendidikan</h3>
+
+                        <p class="program-desc">
+                            Mengembangkan kepemimpinan, manajemen, dan inovasi pendidikan yang adaptif terhadap
+                            kebutuhan zaman.
+                        </p>
+                    </div>
+
+                    <a href="{{ route('akademik.show', 'magister-manajemen-pendidikan') }}" class="program-detail"
+                        aria-label="Detail Program Magister Manajemen Pendidikan">
+                        Detail Program
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </article>
+
+                <article class="program-card">
+                    <div>
+                        <div class="program-top">
+                            <div class="program-icon">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M12 21s-7.5-4.6-9.7-9.2C.6 8.2 2.6 4 6.5 4c2.2 0 3.7 1.2 4.5 2.6C11.8 5.2 13.3 4 15.5 4c3.9 0 5.9 4.2 4.2 7.8C17.5 16.4 12 21 12 21Zm-1.3-7.7h2.6v-2.1h2.1V8.6h-2.1V6.5h-2.6v2.1H8.6v2.6h2.1v2.1Z" />
+                                </svg>
+                            </div>
+
+                            <span class="program-number">02</span>
+                        </div>
+
+                        <h3 class="program-title">Magister Kesehatan<br>Masyarakat</h3>
+
+                        <p class="program-desc">
+                            Fokus pada pengembangan ilmu kesehatan masyarakat, kebijakan kesehatan, dan peningkatan
+                            kualitas layanan.
+                        </p>
+                    </div>
+
+                    <a href="{{ route('akademik.show', 'magister-kesehatan-masyarakat') }}" class="program-detail"
+                        aria-label="Detail Program Magister Kesehatan Masyarakat">
+                        Detail Program
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </article>
+
+                <article class="program-card">
+                    <div>
+                        <div class="program-top">
+                            <div class="program-icon">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M12 2 6 4v5c0 3.7 2.5 7.1 6 8 3.5-.9 6-4.3 6-8V4l-6-2Zm1 3v2h2v2h-2v2h-2V9H9V7h2V5h2Zm-8 14c0-2.2 4.7-3.4 7-3.4s7 1.2 7 3.4V22H5v-3Z" />
+                                </svg>
+                            </div>
+
+                            <span class="program-number">01</span>
+                        </div>
+
+                        <h3 class="program-title">Magister<br>Keperawatan</h3>
+
+                        <p class="program-desc">
+                            Mendukung peningkatan profesionalisme keperawatan melalui kajian lanjut, praktik, dan riset
+                            kesehatan.
+                        </p>
+                    </div>
+
+                    <a href="{{ route('akademik.show', 'magister-keperawatan') }}" class="program-detail"
+                        aria-label="Detail Program Magister Keperawatan">
+                        Detail Program
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </article>
 
             </div>
+
         </div>
     </section>
 
@@ -1541,10 +1846,7 @@
         <div class="container">
             <div class="info-layout">
 
-                <!-- BAGIAN BERITA KIRI -->
                 <div class="news-area">
-
-                    <!-- Header dengan Pagination di Bawahnya -->
                     <div class="section-header">
                         <h2 class="section-title">Berita Terkini & Agenda</h2>
 
@@ -1561,7 +1863,6 @@
                         </div>
                     </div>
 
-                    <!-- Tombol Kategori -->
                     <div class="category-filters">
                         <button class="cat-pill active">Semua</button>
                         <button class="cat-pill">Umum</button>
@@ -1579,11 +1880,9 @@
                         <button class="cat-pill">PKKS/PPKPT</button>
                     </div>
 
-                    <!-- List Berita -->
                     <div class="news-list">
                         @for ($i = 0; $i < 4; $i++)
                             <article class="news-item">
-                                <!-- Thumbnail -->
                                 <div class="news-thumb">
                                     <svg viewBox="0 0 24 24" style="width: 50px; fill: #111;">
                                         <path
@@ -1591,7 +1890,6 @@
                                     </svg>
                                 </div>
 
-                                <!-- Konten Teks -->
                                 <div class="news-content">
                                     <div class="news-category">
                                         <svg viewBox="0 0 24 24">
@@ -1606,7 +1904,6 @@
                                         Seminar Internasional serta Teken Kerja Sama dengan Mitra Thailand
                                     </h3>
 
-                                    <!-- Deskripsi singkat seperti di gambar Anda -->
                                     <p class="news-excerpt">
                                         Seminar internasional menghadirkan Executive director for internasional affair
                                         Thai global business administration technological college Thailand
@@ -1625,7 +1922,6 @@
                     </div>
                 </div>
 
-                <!-- BAGIAN MENU LAYANAN KANAN -->
                 <div class="service-area">
                     <h2 class="service-title">Menu Layanan Mahasiswa</h2>
 
@@ -1694,9 +1990,11 @@
         const hamburger = document.getElementById('hamburger');
         const navMenu = document.getElementById('navMenu');
 
-        hamburger.addEventListener('click', function() {
-            navMenu.classList.toggle('show');
-        });
+        if (hamburger && navMenu) {
+            hamburger.addEventListener('click', function() {
+                navMenu.classList.toggle('show');
+            });
+        }
 
         const dropdownTriggers = document.querySelectorAll('.dropdown-trigger');
 
@@ -1713,7 +2011,9 @@
                         }
                     });
 
-                    currentItem.classList.toggle('open');
+                    if (currentItem) {
+                        currentItem.classList.toggle('open');
+                    }
                 }
             });
         });
@@ -1724,11 +2024,11 @@
             const prevSlide = document.getElementById('prevSlide');
             const nextSlide = document.getElementById('nextSlide');
 
-            // Proteksi: Jika jumlah bullet dan gambar beda, berarti masih ada hardcode HTML
             if (slides.length !== dots.length) {
                 console.error("Error: Jumlah gambar tidak sama dengan jumlah bullet.");
                 return;
             }
+
             if (slides.length === 0) return;
 
             let currentSlide = 0;
@@ -1754,10 +2054,12 @@
 
             function startAutoSlide() {
                 clearTimeout(slideTimeout);
+
                 const activeSlide = slides[currentSlide];
                 if (!activeSlide) return;
 
                 let duration = parseInt(activeSlide.getAttribute('data-duration')) || 3000;
+
                 slideTimeout = setTimeout(() => {
                     showSlide(currentSlide + 1);
                 }, duration);
@@ -1783,10 +2085,12 @@
             edomNav.addEventListener('click', function() {
                 navLinks.forEach((link) => link.classList.remove('nav-click-active'));
                 edomNav.classList.add('nav-click-active');
+
                 if (homeNavItem) homeNavItem.classList.add('hide-indicator');
 
                 if (window.innerWidth <= 992) {
-                    navMenu.classList.remove('show');
+                    if (navMenu) navMenu.classList.remove('show');
+
                     document.querySelectorAll('.nav-item.has-dropdown').forEach((item) => {
                         item.classList.remove('open');
                     });
@@ -1794,7 +2098,7 @@
             });
         }
 
-        if (edomService) {
+        if (edomService && edomCardWrapper) {
             edomService.addEventListener('click', function(event) {
                 if (window.innerWidth <= 992) {
                     event.preventDefault();

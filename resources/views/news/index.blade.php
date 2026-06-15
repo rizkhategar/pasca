@@ -27,12 +27,10 @@
             --text-soft: #334155;
             --muted: #64748b;
             --border: #e2e8f0;
-            --green: #14532d;
 
             --shadow-sm: 0 10px 28px rgba(15, 23, 42, .07);
             --shadow-md: 0 18px 46px rgba(15, 23, 42, .10);
             --shadow-lg: 0 28px 70px rgba(15, 23, 42, .15);
-            --shadow-blue: 0 24px 70px rgba(6, 47, 95, .25);
         }
 
         * {
@@ -210,7 +208,7 @@
             color: var(--yellow);
         }
 
-        /* ================= SECTION ================= */
+        /* ================= SECTION & TOOLBAR ================= */
 
         .news-section {
             position: relative;
@@ -220,122 +218,250 @@
         }
 
         .news-panel {
+            position: relative;
+            z-index: 10;
             border-radius: 30px;
             background: rgba(255, 255, 255, .94);
             border: 1px solid rgba(226, 232, 240, .95);
             box-shadow: var(--shadow-lg);
-            overflow: hidden;
+            overflow: visible !important;
         }
 
         .news-toolbar {
+            position: relative;
+            z-index: 100;
             display: grid;
-            grid-template-columns: 1fr minmax(280px, 360px);
-            gap: 18px;
+            grid-template-columns: minmax(0, auto) minmax(260px, 360px);
+            gap: 14px;
             align-items: center;
-            padding: 24px;
+            justify-content: space-between;
+            padding: 18px 22px;
             background:
-                linear-gradient(135deg, rgba(6, 47, 95, .08), rgba(45, 156, 219, .08)),
+                linear-gradient(135deg, rgba(6, 47, 95, .05), rgba(45, 156, 219, .05)),
                 #ffffff;
             border-bottom: 1px solid rgba(226, 232, 240, .95);
+            border-radius: 30px 30px 0 0;
+            overflow: visible !important;
         }
 
         .filter-wrap {
-            min-width: 0;
-        }
-
-        .toolbar-label {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 12px;
-            color: var(--primary);
-            font-size: 14px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: .45px;
-        }
-
-        .toolbar-label i {
-            width: 34px;
-            height: 34px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 13px;
-            color: #fff;
-            background: linear-gradient(135deg, var(--primary), var(--blue));
-            box-shadow: 0 10px 22px rgba(6, 47, 95, .20);
-        }
-
-        .filter-bar {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            min-width: 0;
-        }
-
-        .filter-btn {
             position: relative;
-            display: inline-flex;
+            z-index: 120;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            width: fit-content;
+        }
+
+        /* ================= CUSTOM DROPDOWN ================= */
+
+        .compact-dropdown {
+            position: relative;
+            z-index: 130;
+            min-width: 0;
+        }
+
+        .compact-dropdown.open {
+            z-index: 999;
+        }
+
+        .compact-dropdown.category-filter {
+            width: 178px;
+        }
+
+        .compact-dropdown.sort-filter {
+            width: 132px;
+        }
+
+        .dropdown-trigger {
+            width: 100%;
+            height: 40px;
+            min-width: 0;
+            display: grid;
+            grid-template-columns: 18px minmax(0, 1fr) 14px;
+            align-items: center;
+            gap: 7px;
+            border: 1px solid rgba(6, 47, 95, .14);
+            border-radius: 999px;
+            background: #ffffff;
+            color: var(--primary);
+            padding: 0 12px;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, .04);
+            cursor: pointer;
+            font-family: inherit;
+            transition: .22s ease;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .dropdown-trigger:hover,
+        .dropdown-trigger:focus,
+        .compact-dropdown.open .dropdown-trigger {
+            border-color: rgba(11, 95, 159, .55);
+            box-shadow: 0 10px 24px rgba(6, 47, 95, .10);
+            outline: none;
+        }
+
+        .dropdown-trigger .left-icon {
+            color: var(--yellow);
+            font-size: 12px;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .dropdown-trigger .selected-text {
+            display: block;
+            min-width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            color: var(--primary);
+            font-size: 13px;
+            font-weight: 900;
+            text-align: left;
+            pointer-events: none;
+        }
+
+        .dropdown-trigger .chevron-icon {
+            color: var(--primary-soft);
+            font-size: 11px;
+            transition: .22s ease;
+            pointer-events: none;
+        }
+
+        .compact-dropdown.open .chevron-icon {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            width: 100%;
+            max-height: 210px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 6px;
+            border-radius: 16px;
+            background: #ffffff;
+            border: 1px solid rgba(6, 47, 95, .13);
+            box-shadow: 0 18px 42px rgba(15, 23, 42, .18);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translateY(-6px) scale(.98);
+            transform-origin: top center;
+            transition: .18s ease;
+            z-index: 9999;
+        }
+
+        .compact-dropdown.open .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(0) scale(1);
+        }
+
+        .dropdown-menu::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .dropdown-menu::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 999px;
+        }
+
+        .dropdown-menu::-webkit-scrollbar-thumb {
+            background: rgba(6, 47, 95, .35);
+            border-radius: 999px;
+        }
+
+        .dropdown-option {
+            width: 100%;
+            min-height: 36px;
+            display: flex;
             align-items: center;
             gap: 8px;
-            min-height: 42px;
-            border: 1px solid rgba(6, 47, 95, .13);
-            background: #fff;
-            color: var(--primary);
-            font-weight: 900;
-            font-size: 13px;
-            border-radius: 999px;
-            padding: 10px 15px;
+            border: 0;
+            border-radius: 11px;
+            background: transparent;
+            color: var(--text-soft);
+            padding: 9px 10px;
             cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1.35;
+            text-align: left;
+            transition: .18s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .dropdown-option span {
+            display: block;
+            min-width: 0;
+            overflow: hidden;
             white-space: nowrap;
-            box-shadow: 0 8px 20px rgba(15, 23, 42, .04);
-            transition: .22s ease;
+            text-overflow: ellipsis;
+            pointer-events: none;
         }
 
-        .filter-btn i {
+        .dropdown-option i {
+            width: 14px;
             color: var(--yellow);
-            transition: .22s ease;
+            font-size: 10px;
+            opacity: 0;
+            flex-shrink: 0;
+            pointer-events: none;
         }
 
-        .filter-btn.active,
-        .filter-btn:hover {
-            background: linear-gradient(135deg, var(--primary), var(--blue));
-            border-color: transparent;
-            color: #fff;
-            transform: translateY(-2px);
-            box-shadow: 0 14px 28px rgba(6, 47, 95, .22);
+        .dropdown-option:hover {
+            color: var(--primary);
+            background: #f8fafc;
         }
 
-        .filter-btn.active i,
-        .filter-btn:hover i {
-            color: var(--yellow);
+        .dropdown-option.active {
+            color: var(--primary);
+            background: rgba(247, 181, 0, .14);
+        }
+
+        .dropdown-option.active i {
+            opacity: 1;
         }
 
         .news-search-wrap {
-            align-self: end;
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 7px;
-            border-radius: 18px;
+            gap: 8px;
+            min-width: 0;
+            width: 100%;
+            max-width: 360px;
+            height: 40px;
+            padding: 3px 4px;
+            border-radius: 999px;
             background: #fff;
-            border: 1px solid rgba(6, 47, 95, .12);
-            box-shadow: 0 12px 30px rgba(15, 23, 42, .06);
+            border: 1px solid rgba(6, 47, 95, .14);
+            box-shadow: 0 8px 18px rgba(15, 23, 42, .04);
+            transition: .22s ease;
+        }
+
+        .news-search-wrap:focus-within {
+            border-color: rgba(11, 95, 159, .55);
+            box-shadow: 0 10px 24px rgba(6, 47, 95, .10);
         }
 
         .search-box {
             width: 100%;
-            height: 46px;
+            height: 32px;
             min-width: 0;
             border: 0;
-            border-radius: 13px;
-            background: #fff;
-            padding: 0 10px 0 12px;
+            border-radius: 999px;
+            background: transparent;
+            padding: 0 8px 0 14px;
             outline: none;
             color: var(--primary);
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 800;
         }
 
@@ -344,19 +470,19 @@
         }
 
         .search-icon-btn {
-            width: 46px;
-            height: 46px;
-            flex: 0 0 46px;
+            width: 32px;
+            height: 32px;
+            flex: 0 0 32px;
             border: 0;
-            border-radius: 14px;
+            border-radius: 50%;
             background: linear-gradient(135deg, var(--primary), var(--blue));
             color: #fff;
-            font-size: 17px;
+            font-size: 13px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: 0 12px 24px rgba(7, 43, 87, .18);
+            box-shadow: 0 8px 18px rgba(7, 43, 87, .16);
             transition: .22s ease;
         }
 
@@ -367,7 +493,11 @@
         }
 
         .news-content {
+            position: relative;
+            z-index: 1;
             padding: 26px;
+            background: rgba(255, 255, 255, .94);
+            border-radius: 0 0 30px 30px;
         }
 
         .news-page-grid {
@@ -575,6 +705,7 @@
             padding: 0 13px;
             transition: .2s ease;
             box-shadow: 0 8px 18px rgba(15, 23, 42, .04);
+            flex-shrink: 0;
         }
 
         .page-btn.active,
@@ -598,6 +729,7 @@
         .page-dots {
             font-weight: 900;
             color: #94a3b8;
+            margin: 0 2px;
         }
 
         .page-jump {
@@ -619,6 +751,7 @@
             font-weight: 900;
             outline: none;
             box-shadow: 0 8px 18px rgba(15, 23, 42, .04);
+            text-align: center;
         }
 
         .page-jump input:focus {
@@ -712,16 +845,28 @@
         /* ================= RESPONSIVE ================= */
 
         @media(max-width: 1024px) {
+            .news-page-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
             .news-toolbar {
                 grid-template-columns: 1fr;
             }
 
-            .news-search-wrap {
-                align-self: stretch;
+            .filter-wrap {
+                width: 100%;
             }
 
-            .news-page-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
+            .compact-dropdown.category-filter {
+                width: min(100%, 190px);
+            }
+
+            .compact-dropdown.sort-filter {
+                width: 140px;
+            }
+
+            .news-search-wrap {
+                max-width: 100%;
             }
         }
 
@@ -735,63 +880,14 @@
                 padding: 48px 0 96px;
             }
 
-            .hero-dots {
-                left: 14px;
-                top: 12px;
-                width: 90px;
-                height: 70px;
-                background-size: 16px 16px;
-                opacity: .34;
-            }
-
-            .hero-line {
-                display: none;
-            }
-
-            .hero-kicker {
-                font-size: 12px;
-                padding: 8px 12px;
-            }
-
-            .page-title {
-                letter-spacing: -.6px;
-            }
-
-            .page-desc {
-                font-size: 15px;
-            }
-
-            .hero-meta span {
-                font-size: 13px;
-                padding: 8px 10px;
-            }
-
             .news-section {
                 margin-top: -48px;
                 padding-bottom: 70px;
             }
 
-            .news-panel {
-                border-radius: 24px;
-            }
-
             .news-toolbar {
-                padding: 20px;
-            }
-
-            .filter-bar {
-                flex-wrap: nowrap;
-                overflow-x: auto;
-                padding-bottom: 3px;
-                scrollbar-width: none;
-            }
-
-            .filter-bar::-webkit-scrollbar {
-                display: none;
-            }
-
-            .filter-btn {
-                flex: 0 0 auto;
+                padding: 16px;
+                gap: 12px;
             }
 
             .news-content {
@@ -802,35 +898,71 @@
                 grid-template-columns: 1fr;
                 gap: 18px;
             }
+        }
 
-            .pagination {
-                justify-content: flex-start;
-                flex-wrap: nowrap;
-                overflow-x: auto;
-                padding-bottom: 6px;
-                scrollbar-width: none;
+        @media(max-width: 560px) {
+            .filter-wrap {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) minmax(112px, .72fr);
+                gap: 8px;
             }
 
-            .pagination::-webkit-scrollbar {
-                display: none;
+            .compact-dropdown.category-filter,
+            .compact-dropdown.sort-filter {
+                width: 100%;
             }
 
-            .page-jump {
-                flex: 0 0 auto;
+            .dropdown-trigger {
+                height: 38px;
+                grid-template-columns: 16px minmax(0, 1fr) 12px;
+                gap: 6px;
+                border-radius: 13px;
+                padding: 0 10px;
+            }
+
+            .dropdown-trigger .selected-text {
+                font-size: 12px;
+            }
+
+            .dropdown-menu {
+                top: calc(100% + 6px);
+                max-height: 184px;
+                border-radius: 14px;
+            }
+
+            .dropdown-option {
+                min-height: 34px;
+                font-size: 12px;
+                padding: 8px 9px;
+                border-radius: 10px;
+            }
+
+            .news-search-wrap {
+                height: 40px;
+                border-radius: 13px;
+            }
+
+            .search-box {
+                height: 32px;
+                font-size: 13px;
+                padding-left: 12px;
+            }
+
+            .search-icon-btn {
+                width: 32px;
+                height: 32px;
+                flex-basis: 32px;
+                border-radius: 10px;
             }
         }
 
         @media(max-width: 480px) {
             .news-hero {
-                min-height: 300px;
+                min-height: 280px;
             }
 
             .page-title {
-                font-size: 31px;
-            }
-
-            .news-toolbar {
-                padding: 18px;
+                font-size: 26px;
             }
 
             .news-content {
@@ -838,24 +970,63 @@
             }
 
             .news-page-card {
-                border-radius: 20px;
+                border-radius: 18px;
             }
 
             .news-page-body {
-                padding: 18px;
+                padding: 16px;
             }
 
             .news-page-title {
-                font-size: 18px;
+                font-size: 16px;
             }
 
-            .news-page-footer {
-                align-items: flex-start;
-                flex-direction: column;
+            .pagination {
+                flex-wrap: wrap !important;
+                gap: 6px;
+                justify-content: center;
+                padding-bottom: 4px;
+            }
+
+            .page-btn {
+                height: 36px;
+                min-width: 36px;
+                padding: 0 8px;
+                font-size: 13px;
+                border-radius: 10px;
+            }
+
+            .page-dots {
+                margin: 0;
+            }
+
+            .page-jump {
+                width: 100%;
+                justify-content: center;
+                margin-left: 0;
+                border-left: 0;
+                padding-left: 0;
+                margin-top: 8px;
+                border-top: 1px solid rgba(6, 47, 95, .12);
+                padding-top: 14px;
             }
 
             .page-jump input {
-                width: 62px;
+                height: 38px;
+                width: 60px;
+                border-radius: 10px;
+                font-size: 13px;
+            }
+
+            .page-jump button {
+                height: 38px;
+                border-radius: 10px;
+            }
+        }
+
+        @media(max-width: 380px) {
+            .filter-wrap {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -906,16 +1077,44 @@
             <section class="news-panel">
                 <div class="news-toolbar">
                     <div class="filter-wrap">
-                        <div class="toolbar-label">
-                            <i class="fas fa-layer-group"></i>
-                            <span>Kategori Berita</span>
+                        <div class="compact-dropdown category-filter" id="categoryDropdown">
+                            <button
+                                class="dropdown-trigger"
+                                type="button"
+                                id="categoryDropdownButton"
+                                aria-label="Pilih Kategori"
+                                aria-expanded="false">
+                                <i class="fas fa-layer-group left-icon"></i>
+                                <span class="selected-text" id="categorySelectedText">Memuat...</span>
+                                <i class="fas fa-chevron-down chevron-icon"></i>
+                            </button>
+
+                            <div class="dropdown-menu" id="categoryDropdownMenu"></div>
                         </div>
 
-                        <div class="filter-bar" id="newsFilters">
-                            <button class="filter-btn active" type="button">
-                                <i class="fas fa-tag"></i>
-                                Semua
+                        <div class="compact-dropdown sort-filter" id="sortDropdown">
+                            <button
+                                class="dropdown-trigger"
+                                type="button"
+                                id="sortDropdownButton"
+                                aria-label="Urutkan Berita"
+                                aria-expanded="false">
+                                <i class="fas fa-arrow-down-wide-short left-icon"></i>
+                                <span class="selected-text" id="sortSelectedText">Terbaru</span>
+                                <i class="fas fa-chevron-down chevron-icon"></i>
                             </button>
+
+                            <div class="dropdown-menu" id="sortDropdownMenu">
+                                <button type="button" class="dropdown-option active" data-value="desc" data-label="Terbaru">
+                                    <i class="fas fa-check"></i>
+                                    <span>Terbaru</span>
+                                </button>
+
+                                <button type="button" class="dropdown-option" data-value="asc" data-label="Terlama">
+                                    <i class="fas fa-check"></i>
+                                    <span>Terlama</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -924,12 +1123,13 @@
                             class="search-box"
                             id="newsSearch"
                             type="search"
-                            placeholder="Cari berita, agenda, atau pengumuman...">
+                            placeholder="Cari berita...">
 
                         <button
                             class="search-icon-btn"
                             id="newsSearchButton"
                             type="button"
+                            title="Cari Berita"
                             aria-label="Cari berita">
                             <i class="fas fa-magnifying-glass"></i>
                         </button>
@@ -966,10 +1166,8 @@
             const state = {
                 page: 1,
                 lastPage: 1,
-                category: {
-                    id: 'all',
-                    slug: 'all'
-                },
+                category: 'all',
+                sort: 'desc',
                 q: ''
             };
 
@@ -977,10 +1175,19 @@
             let activeRequestId = 0;
 
             const grid = document.getElementById('newsGrid');
-            const filters = document.getElementById('newsFilters');
             const pagination = document.getElementById('newsPagination');
             const search = document.getElementById('newsSearch');
             const searchButton = document.getElementById('newsSearchButton');
+
+            const categoryDropdown = document.getElementById('categoryDropdown');
+            const categoryButton = document.getElementById('categoryDropdownButton');
+            const categoryMenu = document.getElementById('categoryDropdownMenu');
+            const categoryText = document.getElementById('categorySelectedText');
+
+            const sortDropdown = document.getElementById('sortDropdown');
+            const sortButton = document.getElementById('sortDropdownButton');
+            const sortMenu = document.getElementById('sortDropdownMenu');
+            const sortText = document.getElementById('sortSelectedText');
 
             function esc(value) {
                 return String(value ?? '').replace(/[&<>'"]/g, function (char) {
@@ -1013,9 +1220,7 @@
 
                 const d = new Date(value);
 
-                if (Number.isNaN(d.getTime())) {
-                    return String(value);
-                }
+                if (Number.isNaN(d.getTime())) return String(value);
 
                 return d.toLocaleDateString('id-ID', {
                     day: '2-digit',
@@ -1029,13 +1234,8 @@
 
                 url = String(url);
 
-                if (/^https?:\/\//i.test(url)) {
-                    return url;
-                }
-
-                if (url.startsWith('/')) {
-                    return API_ORIGIN + url;
-                }
+                if (/^https?:\/\//i.test(url)) return url;
+                if (url.startsWith('/')) return API_ORIGIN + url;
 
                 return API_ORIGIN + '/' + url.replace(/^\/+/, '');
             }
@@ -1053,6 +1253,154 @@
 
                 return response.json();
             }
+
+            /* ================= DROPDOWN FIX ================= */
+
+            function closeDropdowns(except = null) {
+                [categoryDropdown, sortDropdown].forEach(function (dropdown) {
+                    if (!dropdown) return;
+
+                    if (dropdown !== except) {
+                        dropdown.classList.remove('open');
+
+                        const button = dropdown.querySelector('.dropdown-trigger');
+                        if (button) {
+                            button.setAttribute('aria-expanded', 'false');
+                        }
+                    }
+                });
+            }
+
+            function openDropdown(dropdown) {
+                if (!dropdown) return;
+
+                closeDropdowns(dropdown);
+                dropdown.classList.add('open');
+
+                const button = dropdown.querySelector('.dropdown-trigger');
+                if (button) {
+                    button.setAttribute('aria-expanded', 'true');
+                }
+            }
+
+            function closeDropdown(dropdown) {
+                if (!dropdown) return;
+
+                dropdown.classList.remove('open');
+
+                const button = dropdown.querySelector('.dropdown-trigger');
+                if (button) {
+                    button.setAttribute('aria-expanded', 'false');
+                }
+            }
+
+            function toggleDropdown(dropdown) {
+                if (!dropdown) return;
+
+                if (dropdown.classList.contains('open')) {
+                    closeDropdown(dropdown);
+                } else {
+                    openDropdown(dropdown);
+                }
+            }
+
+            function setActiveOption(menu, value) {
+                if (!menu) return;
+
+                menu.querySelectorAll('.dropdown-option').forEach(function (option) {
+                    option.classList.toggle('active', String(option.dataset.value) === String(value));
+                });
+            }
+
+            function setupDropdownButton(button, dropdown) {
+                if (!button || !dropdown) return;
+
+                button.addEventListener('pointerdown', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    toggleDropdown(dropdown);
+                });
+
+                button.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        toggleDropdown(dropdown);
+                    }
+
+                    if (event.key === 'Escape') {
+                        closeDropdown(dropdown);
+                    }
+                });
+            }
+
+            function setupDropdownArea(dropdown) {
+                if (!dropdown) return;
+
+                dropdown.addEventListener('pointerdown', function (event) {
+                    event.stopPropagation();
+                });
+
+                dropdown.addEventListener('click', function (event) {
+                    event.stopPropagation();
+                });
+            }
+
+            setupDropdownButton(categoryButton, categoryDropdown);
+            setupDropdownButton(sortButton, sortDropdown);
+            setupDropdownArea(categoryDropdown);
+            setupDropdownArea(sortDropdown);
+
+            document.addEventListener('pointerdown', function (event) {
+                const clickedInsideDropdown = event.target.closest('.compact-dropdown');
+
+                if (!clickedInsideDropdown) {
+                    closeDropdowns();
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    closeDropdowns();
+                }
+            });
+
+            categoryMenu?.addEventListener('pointerdown', function (event) {
+                const option = event.target.closest('.dropdown-option');
+                if (!option) return;
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                state.category = option.dataset.value || 'all';
+                state.page = 1;
+
+                categoryText.textContent = option.dataset.label || option.textContent.trim() || 'Semua';
+
+                setActiveOption(categoryMenu, state.category);
+                closeDropdown(categoryDropdown);
+
+                load();
+            });
+
+            sortMenu?.addEventListener('pointerdown', function (event) {
+                const option = event.target.closest('.dropdown-option');
+                if (!option) return;
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                state.sort = option.dataset.value || 'desc';
+                state.page = 1;
+
+                sortText.textContent = option.dataset.label || option.textContent.trim() || 'Terbaru';
+
+                setActiveOption(sortMenu, state.sort);
+                closeDropdown(sortDropdown);
+
+                load();
+            });
+
+            /* ================= NEWS DATA ================= */
 
             function normalize(item) {
                 const category = item?.category || {};
@@ -1072,16 +1420,16 @@
             function buildUrl(page) {
                 const params = new URLSearchParams({
                     paginate: String(PAGE_SIZE),
-                    page: String(page)
+                    page: String(page),
+                    sort: state.sort
                 });
 
                 if (state.q.trim() !== '') {
                     params.set('q', state.q.trim());
                 }
 
-                if (state.category.id !== 'all') {
-                    params.set('category_id', state.category.id);
-                    params.set('category', state.category.slug || state.category.id);
+                if (state.category !== 'all') {
+                    params.set('category_id', state.category);
                 }
 
                 return API.search + '?' + params.toString();
@@ -1093,7 +1441,7 @@
                         <div class="empty">
                             <i class="fas fa-magnifying-glass"></i>
                             <strong>Berita tidak ditemukan</strong>
-                            <span>Belum ada berita yang sesuai dengan kategori atau kata kunci pencarian Anda.</span>
+                            <span>Belum ada berita yang sesuai dengan pencarian Anda.</span>
                         </div>
                     `;
                     return;
@@ -1126,10 +1474,8 @@
                     return `
                         <a class="news-page-card" href="${url}">
                             ${imageHtml}
-
                             <div class="news-page-body">
                                 <h2 class="news-page-title">${title}</h2>
-
                                 <p class="news-page-excerpt">${excerpt}</p>
 
                                 <div class="news-page-footer">
@@ -1139,8 +1485,7 @@
                                     </div>
 
                                     <div class="read-more">
-                                        Baca
-                                        <i class="fas fa-arrow-right"></i>
+                                        Baca <i class="fas fa-arrow-right"></i>
                                     </div>
                                 </div>
                             </div>
@@ -1158,40 +1503,28 @@
                     return;
                 }
 
-                let start = Math.max(1, current - 2);
-                let end = Math.min(last, start + 4);
+                const isMobile = window.innerWidth <= 480;
+                const visiblePages = isMobile ? 3 : 5;
 
-                if (end - start < 4) {
-                    start = Math.max(1, end - 4);
+                let start = Math.max(1, current - Math.floor(visiblePages / 2));
+                let end = Math.min(last, start + visiblePages - 1);
+
+                if (end - start < visiblePages - 1) {
+                    start = Math.max(1, end - visiblePages + 1);
                 }
 
-                let html = `
-                    <button class="page-btn" data-page="${current - 1}" ${current <= 1 ? 'disabled' : ''}>
-                        ‹
-                    </button>
-                `;
+                let html = `<button class="page-btn" data-page="${current - 1}" ${current <= 1 ? 'disabled' : ''}>‹</button>`;
 
                 for (let page = start; page <= end; page++) {
-                    html += `
-                        <button class="page-btn ${page === current ? 'active' : ''}" data-page="${page}">
-                            ${page}
-                        </button>
-                    `;
+                    html += `<button class="page-btn ${page === current ? 'active' : ''}" data-page="${page}">${page}</button>`;
                 }
 
                 if (end < last) {
-                    html += `
-                        <span class="page-dots">...</span>
-                        <button class="page-btn" data-page="${last}">
-                            ${last}
-                        </button>
-                    `;
+                    html += `<span class="page-dots">...</span><button class="page-btn" data-page="${last}">${last}</button>`;
                 }
 
                 html += `
-                    <button class="page-btn" data-page="${current + 1}" ${current >= last ? 'disabled' : ''}>
-                        ›
-                    </button>
+                    <button class="page-btn" data-page="${current + 1}" ${current >= last ? 'disabled' : ''}>›</button>
 
                     <div class="page-jump">
                         <input type="number" min="1" max="${last}" value="${current}" aria-label="Pilih halaman">
@@ -1246,9 +1579,7 @@
                 try {
                     const payload = await get(buildUrl(state.page));
 
-                    if (requestId !== activeRequestId) {
-                        return;
-                    }
+                    if (requestId !== activeRequestId) return;
 
                     state.lastPage = Number(payload?.meta?.last_page || 1);
                     state.page = Number(payload?.meta?.current_page || state.page);
@@ -1264,6 +1595,7 @@
                                 <span>Silakan coba muat ulang halaman atau periksa koneksi internet Anda.</span>
                             </div>
                         `;
+
                         pagination.innerHTML = '';
                     }
                 }
@@ -1273,48 +1605,40 @@
                 try {
                     const payload = await get(API.category);
 
-                    filters.innerHTML = `
-                        <button class="filter-btn active" data-id="all" data-slug="all" type="button">
-                            <i class="fas fa-tag"></i>
-                            Semua
-                        </button>
-                    ` + arr(payload).map(function (category) {
-                        return `
+                    const categoryOptions = [
+                        `<button type="button" class="dropdown-option active" data-value="all" data-label="Semua">
+                            <i class="fas fa-check"></i>
+                            <span>Semua</span>
+                        </button>`
+                    ];
+
+                    arr(payload).forEach(function (category) {
+                        categoryOptions.push(`
                             <button
-                                class="filter-btn"
-                                data-id="${esc(category.id)}"
-                                data-slug="${esc(category.slug || '')}"
-                                type="button">
-                                <i class="fas fa-tag"></i>
-                                ${esc(category.name)}
+                                type="button"
+                                class="dropdown-option"
+                                data-value="${esc(category.id)}"
+                                data-label="${esc(category.name)}"
+                                title="${esc(category.name)}">
+                                <i class="fas fa-check"></i>
+                                <span>${esc(category.name)}</span>
                             </button>
-                        `;
-                    }).join('');
-
-                    filters.querySelectorAll('.filter-btn').forEach(function (button) {
-                        button.onclick = function () {
-                            filters.querySelectorAll('.filter-btn').forEach(function (item) {
-                                item.classList.remove('active');
-                            });
-
-                            button.classList.add('active');
-
-                            state.category = {
-                                id: button.dataset.id,
-                                slug: button.dataset.slug
-                            };
-
-                            state.page = 1;
-                            load();
-                        };
+                        `);
                     });
+
+                    categoryMenu.innerHTML = categoryOptions.join('');
+                    categoryText.textContent = 'Semua';
+                    setActiveOption(categoryMenu, state.category);
                 } catch (error) {
-                    filters.innerHTML = `
-                        <button class="filter-btn active" data-id="all" data-slug="all" type="button">
-                            <i class="fas fa-tag"></i>
-                            Semua
+                    categoryMenu.innerHTML = `
+                        <button type="button" class="dropdown-option active" data-value="all" data-label="Semua">
+                            <i class="fas fa-check"></i>
+                            <span>Semua</span>
                         </button>
                     `;
+
+                    categoryText.textContent = 'Semua';
+                    setActiveOption(categoryMenu, 'all');
                 }
             }
 
@@ -1330,12 +1654,22 @@
             searchButton?.addEventListener('click', function () {
                 state.q = search.value;
                 state.page = 1;
+
                 search.focus();
                 load();
             });
 
             loadFilters();
             load();
+
+            window.addEventListener('resize', function () {
+                clearTimeout(window.resizeTimer);
+
+                window.resizeTimer = setTimeout(function () {
+                    closeDropdowns();
+                    renderPages();
+                }, 200);
+            });
         })();
     </script>
 </body>
