@@ -71,7 +71,6 @@ class AboutPascasarjanaForm
                                             ->removeUploadedFileButtonPosition('right')
                                             ->uploadProgressIndicatorPosition('right')
                                             ->label('Upload / Ganti Ikon')
-                                            ->helperText('Kolom ini sengaja kosong saat edit agar tidak menunggu gambar lama. Pilih file baru untuk menimpa ikon lama.')
                                             ->columnSpan([
                                                 'default' => 4,
                                                 'md' => 1,
@@ -140,7 +139,6 @@ class AboutPascasarjanaForm
                                     ->removeUploadedFileButtonPosition('right')
                                     ->uploadProgressIndicatorPosition('right')
                                     ->label('Upload / Ganti Foto Direktur')
-                                    ->helperText('Kolom ini sengaja kosong saat edit agar tidak menunggu foto lama. Pilih file baru untuk menimpa foto lama.')
                                     ->columnSpan([
                                         'default' => 4,
                                         'md' => 1,
