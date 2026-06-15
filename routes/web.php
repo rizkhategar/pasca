@@ -11,10 +11,12 @@ use App\Http\Controllers\RisetController;
 use App\Http\Controllers\ScrapController;
 use App\Http\Controllers\SliderUploadController;
 use App\Http\Controllers\VisiMisiController;
+use App\Models\AboutPascasarjana;
 use App\Models\OrganizationStructure;
 use App\Models\Slider;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 Route::get('/', function () {
     $sliders = Slider::query()
@@ -25,6 +27,18 @@ Route::get('/', function () {
 
     return view('home', compact('sliders'));
 })->name('home');
+
+Route::get('/storage/{path}', function (string $path) {
+    $path = ltrim($path, '/');
+
+    abort_if(Str::contains($path, ['..', '\\']), 404);
+    abort_unless(Storage::disk('public')->exists($path), 404);
+
+    return response()
+        ->file(Storage::disk('public')->path($path), [
+            'Cache-Control' => 'public, max-age=31536000',
+        ]);
+})->where('path', '.*')->name('public-storage.file');
 
 Route::get('/sliders/{slider}/image', function (Slider $slider) {
     abort_unless($slider->image_path, 404);
@@ -49,6 +63,43 @@ Route::get('/organization-structures/{organizationStructure}/image', function (O
             'Expires' => '0',
         ]);
 })->name('organization-structures.image');
+
+Route::get('/about-pascasarjanas/{aboutPascasarjana}/director-image', function (AboutPascasarjana $aboutPascasarjana) {
+    $imagePath = $aboutPascasarjana->direktur_image;
+
+    if (is_array($imagePath)) {
+        $imagePath = reset($imagePath);
+    }
+
+    abort_unless($imagePath, 404);
+    abort_unless(Storage::disk('public')->exists($imagePath), 404);
+
+    return response()
+        ->file(Storage::disk('public')->path($imagePath), [
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+        ]);
+})->name('about-pascasarjanas.director-image');
+
+Route::get('/about-pascasarjanas/{aboutPascasarjana}/point-icons/{index}', function (AboutPascasarjana $aboutPascasarjana, int $index) {
+    $points = $aboutPascasarjana->points ?? [];
+    $iconPath = data_get($points, $index . '.icon');
+
+    if (is_array($iconPath)) {
+        $iconPath = reset($iconPath);
+    }
+
+    abort_unless($iconPath, 404);
+    abort_unless(Storage::disk('public')->exists($iconPath), 404);
+
+    return response()
+        ->file(Storage::disk('public')->path($iconPath), [
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+        ]);
+})->name('about-pascasarjanas.point-icon');
 
 Route::get('/berita', [NewsController::class, 'index'])->name('news.index');
 Route::get('/berita/search', [NewsController::class, 'search'])->name('news.search');
