@@ -54,13 +54,18 @@ class AboutPascasarjanaForm
                                     ->schema([
                                         FileUpload::make('icon')
                                             ->image()
-                                            ->imageEditor()
                                             ->directory('tentang-icons')
                                             ->disk('public')
                                             ->visibility('public')
-                                            ->maxSize(5120)
+                                            ->maxSize(2048)
                                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'])
+                                            ->imagePreviewHeight('70')
+                                            ->panelLayout('compact')
+                                            ->loadingIndicatorPosition('right')
+                                            ->removeUploadedFileButtonPosition('right')
+                                            ->uploadProgressIndicatorPosition('right')
                                             ->label('Upload Ikon')
+                                            ->helperText('Agar upload cepat, gunakan ikon kecil. Maksimal 2 MB.')
                                             ->columnSpan([
                                                 'default' => 4,
                                                 'md' => 1,
@@ -113,13 +118,18 @@ class AboutPascasarjanaForm
                             ->schema([
                                 FileUpload::make('direktur_image')
                                     ->image()
-                                    ->imageEditor()
                                     ->directory('direktur-images')
                                     ->disk('public')
                                     ->visibility('public')
-                                    ->maxSize(5120)
+                                    ->maxSize(3072)
                                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                                    ->imagePreviewHeight('140')
+                                    ->panelLayout('compact')
+                                    ->loadingIndicatorPosition('right')
+                                    ->removeUploadedFileButtonPosition('right')
+                                    ->uploadProgressIndicatorPosition('right')
                                     ->label('Foto Direktur (Potret/Berdiri)')
+                                    ->helperText('Agar upload cepat, gunakan foto terkompresi. Maksimal 3 MB.')
                                     ->columnSpan([
                                         'default' => 4,
                                         'md' => 1,
