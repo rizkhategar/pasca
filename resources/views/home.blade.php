@@ -1669,8 +1669,8 @@
     @include('component.header')
 
     <section class="hero">
-        @if(isset($sliders) && $sliders->count() > 0)
-            @foreach($sliders as $index => $slider)
+        @if (isset($sliders) && $sliders->count() > 0)
+            @foreach ($sliders as $index => $slider)
                 <div class="hero-slide {{ $index === 0 ? 'active' : '' }}"
                     style="background-image: url('{{ route('sliders.image', $slider->id) }}');"
                     data-duration="{{ $slider->duration_ms ?? 3000 }}">
@@ -1678,8 +1678,8 @@
             @endforeach
         @else
             <div class="hero-slide active"
-                style="background-image: url('{{ asset('assets/images/hero-campus.png') }}');"
-                data-duration="3000"></div>
+                style="background-image: url('{{ asset('assets/images/hero-campus.png') }}');" data-duration="3000">
+            </div>
         @endif
 
         <button class="hero-arrow left" id="prevSlide" type="button" aria-label="Slide sebelumnya">‹</button>
@@ -1696,8 +1696,8 @@
         </div>
 
         <div class="hero-dots" id="heroDots">
-            @if(isset($sliders) && $sliders->count() > 0)
-                @foreach($sliders as $index => $slider)
+            @if (isset($sliders) && $sliders->count() > 0)
+                @foreach ($sliders as $index => $slider)
                     <button class="hero-dot {{ $index === 0 ? 'active' : '' }}" type="button"
                         aria-label="Slide {{ $index + 1 }}"></button>
                 @endforeach
@@ -1725,7 +1725,7 @@
 
             <div class="program-grid">
 
-                <a href="{{ route('akademik.show', 'magister-hukum') }}" class="program-card">
+                <article class="program-card">
                     <div>
                         <div class="program-top">
                             <div class="program-icon">
@@ -1746,18 +1746,20 @@
                         </p>
                     </div>
 
-                    <span class="program-detail">
+                    <a href="{{ route('akademik.show', 'magister-hukum') }}" class="program-detail"
+                        aria-label="Detail Program Magister Hukum">
                         Detail Program
                         <i class="fas fa-arrow-right"></i>
-                    </span>
-                </a>
+                    </a>
+                </article>
 
-                <a href="{{ route('akademik.show', 'magister-manajemen-pendidikan') }}" class="program-card">
+                <article class="program-card">
                     <div>
                         <div class="program-top">
                             <div class="program-icon">
                                 <svg viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 3 1 9l11 6 9-4.91V17h2V9L12 3Zm0 14.2L5 13.4V17l7 4 7-4v-3.6l-7 3.8Z" />
+                                    <path
+                                        d="M12 3 1 9l11 6 9-4.91V17h2V9L12 3Zm0 14.2L5 13.4V17l7 4 7-4v-3.6l-7 3.8Z" />
                                 </svg>
                             </div>
 
@@ -1772,13 +1774,14 @@
                         </p>
                     </div>
 
-                    <span class="program-detail">
+                    <a href="{{ route('akademik.show', 'magister-manajemen-pendidikan') }}" class="program-detail"
+                        aria-label="Detail Program Magister Manajemen Pendidikan">
                         Detail Program
                         <i class="fas fa-arrow-right"></i>
-                    </span>
-                </a>
+                    </a>
+                </article>
 
-                <a href="{{ route('akademik.show', 'magister-kesehatan-masyarakat') }}" class="program-card">
+                <article class="program-card">
                     <div>
                         <div class="program-top">
                             <div class="program-icon">
@@ -1799,13 +1802,14 @@
                         </p>
                     </div>
 
-                    <span class="program-detail">
+                    <a href="{{ route('akademik.show', 'magister-kesehatan-masyarakat') }}" class="program-detail"
+                        aria-label="Detail Program Magister Kesehatan Masyarakat">
                         Detail Program
                         <i class="fas fa-arrow-right"></i>
-                    </span>
-                </a>
+                    </a>
+                </article>
 
-                <a href="{{ route('akademik.show', 'magister-keperawatan') }}" class="program-card">
+                <article class="program-card">
                     <div>
                         <div class="program-top">
                             <div class="program-icon">
@@ -1826,11 +1830,12 @@
                         </p>
                     </div>
 
-                    <span class="program-detail">
+                    <a href="{{ route('akademik.show', 'magister-keperawatan') }}" class="program-detail"
+                        aria-label="Detail Program Magister Keperawatan">
                         Detail Program
                         <i class="fas fa-arrow-right"></i>
-                    </span>
-                </a>
+                    </a>
+                </article>
 
             </div>
 
@@ -1986,7 +1991,7 @@
         const navMenu = document.getElementById('navMenu');
 
         if (hamburger && navMenu) {
-            hamburger.addEventListener('click', function () {
+            hamburger.addEventListener('click', function() {
                 navMenu.classList.toggle('show');
             });
         }
@@ -1994,7 +1999,7 @@
         const dropdownTriggers = document.querySelectorAll('.dropdown-trigger');
 
         dropdownTriggers.forEach((trigger) => {
-            trigger.addEventListener('click', function (event) {
+            trigger.addEventListener('click', function(event) {
                 if (window.innerWidth <= 992) {
                     event.preventDefault();
 
@@ -2013,7 +2018,7 @@
             });
         });
 
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             const slides = document.querySelectorAll('.hero-slide');
             const dots = document.querySelectorAll('.hero-dot');
             const prevSlide = document.getElementById('prevSlide');
@@ -2077,7 +2082,7 @@
         const edomService = document.getElementById('edomService');
 
         if (edomNav) {
-            edomNav.addEventListener('click', function () {
+            edomNav.addEventListener('click', function() {
                 navLinks.forEach((link) => link.classList.remove('nav-click-active'));
                 edomNav.classList.add('nav-click-active');
 
@@ -2094,7 +2099,7 @@
         }
 
         if (edomService && edomCardWrapper) {
-            edomService.addEventListener('click', function (event) {
+            edomService.addEventListener('click', function(event) {
                 if (window.innerWidth <= 992) {
                     event.preventDefault();
                     edomCardWrapper.classList.toggle('show-popover');
@@ -2102,13 +2107,13 @@
             });
         }
 
-        document.addEventListener('click', function (event) {
+        document.addEventListener('click', function(event) {
             if (window.innerWidth <= 992 && edomCardWrapper && !edomCardWrapper.contains(event.target)) {
                 edomCardWrapper.classList.remove('show-popover');
             }
         });
 
-        window.addEventListener('resize', function () {
+        window.addEventListener('resize', function() {
             if (window.innerWidth > 992) {
                 if (navMenu) navMenu.classList.remove('show');
 
