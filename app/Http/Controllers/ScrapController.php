@@ -19,20 +19,18 @@ class ScrapController extends Controller
      */
     public function index()
     {
-        $scriptPath = base_path('scripts/baca_dosen.py');
-        $dosenList = [];
-
-        if (file_exists($scriptPath)) {
-            $command = escapeshellcmd("{$this->pythonExe} \"{$scriptPath}\"");
-            $jsonData = shell_exec($command);
-            if ($jsonData) {
-                $dosenList = json_decode($jsonData, true);
-            }
+        try {
+            // Tembak API Python di Docker untuk membaca data dosen awal
+            // (Gunakan 127.0.0.1 untuk uji coba antar kontainer lokal saat ini)
+            $response = \Illuminate\Support\Facades\Http::get('http://127.0.0.1:8000/api/baca-dosen');
+            $dosenList = $response->successful() ? $response->json() : [];
+        } catch (\Exception $e) {
+            $dosenList = [];
+            \Illuminate\Support\Facades\Log::error("Gagal mengambil data dosen dari API Python: " . $e->getMessage());
         }
 
-        $excelExists = file_exists(base_path('scripts/output/dosen_universitas_ngudi_waluyo.xlsx'));
-
-        return view('scrap.ambildatadosen', compact('dosenList', 'excelExists'));
+        // Sesuaikan nama view di bawah ini dengan nama file Blade dropdown Anda
+        return view('filament.resources.detail-dosens.pages.import-detail-dosen', compact('dosenList'));
     }
 
     /**
@@ -44,55 +42,72 @@ class ScrapController extends Controller
             set_time_limit(0);
             ignore_user_abort(true);
 
-            $scriptPath = base_path('scripts/dosen.py');
-            $command = "{$this->pythonExe} -u \"{$scriptPath}\" 2>&1";
+            $baseUrl = env('PYTHON_SCRAPER_URL', 'http://127.0.0.1:8000');
+            $streamUrl = $baseUrl . '/api/scrape-dosen';
 
-            $handle = popen($command, 'r');
-            if ($handle) {
-                while (!feof($handle)) {
-                    $buffer = fgets($handle);
-                    if ($buffer !== false) {
-                        $cleanBuffer = mb_convert_encoding($buffer, 'UTF-8', 'UTF-8');
-                        echo "data: " . json_encode(['output' => $cleanBuffer]) . "\n\n";
-                        ob_flush();
-                        flush();
+            // 💡 JALUR BARU: Menggunakan cURL Stream agar kebal dari batasan php.ini Windows
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $streamUrl);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+            curl_setopt($ch, CURLOPT_BUFFERSIZE, 256);
+
+            // Fungsi callback untuk menangkap serpihan data log secara real-time
+            curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $chunk) {
+                $lines = explode("\n", $chunk);
+                foreach ($lines as $line) {
+                    $line = trim($line);
+                    if (empty($line)) continue;
+
+                    $lineText = $line;
+                    if (strpos($line, 'data: ') === 0) {
+                        $lineText = substr($line, 6);
                     }
+
+                    $cleanBuffer = mb_convert_encoding($lineText, 'UTF-8', 'UTF-8');
+                    echo "data: " . json_encode(['output' => $cleanBuffer . "\n"]) . "\n\n";
+                    ob_flush();
+                    flush();
                 }
-                pclose($handle);
+                return strlen($chunk);
+            });
+
+            $success = curl_exec($ch);
+
+            if (!$success) {
+                $error = curl_error($ch);
+                echo "data: " . json_encode(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> Gagal terhubung ke Server Docker Scraper Python. Jalur URL: {$streamUrl}. Curl Error: {$error}\n"]) . "\n\n";
+                ob_flush();
+                flush();
             }
+            curl_close($ch);
 
             // =========================================================================
             // FITUR OTOMATIS: IMPORT dosen_universitas_ngudi_waluyo.xlsx KE DATABASE
             // =========================================================================
             $excelPath = base_path('scripts/output/dosen_universitas_ngudi_waluyo.xlsx');
 
-            if (file_exists($excelPath)) {
+            if ($success && file_exists($excelPath)) {
                 echo "data: " . json_encode(['output' => "\n----------------------------------------\n"]) . "\n\n";
                 echo "data: " . json_encode(['output' => "<span class='text-primary-400 font-bold'>[AUTO-IMPORT]</span> Berkas Excel ditemukan. Memulai proses simpan ke tabel daftar_dosen...\n"]) . "\n\n";
                 ob_flush();
                 flush();
 
                 try {
-                    // Membaca baris data dari file Excel utama
-                    $rows = (new FastExcel)->import($excelPath);
+                    $rows = (new \Rap2hpoutre\FastExcel\FastExcel)->import($excelPath);
                     $insertedCount = 0;
 
-                    DB::beginTransaction();
+                    \Illuminate\Support\Facades\DB::beginTransaction();
 
                     foreach ($rows as $row) {
-                        // Mengubah semua key header Excel menjadi lowercase agar cocok (nama, sinta id, dll.)
                         $r = array_change_key_case((array)$row, CASE_LOWER);
-
-                        // Ambil dan bersihkan sinta_id dari karakter non-angka
                         $sintaId = isset($r['sinta id']) ? preg_replace('/[^0-9]/', '', $r['sinta id']) : null;
 
-                        // Validasi minimal: SINTA ID dan Nama tidak boleh kosong sesuai aturan migrasi Anda
                         if (empty($sintaId) || empty($r['nama'])) {
                             continue;
                         }
 
-                        // Lakukan simpan atau perbarui data dosen
-                        DaftarDosen::updateOrCreate(
+                        \App\Models\DaftarDosen::updateOrCreate(
                             ['sinta_id' => $sintaId],
                             [
                                 'nama'                    => $r['nama'],
@@ -110,22 +125,16 @@ class ScrapController extends Controller
                         $insertedCount++;
                     }
 
-                    DB::commit();
-
+                    \Illuminate\Support\Facades\DB::commit();
                     echo "data: " . json_encode(['output' => "<span class='text-success-400 font-bold'>[OK] Auto-Import Berhasil!</span> Menyimpan {$insertedCount} dosen ke tabel daftar_dosen.\n----------------------------------------\n"]) . "\n\n";
                 } catch (\Throwable $importError) {
-                    DB::rollBack();
+                    \Illuminate\Support\Facades\DB::rollBack();
                     $errMsg = addslashes($importError->getMessage());
                     echo "data: " . json_encode(['output' => "\n<span class='text-danger-500 font-bold'>[AUTO-IMPORT ERROR]</span> Gagal menyimpan data: {$errMsg}\n----------------------------------------\n"]) . "\n\n";
                 }
                 ob_flush();
                 flush();
-            } else {
-                echo "data: " . json_encode(['output' => "\n<span class='text-warning-500'>[WARN] File dosen_universitas_ngudi_waluyo.xlsx tidak ditemukan di folder output. Auto-import dibatalkan.</span>\n----------------------------------------\n"]) . "\n\n";
-                ob_flush();
-                flush();
             }
-            // =========================================================================
 
             echo "data: " . json_encode(['done' => true]) . "\n\n";
             ob_flush();
@@ -162,6 +171,7 @@ class ScrapController extends Controller
     /**
      * SSE Stream: Menjalankan 6 script detail publikasi + merge (Langkah 2)
      */
+
     public function ambilDetail($sinta_id)
     {
         $sintaId = preg_replace('/[^0-9]/', '', $sinta_id);
@@ -170,53 +180,44 @@ class ScrapController extends Controller
             set_time_limit(0);
             ignore_user_abort(true);
 
-            $scripts = ["books.py", "garuda.py", "pengabdian.py", "profildosen.py", "riset.py", "sc.py"];
+            $baseUrl = env('PYTHON_SCRAPER_URL', 'http://127.0.0.1:8000');
+            $streamUrl = $baseUrl . "/api/scrape-detail/{$sintaId}";
 
-            foreach ($scripts as $scriptName) {
-                echo "data: " . json_encode(['output' => "-------------------------------------------------\nMenjalankan {$scriptName}...\n-------------------------------------------------\n"]) . "\n\n";
-                ob_flush();
-                flush();
+            // 💡 JALUR BARU: Menggunakan cURL Stream agar kebal dari batasan php.ini Windows
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $streamUrl);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+            curl_setopt($ch, CURLOPT_BUFFERSIZE, 256);
 
-                $scriptPath = base_path("scripts/{$scriptName}");
-                $command = "{$this->pythonExe} -u \"{$scriptPath}\" {$sintaId} 2>&1";
+            curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $chunk) {
+                $lines = explode("\n", $chunk);
+                foreach ($lines as $line) {
+                    $line = trim($line);
+                    if (empty($line)) continue;
 
-                $handle = popen($command, 'r');
-                if ($handle) {
-                    while (!feof($handle)) {
-                        $buffer = fgets($handle);
-                        if ($buffer !== false) {
-                            $cleanBuffer = mb_convert_encoding($buffer, 'UTF-8', 'UTF-8');
-                            echo "data: " . json_encode(['output' => $cleanBuffer]) . "\n\n";
-                            ob_flush();
-                            flush();
-                        }
+                    $lineText = $line;
+                    if (strpos($line, 'data: ') === 0) {
+                        $lineText = substr($line, 6);
                     }
-                    pclose($handle);
+
+                    $cleanBuffer = mb_convert_encoding($lineText, 'UTF-8', 'UTF-8');
+                    echo "data: " . json_encode(['output' => $cleanBuffer . "\n"]) . "\n\n";
+                    ob_flush();
+                    flush();
                 }
-                echo "data: " . json_encode(['output' => "\n"]) . "\n\n";
+                return strlen($chunk);
+            });
+
+            $success = curl_exec($ch);
+
+            if (!$success) {
+                $error = curl_error($ch);
+                echo "data: " . json_encode(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> Gagal terhubung ke Server Docker Scraper Python. Jalur URL: {$streamUrl}. Curl Error: {$error}\n"]) . "\n\n";
                 ob_flush();
                 flush();
             }
-
-            echo "data: " . json_encode(['output' => "-------------------------------------------------\nMenjalankan merge_excel.py...\n-------------------------------------------------\n"]) . "\n\n";
-            ob_flush();
-            flush();
-
-            $mergeScriptPath = base_path("scripts/merge_excel.py");
-            $mergeCommand = "{$this->pythonExe} -u \"{$mergeScriptPath}\" {$sintaId} 2>&1";
-            $handle = popen($mergeCommand, 'r');
-            if ($handle) {
-                while (!feof($handle)) {
-                    $buffer = fgets($handle);
-                    if ($buffer !== false) {
-                        $cleanBuffer = mb_convert_encoding($buffer, 'UTF-8', 'UTF-8');
-                        echo "data: " . json_encode(['output' => $cleanBuffer]) . "\n\n";
-                        ob_flush();
-                        flush();
-                    }
-                }
-                pclose($handle);
-            }
+            curl_close($ch);
 
             echo "data: " . json_encode(['done' => true]) . "\n\n";
             ob_flush();
