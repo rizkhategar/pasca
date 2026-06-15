@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\AboutController;
-use App\Http\Controllers\AboutPascasarjanaUploadController;
 use App\Http\Controllers\AcademicController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\NewsController;
@@ -67,10 +66,6 @@ Route::get('/organization-structures/{organizationStructure}/image', function (O
 Route::get('/about-pascasarjanas/{aboutPascasarjana}/director-image', function (AboutPascasarjana $aboutPascasarjana) {
     $imagePath = $aboutPascasarjana->direktur_image;
 
-    if (is_array($imagePath)) {
-        $imagePath = reset($imagePath);
-    }
-
     abort_unless($imagePath, 404);
     abort_unless(Storage::disk('public')->exists($imagePath), 404);
 
@@ -83,12 +78,7 @@ Route::get('/about-pascasarjanas/{aboutPascasarjana}/director-image', function (
 })->name('about-pascasarjanas.director-image');
 
 Route::get('/about-pascasarjanas/{aboutPascasarjana}/point-icons/{index}', function (AboutPascasarjana $aboutPascasarjana, int $index) {
-    $points = $aboutPascasarjana->points ?? [];
-    $iconPath = data_get($points, $index . '.icon');
-
-    if (is_array($iconPath)) {
-        $iconPath = reset($iconPath);
-    }
+    $iconPath = data_get($aboutPascasarjana->points ?? [], $index . '.icon');
 
     abort_unless($iconPath, 404);
     abort_unless(Storage::disk('public')->exists($iconPath), 404);
@@ -124,9 +114,6 @@ Route::get('/riset-dosen', [RisetController::class, 'listDosen'])->name('riset.d
 Route::get('/riset-dosen/detail/{sinta_id}', [RisetController::class, 'detailDosen'])->name('riset.detail');
 
 Route::middleware(['web', 'auth'])->group(function () {
-    Route::post('/admin/about-pascasarjanas/upload', [AboutPascasarjanaUploadController::class, 'store'])->name('admin.about-pascasarjanas.store');
-    Route::put('/admin/about-pascasarjanas/{aboutPascasarjana}/upload', [AboutPascasarjanaUploadController::class, 'update'])->name('admin.about-pascasarjanas.update');
-
     Route::get('/admin/organization-structures/custom-create', [OrganizationStructureUploadController::class, 'create'])->name('admin.organization-structures.create-custom');
     Route::get('/admin/organization-structures/{organizationStructure}/custom-edit', [OrganizationStructureUploadController::class, 'edit'])->name('admin.organization-structures.edit-custom');
     Route::post('/admin/organization-structures/upload', [OrganizationStructureUploadController::class, 'store'])->name('admin.organization-structures.store');

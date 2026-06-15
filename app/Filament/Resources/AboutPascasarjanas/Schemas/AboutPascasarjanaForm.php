@@ -17,10 +17,7 @@ class AboutPascasarjanaForm
     {
         return $schema
             ->columns(1)
-            ->components([                                 
-                // ==========================================
-                // BAGIAN 1: TEKS UTAMA
-                // ==========================================
+            ->components([
                 Section::make('Teks Utama Halaman')
                     ->description('Atur sub-judul, judul, dan deskripsi utama profil.')
                     ->icon('heroicon-o-document-text')
@@ -45,9 +42,6 @@ class AboutPascasarjanaForm
                             ->rows(5),
                     ]),
 
-                // ==========================================
-                // BAGIAN 2: POIN FITUR
-                // ==========================================
                 Section::make('Poin-Poin Fitur & Keunggulan')
                     ->description('Daftar fitur yang akan ditampilkan pada halaman Tentang Pascasarjana.')
                     ->icon('heroicon-o-star')
@@ -63,6 +57,9 @@ class AboutPascasarjanaForm
                                             ->imageEditor()
                                             ->directory('tentang-icons')
                                             ->disk('public')
+                                            ->visibility('public')
+                                            ->maxSize(5120)
+                                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'])
                                             ->label('Upload Ikon')
                                             ->columnSpan([
                                                 'default' => 4,
@@ -86,19 +83,15 @@ class AboutPascasarjanaForm
                                     ]),
                             ])
                             ->defaultItems(3)
-                            ->addActionLabel('  Tambah Poin Baru')
+                            ->addActionLabel('Tambah Poin Baru')
                             ->reorderableWithButtons()
                             ->collapsible()
                             ->cloneable()
                             ->itemLabel(
-                                fn(array $state): ?string =>
-                                $state['title'] ?? 'Poin Baru'
+                                fn (array $state): ?string => $state['title'] ?? 'Poin Baru'
                             ),
                     ]),
 
-                // ==========================================
-                // BAGIAN 3: SAMBUTAN DIREKTUR
-                // ==========================================
                 Section::make('Sambutan Direktur Pascasarjana')
                     ->description('Tampilkan foto, sapaan, dan pesan pimpinan di bawah Tentang Kami.')
                     ->icon('heroicon-o-user-circle')
@@ -123,6 +116,9 @@ class AboutPascasarjanaForm
                                     ->imageEditor()
                                     ->directory('direktur-images')
                                     ->disk('public')
+                                    ->visibility('public')
+                                    ->maxSize(5120)
+                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                                     ->label('Foto Direktur (Potret/Berdiri)')
                                     ->columnSpan([
                                         'default' => 4,
