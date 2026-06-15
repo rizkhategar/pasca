@@ -111,6 +111,28 @@
             font-weight: 500 !important;
         }
 
+        .news-list .news-content,
+        .info-section .news-content,
+        .news-area .news-content {
+            justify-content: flex-start !important;
+            gap: 0 !important;
+        }
+
+        .news-list .news-category,
+        .info-section .news-category,
+        .news-area .news-category {
+            margin: 0 0 5px !important;
+            line-height: 1.25 !important;
+        }
+
+        .news-list .news-title,
+        .info-section .news-title,
+        .news-area .news-title {
+            margin: 0 !important;
+            line-height: 1.28 !important;
+            -webkit-line-clamp: 2 !important;
+        }
+
         .news-list .news-excerpt,
         .info-section .news-excerpt,
         .news-area .news-excerpt {
@@ -119,9 +141,16 @@
             -webkit-box-orient: vertical !important;
             overflow: hidden !important;
             font-size: 13px !important;
-            line-height: 1.55 !important;
-            margin-top: 7px !important;
+            line-height: 1.45 !important;
+            margin: 6px 0 0 !important;
             color: #64748b !important;
+        }
+
+        .news-list .news-date,
+        .info-section .news-date,
+        .news-area .news-date {
+            margin-top: 8px !important;
+            line-height: 1.25 !important;
         }
 
         .nav-link,
@@ -151,11 +180,25 @@
             line-height: 1.58 !important;
         }
 
+        .news-list .news-title,
+        .info-section .news-title,
+        .news-area .news-title {
+            line-height: 1.24 !important;
+        }
+
         .news-list .news-excerpt,
         .info-section .news-excerpt,
         .news-area .news-excerpt {
             -webkit-line-clamp: 2 !important;
             font-size: 12.5px !important;
+            line-height: 1.42 !important;
+            margin-top: 5px !important;
+        }
+
+        .news-list .news-date,
+        .info-section .news-date,
+        .news-area .news-date {
+            margin-top: 7px !important;
         }
     }
 </style>
