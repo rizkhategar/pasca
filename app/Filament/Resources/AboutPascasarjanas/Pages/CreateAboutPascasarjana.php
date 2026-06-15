@@ -9,5 +9,5 @@ class CreateAboutPascasarjana extends Page
 {
     protected static string $resource = AboutPascasarjanaResource::class;
 
-    protected static string $view = 'filament.resources.about-pascasarjanas.pages.create-about-pascasarjana';
+    protected string $view = 'filament.resources.about-pascasarjanas.pages.create-about-pascasarjana';
 }
