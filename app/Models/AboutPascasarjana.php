@@ -52,6 +52,14 @@ class AboutPascasarjana extends Model
             return null;
         }
 
+        if (Str::startsWith($path, ['[', '{'])) {
+            $decoded = json_decode($path, true);
+
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return self::normalizeImagePath($decoded);
+            }
+        }
+
         if (Str::startsWith($path, ['http://', 'https://'])) {
             return $path;
         }
@@ -88,6 +96,64 @@ class AboutPascasarjana extends Model
         }
 
         return Storage::disk('public')->exists($path);
+    }
+
+    public function getPointsAttribute($value): array
+    {
+        $points = is_array($value) ? $value : (json_decode($value ?: '[]', true) ?: []);
+
+        return collect($points)
+            ->map(function ($point) {
+                if (! is_array($point)) {
+                    return null;
+                }
+
+                $point['icon'] = self::normalizeImagePath($point['icon'] ?? null);
+
+                return $point;
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    public function setPointsAttribute($value): void
+    {
+        $points = collect($value ?? [])
+            ->map(function ($point) {
+                if (! is_array($point)) {
+                    return null;
+                }
+
+                $point['icon'] = self::normalizeImagePath($point['icon'] ?? null);
+
+                return $point;
+            })
+            ->filter()
+            ->values()
+            ->all();
+
+        $this->attributes['points'] = json_encode($points);
+    }
+
+    public function getDirekturImageAttribute($value): ?string
+    {
+        return self::normalizeImagePath($value);
+    }
+
+    public function setDirekturImageAttribute($value): void
+    {
+        $this->attributes['direktur_image'] = self::normalizeImagePath($value);
+    }
+
+    public function getHeroImageAttribute($value): ?string
+    {
+        return self::normalizeImagePath($value);
+    }
+
+    public function setHeroImageAttribute($value): void
+    {
+        $this->attributes['hero_image'] = self::normalizeImagePath($value);
     }
 
     public function getDirekturImageUrlAttribute(): ?string
