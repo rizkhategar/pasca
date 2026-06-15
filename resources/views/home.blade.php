@@ -1738,7 +1738,7 @@
                             <span class="program-number">04</span>
                         </div>
 
-                        <h3 class="program-title">Magister<br>Hukum</h3>
+                        <h3 class="program-title">MAGISTER<br>HUKUM</h3>
 
                         <p class="program-desc">
                             Program lanjutan untuk penguatan kompetensi hukum, tata kelola, dan penyelesaian persoalan
@@ -1766,7 +1766,7 @@
                             <span class="program-number">03</span>
                         </div>
 
-                        <h3 class="program-title">Magister Manajemen<br>Pendidikan</h3>
+                        <h3 class="program-title">MAGISTER<br>MANAJEMEN PENDIDIKAN</h3>
 
                         <p class="program-desc">
                             Mengembangkan kepemimpinan, manajemen, dan inovasi pendidikan yang adaptif terhadap
@@ -1794,7 +1794,7 @@
                             <span class="program-number">02</span>
                         </div>
 
-                        <h3 class="program-title">Magister Kesehatan<br>Masyarakat</h3>
+                        <h3 class="program-title">MAGISTER<br>KESEHATAN MASYARAKAT</h3>
 
                         <p class="program-desc">
                             Fokus pada pengembangan ilmu kesehatan masyarakat, kebijakan kesehatan, dan peningkatan
@@ -1822,7 +1822,7 @@
                             <span class="program-number">01</span>
                         </div>
 
-                        <h3 class="program-title">Magister<br>Keperawatan</h3>
+                        <h3 class="program-title">MAGISTER<br>KEPERAWATAN</h3>
 
                         <p class="program-desc">
                             Mendukung peningkatan profesionalisme keperawatan melalui kajian lanjut, praktik, dan riset
