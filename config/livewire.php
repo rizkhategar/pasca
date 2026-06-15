@@ -10,10 +10,10 @@ return [
     'lazy_placeholder' => null,
 
     'temporary_file_upload' => [
-        'disk' => 'public',
+        'disk' => 'local',
         'rules' => 'file|max:10240',
         'directory' => 'livewire-tmp',
-        'middleware' => null,
+        'middleware' => 'throttle:120,1',
         'preview_mimes' => [
             'png',
             'jpg',

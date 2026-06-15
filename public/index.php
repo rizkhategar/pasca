@@ -1,5 +1,10 @@
 <?php
 
+if (isset($_SERVER['REQUEST_URI']) && str_contains((string) $_SERVER['REQUEST_URI'], 'livewire/upload')) {
+    ini_set('display_errors', '0');
+    ini_set('log_errors', '1');
+}
+
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 
