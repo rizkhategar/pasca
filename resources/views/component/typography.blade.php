@@ -74,6 +74,25 @@
         font-family: var(--font-sans) !important;
     }
 
+    .about-points .point-icon {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+        color: #062f5f !important;
+        border: 1px solid rgba(6, 47, 95, .12) !important;
+        box-shadow: 0 12px 26px rgba(15, 23, 42, .08) !important;
+    }
+
+    .about-points .point-icon img {
+        width: 34px !important;
+        height: 34px !important;
+        object-fit: contain !important;
+        filter: none !important;
+        mix-blend-mode: normal !important;
+    }
+
+    .about-points .point-icon i {
+        color: #062f5f !important;
+    }
+
     .news-list .news-content,
     .info-section .news-content,
     .news-area .news-content {
@@ -149,6 +168,16 @@
             font-size: 14px !important;
             line-height: 1.62 !important;
             font-weight: 500 !important;
+        }
+
+        .about-points .point-icon {
+            background: #ffffff !important;
+            border-color: rgba(6, 47, 95, .12) !important;
+        }
+
+        .about-points .point-icon img {
+            width: 32px !important;
+            height: 32px !important;
         }
 
         .news-list .news-content,
