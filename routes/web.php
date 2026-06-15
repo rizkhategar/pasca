@@ -61,7 +61,7 @@ Route::get('/akademik/magister-hukum', function () {
 
 Route::get('/visi-misi', [VisiMisiController::class, 'index'])->name('visi-misi');
 Route::get('/profil/struktur-organisasi', [OrganizationStructureController::class, 'index'])->name('profil.struktur-organisasi');
-Route::get('/tentang-pascasarjana', [AboutController::class, 'index'])->name('about');
+Route::get('/tentang-pascasarjana', [AboutController::class, 'index'])->name('tentang');
 
 Route::get('/scrap/ambildatadosen', [ScrapController::class, 'index'])->name('scrap.index');
 Route::get('/scrap/perbarui-dosen', [ScrapController::class, 'perbaruiDosen'])->name('scrap.perbaruiDosen');
