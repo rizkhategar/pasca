@@ -16,6 +16,7 @@ use App\Models\OrganizationStructure;
 use App\Models\Slider;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 Route::get('/', function () {
     $sliders = Slider::query()
@@ -26,6 +27,18 @@ Route::get('/', function () {
 
     return view('home', compact('sliders'));
 })->name('home');
+
+Route::get('/storage/{path}', function (string $path) {
+    $path = ltrim($path, '/');
+
+    abort_if(Str::contains($path, ['..', '\\']), 404);
+    abort_unless(Storage::disk('public')->exists($path), 404);
+
+    return response()
+        ->file(Storage::disk('public')->path($path), [
+            'Cache-Control' => 'public, max-age=31536000',
+        ]);
+})->where('path', '.*')->name('public-storage.file');
 
 Route::get('/sliders/{slider}/image', function (Slider $slider) {
     abort_unless($slider->image_path, 404);
