@@ -32,14 +32,23 @@ class AboutPascasarjanasTable
                 //
             ])
             ->recordActions([
-                EditAction::make()->button()->color('primary'),
-                DeleteAction::make()->button()->color('danger'),
+                EditAction::make()
+                    ->label('Edit')
+                    ->icon('heroicon-o-pencil-square')
+                    ->button()
+                    ->color('warning'),
+                DeleteAction::make()
+                    ->label('Delete')
+                    ->icon('heroicon-o-trash')
+                    ->button()
+                    ->color('danger'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->icon('heroicon-o-trash'),
                 ]),
             ])
-            ->paginated(false); // Karena datanya cuma 1
+            ->paginated(false);
     }
 }
