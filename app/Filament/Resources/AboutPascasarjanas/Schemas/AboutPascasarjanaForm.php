@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AboutPascasarjanas\Schemas;
 
+use App\Support\FilamentImageUpload;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Grid;
@@ -10,6 +11,8 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\FileUpload;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class AboutPascasarjanaForm
 {
@@ -54,8 +57,8 @@ class AboutPascasarjanaForm
                                     ->schema([
                                         FileUpload::make('icon')
                                             ->image()
-                                            ->directory('tentang-icons')
                                             ->disk('public')
+                                            ->directory('tentang-icons')
                                             ->visibility('public')
                                             ->maxSize(2048)
                                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'])
@@ -68,6 +71,12 @@ class AboutPascasarjanaForm
                                             ->loadingIndicatorPosition('right')
                                             ->removeUploadedFileButtonPosition('right')
                                             ->uploadProgressIndicatorPosition('right')
+                                            ->saveUploadedFileUsing(
+                                                fn (TemporaryUploadedFile $file): string => FilamentImageUpload::saveToPublicDisk($file, 'tentang-icons')
+                                            )
+                                            ->deleteUploadedFileUsing(
+                                                fn (string $file): bool => Storage::disk('public')->delete($file)
+                                            )
                                             ->label('Upload Ikon')
                                             ->columnSpan([
                                                 'default' => 4,
@@ -121,8 +130,8 @@ class AboutPascasarjanaForm
                             ->schema([
                                 FileUpload::make('direktur_image')
                                     ->image()
-                                    ->directory('direktur-images')
                                     ->disk('public')
+                                    ->directory('direktur-images')
                                     ->visibility('public')
                                     ->maxSize(3072)
                                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
@@ -135,6 +144,12 @@ class AboutPascasarjanaForm
                                     ->loadingIndicatorPosition('right')
                                     ->removeUploadedFileButtonPosition('right')
                                     ->uploadProgressIndicatorPosition('right')
+                                    ->saveUploadedFileUsing(
+                                        fn (TemporaryUploadedFile $file): string => FilamentImageUpload::saveToPublicDisk($file, 'direktur-images')
+                                    )
+                                    ->deleteUploadedFileUsing(
+                                        fn (string $file): bool => Storage::disk('public')->delete($file)
+                                    )
                                     ->label('Foto Direktur')
                                     ->columnSpan([
                                         'default' => 4,
