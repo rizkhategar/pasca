@@ -10,7 +10,6 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Hidden;
 
 class AboutPascasarjanaForm
 {
@@ -53,11 +52,11 @@ class AboutPascasarjanaForm
                             ->schema([
                                 Grid::make(4)
                                     ->schema([
-                                        Hidden::make('icon'),
-
-                                        FileUpload::make('icon_upload')
+                                        FileUpload::make('icon')
                                             ->image()
-                                            ->storeFiles(false)
+                                            ->directory('tentang-icons')
+                                            ->disk('public')
+                                            ->visibility('public')
                                             ->maxSize(2048)
                                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'])
                                             ->fetchFileInformation(false)
@@ -65,10 +64,11 @@ class AboutPascasarjanaForm
                                             ->openable(false)
                                             ->downloadable(false)
                                             ->panelLayout('compact')
+                                            ->imagePreviewHeight('72')
                                             ->loadingIndicatorPosition('right')
                                             ->removeUploadedFileButtonPosition('right')
                                             ->uploadProgressIndicatorPosition('right')
-                                            ->label('Upload / Ganti Ikon')
+                                            ->label('Upload Ikon')
                                             ->columnSpan([
                                                 'default' => 4,
                                                 'md' => 1,
@@ -119,11 +119,11 @@ class AboutPascasarjanaForm
                             ]),
                         Grid::make(4)
                             ->schema([
-                                Hidden::make('direktur_image'),
-
-                                FileUpload::make('direktur_image_upload')
+                                FileUpload::make('direktur_image')
                                     ->image()
-                                    ->storeFiles(false)
+                                    ->directory('direktur-images')
+                                    ->disk('public')
+                                    ->visibility('public')
                                     ->maxSize(3072)
                                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                                     ->fetchFileInformation(false)
@@ -131,10 +131,11 @@ class AboutPascasarjanaForm
                                     ->openable(false)
                                     ->downloadable(false)
                                     ->panelLayout('compact')
+                                    ->imagePreviewHeight('120')
                                     ->loadingIndicatorPosition('right')
                                     ->removeUploadedFileButtonPosition('right')
                                     ->uploadProgressIndicatorPosition('right')
-                                    ->label('Upload / Ganti Foto Direktur')
+                                    ->label('Foto Direktur')
                                     ->columnSpan([
                                         'default' => 4,
                                         'md' => 1,
