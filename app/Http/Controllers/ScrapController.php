@@ -45,14 +45,16 @@ class ScrapController extends Controller
             $baseUrl = env('PYTHON_SCRAPER_URL', 'http://127.0.0.1:8000');
             $streamUrl = $baseUrl . '/api/scrape-dosen';
 
-            // 💡 JALUR BARU: Menggunakan cURL Stream agar kebal dari batasan php.ini Windows
+            // Inisialisasi cURL POST Stream untuk membaca log scraping real-time
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $streamUrl);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "");
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
             curl_setopt($ch, CURLOPT_BUFFERSIZE, 256);
 
-            // Fungsi callback untuk menangkap serpihan data log secara real-time
+            // Callback capturing log terminal secara interaktif
             curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $chunk) {
                 $lines = explode("\n", $chunk);
                 foreach ($lines as $line) {
@@ -76,61 +78,77 @@ class ScrapController extends Controller
 
             if (!$success) {
                 $error = curl_error($ch);
-                echo "data: " . json_encode(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> Gagal terhubung ke Server Docker Scraper Python. Jalur URL: {$streamUrl}. Curl Error: {$error}\n"]) . "\n\n";
+                echo "data: " . json_encode(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> Gagal terhubung ke Docker Python Scraper. URL: {$streamUrl}. Error: {$error}\n"]) . "\n\n";
                 ob_flush();
                 flush();
             }
             curl_close($ch);
 
             // =========================================================================
-            // FITUR OTOMATIS: IMPORT dosen_universitas_ngudi_waluyo.xlsx KE DATABASE
+            // PROSES AMBIL FILE EXCEL & SINKRONISASI KE DATABASE MYSQL (LANGKAH 1)
             // =========================================================================
-            $excelPath = base_path('scripts/output/dosen_universitas_ngudi_waluyo.xlsx');
+            if ($success) {
+                $downloadUrl = $baseUrl . '/api/download-excel-dosen';
 
-            if ($success && file_exists($excelPath)) {
-                echo "data: " . json_encode(['output' => "\n----------------------------------------\n"]) . "\n\n";
-                echo "data: " . json_encode(['output' => "<span class='text-primary-400 font-bold'>[AUTO-IMPORT]</span> Berkas Excel ditemukan. Memulai proses simpan ke tabel daftar_dosen...\n"]) . "\n\n";
+                echo "data: " . json_encode(['output' => "\n[LARAVEL] Menghubungi API Docker untuk mengunduh berkas Excel master...\n"]) . "\n\n";
                 ob_flush();
                 flush();
 
-                try {
-                    $rows = (new \Rap2hpoutre\FastExcel\FastExcel)->import($excelPath);
-                    $insertedCount = 0;
+                $fileResponse = \Illuminate\Support\Facades\Http::get($downloadUrl);
 
-                    \Illuminate\Support\Facades\DB::beginTransaction();
+                if ($fileResponse->successful() && !isset($fileResponse->json()['error'])) {
+                    $excelPath = base_path('scripts/output/dosen_universitas_ngudi_waluyo.xlsx');
 
-                    foreach ($rows as $row) {
-                        $r = array_change_key_case((array)$row, CASE_LOWER);
-                        $sintaId = isset($r['sinta id']) ? preg_replace('/[^0-9]/', '', $r['sinta id']) : null;
-
-                        if (empty($sintaId) || empty($r['nama'])) {
-                            continue;
-                        }
-
-                        \App\Models\DaftarDosen::updateOrCreate(
-                            ['sinta_id' => $sintaId],
-                            [
-                                'nama'                    => $r['nama'],
-                                'departemen'              => $r['departemen'] ?? null,
-                                'scopus_h_index'          => $r['scopus h-index'] ?? null,
-                                'google_scholar_h_index'  => $r['google scholar h-index'] ?? null,
-                                'sinta_score_3yr'         => isset($r['sinta score 3yr']) ? (int) str_replace('.', '', $r['sinta score 3yr']) : null,
-                                'sinta_score'             => isset($r['sinta score']) ? (int) str_replace('.', '', $r['sinta score']) : null,
-                                'affiliation_score_3yr'   => isset($r['affiliation score 3yr']) ? (int) str_replace('.', '', $r['affiliation score 3yr']) : null,
-                                'affiliation_score'       => isset($r['affiliation score']) ? (int) str_replace('.', '', $r['affiliation score']) : null,
-                                'profile_url'             => $r['profile url'] ?? null,
-                            ]
-                        );
-
-                        $insertedCount++;
+                    // Pastikan folder output lokal laptop tersedia
+                    if (!file_exists(dirname($excelPath))) {
+                        mkdir(dirname($excelPath), 0777, true);
                     }
 
-                    \Illuminate\Support\Facades\DB::commit();
-                    echo "data: " . json_encode(['output' => "<span class='text-success-400 font-bold'>[OK] Auto-Import Berhasil!</span> Menyimpan {$insertedCount} dosen ke tabel daftar_dosen.\n----------------------------------------\n"]) . "\n\n";
-                } catch (\Throwable $importError) {
-                    \Illuminate\Support\Facades\DB::rollBack();
-                    $errMsg = addslashes($importError->getMessage());
-                    echo "data: " . json_encode(['output' => "\n<span class='text-danger-500 font-bold'>[AUTO-IMPORT ERROR]</span> Gagal menyimpan data: {$errMsg}\n----------------------------------------\n"]) . "\n\n";
+                    // Ambil binary body dari API dan tulis menjadi file excel fisik di Windows
+                    file_put_contents($excelPath, $fileResponse->body());
+
+                    echo "data: " . json_encode(['output' => "<span class='text-success-400 font-bold'>[OK]</span> Berkas Excel berhasil diunduh. Memulai migrasi data ke tabel daftar_dosen...\n"]) . "\n\n";
+                    ob_flush();
+                    flush();
+
+                    try {
+                        $rows = (new \Rap2hpoutre\FastExcel\FastExcel)->import($excelPath);
+                        $insertedCount = 0;
+
+                        \Illuminate\Support\Facades\DB::beginTransaction();
+                        foreach ($rows as $row) {
+                            $r = array_change_key_case((array)$row, CASE_LOWER);
+                            $sintaId = isset($r['sinta id']) ? preg_replace('/[^0-9]/', '', $r['sinta id']) : null;
+
+                            if (empty($sintaId) || empty($r['nama'])) {
+                                continue;
+                            }
+
+                            \App\Models\DaftarDosen::updateOrCreate(
+                                ['sinta_id' => $sintaId],
+                                [
+                                    'nama'                    => $r['nama'],
+                                    'departemen'              => $r['departemen'] ?? null,
+                                    'scopus_h_index'          => $r['scopus h-index'] ?? null,
+                                    'google_scholar_h_index'  => $r['google scholar h-index'] ?? null,
+                                    'sinta_score_3yr'         => isset($r['sinta score 3yr']) ? (int) str_replace('.', '', $r['sinta score 3yr']) : null,
+                                    'sinta_score'             => isset($r['sinta score']) ? (int) str_replace('.', '', $r['sinta score']) : null,
+                                    'affiliation_score_3yr'   => isset($r['affiliation score 3yr']) ? (int) str_replace('.', '', $r['affiliation score 3yr']) : null,
+                                    'affiliation_score'       => isset($r['affiliation score']) ? (int) str_replace('.', '', $r['affiliation score']) : null,
+                                    'profile_url'             => $r['profile url'] ?? null,
+                                ]
+                            );
+                            $insertedCount++;
+                        }
+                        \Illuminate\Support\Facades\DB::commit();
+                        echo "data: " . json_encode(['output' => "<span class='text-success-400 font-bold'>[SUKSES] Auto-Import Selesai!</span> Berhasil memperbarui {$insertedCount} dosen ke tabel database MySQL.\n----------------------------------------\n"]) . "\n\n";
+                    } catch (\Throwable $importError) {
+                        \Illuminate\Support\Facades\DB::rollBack();
+                        $errMsg = addslashes($importError->getMessage());
+                        echo "data: " . json_encode(['output' => "\n<span class='text-danger-500 font-bold'>[DATABASE ERROR]</span> Gagal menyimpan data: {$errMsg}\n----------------------------------------\n"]) . "\n\n";
+                    }
+                } else {
+                    echo "data: " . json_encode(['output' => "\n<span class='text-warning-500'>[WARN] File excel dosen gagal diunduh atau belum tercipta di container Docker.</span>\n----------------------------------------\n"]) . "\n\n";
                 }
                 ob_flush();
                 flush();
@@ -183,9 +201,11 @@ class ScrapController extends Controller
             $baseUrl = env('PYTHON_SCRAPER_URL', 'http://127.0.0.1:8000');
             $streamUrl = $baseUrl . "/api/scrape-detail/{$sintaId}";
 
-            // 💡 JALUR BARU: Menggunakan cURL Stream agar kebal dari batasan php.ini Windows
+            // Inisialisasi cURL POST Stream untuk memantau 6 robot detail + script merge
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $streamUrl);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "");
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
             curl_setopt($ch, CURLOPT_BUFFERSIZE, 256);
@@ -213,11 +233,53 @@ class ScrapController extends Controller
 
             if (!$success) {
                 $error = curl_error($ch);
-                echo "data: " . json_encode(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> Gagal terhubung ke Server Docker Scraper Python. Jalur URL: {$streamUrl}. Curl Error: {$error}\n"]) . "\n\n";
+                echo "data: " . json_encode(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> Gagal terhubung ke Docker Python Scraper. URL: {$streamUrl}. Error: {$error}\n"]) . "\n\n";
                 ob_flush();
                 flush();
             }
             curl_close($ch);
+
+            // =========================================================================
+            // PROSES AMBIL FILE EXCEL MERGED DETAIL & SINKRONISASI (LANGKAH 2)
+            // =========================================================================
+            if ($success) {
+                $downloadUrl = $baseUrl . "/api/download-excel-detail/{$sintaId}";
+
+                echo "data: " . json_encode(['output' => "\n[LARAVEL] Menghubungi API Docker untuk menarik file excel gabungan (merged_data)...\n"]) . "\n\n";
+                ob_flush();
+                flush();
+
+                $fileResponse = \Illuminate\Support\Facades\Http::get($downloadUrl);
+
+                if ($fileResponse->successful() && !isset($fileResponse->json()['error'])) {
+                    $excelPath = base_path("scripts/output/merged_data_{$sintaId}.xlsx");
+
+                    if (!file_exists(dirname($excelPath))) {
+                        mkdir(dirname($excelPath), 0777, true);
+                    }
+
+                    // Simpan berkas hasil gabungan robot ke folder Windows
+                    file_put_contents($excelPath, $fileResponse->body());
+
+                    echo "data: " . json_encode(['output' => "<span class='text-success-400 font-bold'>[OK]</span> Berkas merged_data_{$sintaId}.xlsx sukses diunduh ke laptop. Memulai sinkronisasi Database...\n"]) . "\n\n";
+                    ob_flush();
+                    flush();
+
+                    try {
+                        // 💡 TEMPAT LOGIKA FASTEXCEL SINKRONISASI DETAIL DOSEN ANDA (Books, Garuda, dll.)
+                        // Contoh membaca lembar Sheet Buku:
+                        // $books = (new \Rap2hpoutre\FastExcel\FastExcel)->sheet(1)->import($excelPath);
+
+                        echo "data: " . json_encode(['output' => "<span class='text-success-400 font-bold'>[LARAVEL SUCCESS]</span> Seluruh data kualifikasi SINTA Dosen sukses bermigrasi ke MySQL.\n----------------------------------------\n"]) . "\n\n";
+                    } catch (\Exception $e) {
+                        echo "data: " . json_encode(['output' => "<span class='text-danger-500'>[LARAVEL ERROR]</span> Gagal melakukan update database: " . $e->getMessage() . "\n----------------------------------------\n"]) . "\n\n";
+                    }
+                } else {
+                    echo "data: " . json_encode(['output' => "\n<span class='text-danger-500'>[ERROR]</span> Berkas merged_data_{$sintaId}.xlsx tidak ditemukan/gagal diunduh dari API Docker.\n----------------------------------------\n"]) . "\n\n";
+                }
+                ob_flush();
+                flush();
+            }
 
             echo "data: " . json_encode(['done' => true]) . "\n\n";
             ob_flush();
