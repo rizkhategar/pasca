@@ -14,6 +14,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
@@ -71,13 +72,14 @@ class AboutPascasarjanaForm
                                                     return new HtmlString('<span class="text-gray-500 text-sm">Belum ada ikon.</span>');
                                                 }
 
-                                                $url = self::publicStorageUrl($path);
-
-                                                return new HtmlString(<<<HTML
-                                                    <div style="display:flex;align-items:center;gap:12px;min-height:72px;">
-                                                        <img src="{$url}" alt="Ikon saat ini" style="width:64px;height:64px;object-fit:contain;border-radius:16px;background:#ffffff;border:1px solid rgba(148,163,184,.35);padding:10px;box-shadow:0 10px 24px rgba(15,23,42,.08);">
-                                                    </div>
-                                                HTML);
+                                                return new HtmlString(self::renderPreviewImage(
+                                                    path: $path,
+                                                    alt: 'Ikon saat ini',
+                                                    width: 64,
+                                                    height: 64,
+                                                    objectFit: 'contain',
+                                                    padding: 10,
+                                                ));
                                             })
                                             ->columnSpan([
                                                 'default' => 4,
@@ -167,15 +169,19 @@ class AboutPascasarjanaForm
                                             return new HtmlString('<span class="text-gray-500 text-sm">Belum ada foto direktur.</span>');
                                         }
 
-                                        $url = $record
+                                        $fallbackUrl = $record
                                             ? route('about-pascasarjanas.director-image', $record) . '?v=' . optional($record->updated_at)->timestamp
                                             : self::publicStorageUrl($path);
 
-                                        return new HtmlString(<<<HTML
-                                            <div style="display:flex;align-items:center;gap:14px;min-height:166px;">
-                                                <img src="{$url}" alt="Foto direktur saat ini" style="width:120px;height:150px;object-fit:cover;border-radius:14px;border:1px solid rgba(148,163,184,.35);box-shadow:0 10px 24px rgba(15,23,42,.08);">
-                                            </div>
-                                        HTML);
+                                        return new HtmlString(self::renderPreviewImage(
+                                            path: $path,
+                                            alt: 'Foto direktur saat ini',
+                                            width: 120,
+                                            height: 150,
+                                            objectFit: 'cover',
+                                            padding: 0,
+                                            fallbackUrl: $fallbackUrl,
+                                        ));
                                     })
                                     ->columnSpan([
                                         'default' => 4,
@@ -241,5 +247,43 @@ class AboutPascasarjanaForm
     private static function publicStorageUrl(string $path): string
     {
         return asset('storage/' . ltrim($path, '/')) . '?v=' . time();
+    }
+
+    private static function previewImageSource(string $path, ?string $fallbackUrl = null): string
+    {
+        $path = self::extractImagePath($path) ?? $path;
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        if (Storage::disk('public')->exists($path)) {
+            $mimeType = Storage::disk('public')->mimeType($path) ?: 'image/jpeg';
+            $contents = Storage::disk('public')->get($path);
+
+            return 'data:' . $mimeType . ';base64,' . base64_encode($contents);
+        }
+
+        return $fallbackUrl ?: self::publicStorageUrl($path);
+    }
+
+    private static function renderPreviewImage(
+        string $path,
+        string $alt,
+        int $width,
+        int $height,
+        string $objectFit,
+        int $padding,
+        ?string $fallbackUrl = null,
+    ): string {
+        $src = htmlspecialchars(self::previewImageSource($path, $fallbackUrl), ENT_QUOTES, 'UTF-8');
+        $alt = htmlspecialchars($alt, ENT_QUOTES, 'UTF-8');
+        $paddingStyle = $padding > 0 ? "padding:{$padding}px;" : '';
+
+        return <<<HTML
+            <div style="display:flex;align-items:center;gap:12px;min-height:{$height}px;">
+                <img src="{$src}" alt="{$alt}" style="width:{$width}px;height:{$height}px;object-fit:{$objectFit};border-radius:16px;background:#ffffff;border:1px solid rgba(148,163,184,.35);{$paddingStyle}box-shadow:0 10px 24px rgba(15,23,42,.08);">
+            </div>
+        HTML;
     }
 }
