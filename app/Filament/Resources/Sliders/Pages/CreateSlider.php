@@ -3,17 +3,9 @@
 namespace App\Filament\Resources\Sliders\Pages;
 
 use App\Filament\Resources\Sliders\SliderResource;
-use Filament\Resources\Pages\Page;
+use Filament\Resources\Pages\CreateRecord;
 
-class CreateSlider extends Page
+class CreateSlider extends CreateRecord
 {
     protected static string $resource = SliderResource::class;
-    
-    // Memanggil custom form HTML murni buatan Anda
-    protected string $view = 'filament.resources.sliders.pages.create-slider';
-
-    public function getTitle(): string
-    {
-        return 'Create Slider';
-    }
 }
