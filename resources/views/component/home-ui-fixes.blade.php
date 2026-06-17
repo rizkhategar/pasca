@@ -1,5 +1,5 @@
 <style>
-    /* Garis hover berita dibuat satu garis utuh, bukan border card yang terlihat terpotong. */
+    /* Garis hover berita dibuat satu garis utuh, bukan border card yang terlihat terpotong/dobel. */
     .info-section .news-item,
     .news-area .news-item,
     .news-list .news-item {
@@ -20,7 +20,7 @@
     .news-area .news-item-link:hover,
     .news-list .news-item-link:hover {
         border-color: rgba(7, 43, 87, .10) !important;
-        box-shadow: 0 18px 40px rgba(15, 23, 42, .10), 0 -4px 0 #f7b500 !important;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, .10) !important;
     }
 
     .info-section .news-item-link::before,
@@ -139,12 +139,65 @@
         }
     }
 
+    @media (max-width: 768px) {
+        .hero {
+            min-height: 330px !important;
+        }
+
+        .hero .hero-content {
+            min-height: 330px !important;
+            padding-top: 10px !important;
+            padding-bottom: 28px !important;
+        }
+
+        .hero .hero-text {
+            padding: 24px 42px 36px !important;
+        }
+
+        .hero .hero-title {
+            margin-bottom: 8px !important;
+            line-height: 1.22 !important;
+        }
+
+        .hero .hero-subtitle {
+            margin-bottom: 12px !important;
+            line-height: 1.35 !important;
+        }
+
+        .hero .btn-primary {
+            margin-top: 0 !important;
+            height: 43px !important;
+        }
+    }
+
     @media (max-width: 420px) {
         .container,
         .footer .container,
         .info-section .container {
             width: min(100% - 24px, 1120px) !important;
             max-width: calc(100vw - 24px) !important;
+        }
+
+        .hero {
+            min-height: 325px !important;
+        }
+
+        .hero .hero-content {
+            min-height: 325px !important;
+            padding-top: 8px !important;
+            padding-bottom: 26px !important;
+        }
+
+        .hero .hero-text {
+            padding: 22px 36px 34px !important;
+        }
+
+        .hero .hero-title {
+            margin-bottom: 7px !important;
+        }
+
+        .hero .hero-subtitle {
+            margin-bottom: 11px !important;
         }
 
         .service-grid {
@@ -170,6 +223,10 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.hero .btn-primary').forEach((button) => {
+            button.setAttribute('href', "{{ route('contact.index') }}");
+        });
+
         const serviceCards = Array.from(document.querySelectorAll('.service-grid .service-card'));
         let learningIndex = 0;
 
@@ -179,10 +236,10 @@
             let url = null;
             let label = null;
 
-            if (rawLabel.includes('e-learning')) {
+            if (rawLabel.includes('e-learning') || rawLabel.includes('siakad') || rawLabel.includes('sipolin')) {
                 learningIndex += 1;
 
-                if (learningIndex === 1) {
+                if (rawLabel.includes('siakad') || learningIndex === 1) {
                     label = 'SIAKAD';
                     url = 'https://siakad.unw.ac.id';
                 } else {
