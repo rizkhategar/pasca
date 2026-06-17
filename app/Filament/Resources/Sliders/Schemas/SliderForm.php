@@ -2,11 +2,14 @@
 
 namespace App\Filament\Resources\Sliders\Schemas;
 
+use App\Support\FilamentImageUpload;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class SliderForm
 {
@@ -45,6 +48,12 @@ class SliderForm
                             ->loadingIndicatorPosition('right')
                             ->removeUploadedFileButtonPosition('right')
                             ->uploadProgressIndicatorPosition('right')
+                            ->saveUploadedFileUsing(
+                                fn (TemporaryUploadedFile $file): string => FilamentImageUpload::saveToPublicDisk($file, 'sliders')
+                            )
+                            ->deleteUploadedFileUsing(
+                                fn (string $file): bool => Storage::disk('public')->delete($file)
+                            )
                             ->helperText('Gunakan gambar JPG, PNG, atau WEBP. Maksimal 8MB.'),
 
                         TextInput::make('sort_order')
