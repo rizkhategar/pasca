@@ -5,10 +5,8 @@ use App\Http\Controllers\AcademicController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\OrganizationStructureController;
-use App\Http\Controllers\OrganizationStructureUploadController;
 use App\Http\Controllers\RisetController;
 use App\Http\Controllers\ScrapController;
-use App\Http\Controllers\SliderUploadController;
 use App\Http\Controllers\VisiMisiController;
 use App\Models\AboutPascasarjana;
 use App\Models\OrganizationStructure;
@@ -95,13 +93,5 @@ Route::get('/riset-dosen', [RisetController::class, 'listDosen'])->name('riset.d
 Route::get('/riset-dosen/detail/{sinta_id}', [RisetController::class, 'detailDosen'])->name('riset.detail');
 
 Route::middleware(['web', 'auth'])->group(function () {
-    Route::get('/admin/organization-structures/custom-create', [OrganizationStructureUploadController::class, 'create'])->name('admin.organization-structures.create-custom');
-    Route::get('/admin/organization-structures/{organizationStructure}/custom-edit', [OrganizationStructureUploadController::class, 'edit'])->name('admin.organization-structures.edit-custom');
-    Route::post('/admin/organization-structures/upload', [OrganizationStructureUploadController::class, 'store'])->name('admin.organization-structures.store');
-    Route::put('/admin/organization-structures/{organizationStructure}/upload', [OrganizationStructureUploadController::class, 'update'])->name('admin.organization-structures.update');
-    Route::get('/admin/sliders/custom-create', [SliderUploadController::class, 'create'])->name('admin.sliders.create-custom');
-    Route::get('/admin/sliders/{slider}/custom-edit', [SliderUploadController::class, 'edit'])->name('admin.sliders.edit-custom');
-    Route::post('/admin/sliders/upload', [SliderUploadController::class, 'store'])->name('admin.sliders.store');
-    Route::put('/admin/sliders/{slider}/upload', [SliderUploadController::class, 'update'])->name('admin.sliders.update');
     Route::post('/admin/scrap/tambah-dosen-manual', [ScrapController::class, 'tambahDosenManual'])->name('scrap.tambahDosenManual');
 });
