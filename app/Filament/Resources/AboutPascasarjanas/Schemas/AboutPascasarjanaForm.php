@@ -3,15 +3,18 @@
 namespace App\Filament\Resources\AboutPascasarjanas\Schemas;
 
 use App\Support\FilamentImageUpload;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\RichEditor;
-use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\HtmlString;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class AboutPascasarjanaForm
@@ -53,13 +56,35 @@ class AboutPascasarjanaForm
                         Repeater::make('points')
                             ->hiddenLabel()
                             ->schema([
+                                Hidden::make('icon'),
+
                                 Grid::make(4)
                                     ->schema([
-                                        FileUpload::make('icon')
+                                        Placeholder::make('icon_preview')
+                                            ->label('Ikon Saat Ini')
+                                            ->content(function ($get) {
+                                                $path = $get('icon');
+
+                                                if (! $path) {
+                                                    return new HtmlString('<span class="text-gray-500 text-sm">Belum ada ikon.</span>');
+                                                }
+
+                                                $url = asset('storage/' . ltrim((string) $path, '/'));
+
+                                                return new HtmlString(<<<HTML
+                                                    <div style="display:flex;align-items:center;gap:12px;">
+                                                        <img src="{$url}" alt="Ikon saat ini" style="width:58px;height:58px;object-fit:contain;border-radius:14px;background:#ffffff;border:1px solid rgba(148,163,184,.35);padding:8px;">
+                                                    </div>
+                                                HTML);
+                                            })
+                                            ->columnSpan([
+                                                'default' => 4,
+                                                'md' => 1,
+                                            ]),
+
+                                        FileUpload::make('icon_upload')
+                                            ->label('Upload / Ganti Ikon')
                                             ->image()
-                                            ->disk('public')
-                                            ->directory('tentang-icons')
-                                            ->visibility('public')
                                             ->maxSize(2048)
                                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'])
                                             ->fetchFileInformation(false)
@@ -74,14 +99,11 @@ class AboutPascasarjanaForm
                                             ->saveUploadedFileUsing(
                                                 fn (TemporaryUploadedFile $file): string => FilamentImageUpload::saveToPublicDisk($file, 'tentang-icons')
                                             )
-                                            ->deleteUploadedFileUsing(
-                                                fn (string $file): bool => Storage::disk('public')->delete($file)
-                                            )
-                                            ->label('Upload / Ganti Ikon')
                                             ->columnSpan([
                                                 'default' => 4,
                                                 'md' => 1,
                                             ]),
+
                                         Grid::make(1)
                                             ->schema([
                                                 TextInput::make('title')
@@ -95,7 +117,7 @@ class AboutPascasarjanaForm
                                             ])
                                             ->columnSpan([
                                                 'default' => 4,
-                                                'md' => 3,
+                                                'md' => 2,
                                             ]),
                                     ]),
                             ])
@@ -126,13 +148,38 @@ class AboutPascasarjanaForm
                                     ->default('Selamat Datang di Pascasarjana Universitas Ngudi Waluyo')
                                     ->placeholder('Cth: Selamat Datang di...'),
                             ]),
+
+                        Hidden::make('direktur_image'),
+
                         Grid::make(4)
                             ->schema([
-                                FileUpload::make('direktur_image')
+                                Placeholder::make('direktur_image_preview')
+                                    ->label('Foto Direktur Saat Ini')
+                                    ->content(function ($record, $get) {
+                                        $path = $get('direktur_image') ?: $record?->direktur_image;
+
+                                        if (! $path) {
+                                            return new HtmlString('<span class="text-gray-500 text-sm">Belum ada foto direktur.</span>');
+                                        }
+
+                                        $url = $record
+                                            ? route('about-pascasarjanas.director-image', $record) . '?v=' . optional($record->updated_at)->timestamp
+                                            : asset('storage/' . ltrim((string) $path, '/'));
+
+                                        return new HtmlString(<<<HTML
+                                            <div style="display:flex;align-items:center;gap:14px;">
+                                                <img src="{$url}" alt="Foto direktur saat ini" style="width:120px;height:150px;object-fit:cover;border-radius:14px;border:1px solid rgba(148,163,184,.35);">
+                                            </div>
+                                        HTML);
+                                    })
+                                    ->columnSpan([
+                                        'default' => 4,
+                                        'md' => 1,
+                                    ]),
+
+                                FileUpload::make('direktur_image_upload')
+                                    ->label('Upload / Ganti Foto Direktur')
                                     ->image()
-                                    ->disk('public')
-                                    ->directory('direktur-images')
-                                    ->visibility('public')
                                     ->maxSize(3072)
                                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                                     ->fetchFileInformation(false)
@@ -147,14 +194,11 @@ class AboutPascasarjanaForm
                                     ->saveUploadedFileUsing(
                                         fn (TemporaryUploadedFile $file): string => FilamentImageUpload::saveToPublicDisk($file, 'direktur-images')
                                     )
-                                    ->deleteUploadedFileUsing(
-                                        fn (string $file): bool => Storage::disk('public')->delete($file)
-                                    )
-                                    ->label('Upload / Ganti Foto Direktur')
                                     ->columnSpan([
                                         'default' => 4,
                                         'md' => 1,
                                     ]),
+
                                 Grid::make(1)
                                     ->schema([
                                         TextInput::make('direktur_name')
@@ -177,7 +221,7 @@ class AboutPascasarjanaForm
                                     ])
                                     ->columnSpan([
                                         'default' => 4,
-                                        'md' => 3,
+                                        'md' => 2,
                                     ]),
                             ]),
                     ]),
