@@ -8,7 +8,9 @@ use Filament\Forms\Components\Placeholder; // Import Placeholder
 use Filament\Forms\Components\FileUpload;  // Import FileUpload
 use Filament\Schemas\Schema;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use RuntimeException;
 
 class DetailDosenForm
 {
@@ -48,20 +50,21 @@ class DetailDosenForm
                             return new HtmlString('<span class="text-gray-500 text-sm">SINTA ID belum diisi</span>');
                         }
 
-                        $imagePath = public_path("assets/images/{$sintaId}.jpg");
+                        $safeSintaId = Str::of($sintaId)->trim()->replaceMatches('/[^A-Za-z0-9_-]/', '')->toString();
+                        $imagePath = public_path("assets/images/{$safeSintaId}.jpg");
                         
                         // Cek apakah file foto sinta_id.jpg benar-scale ada di folder public
-                        if (file_exists($imagePath)) {
+                        if ($safeSintaId && file_exists($imagePath)) {
                             return new HtmlString("
                                 <div class='flex items-center gap-4 py-2'>
-                                    <img src='/assets/images/{$sintaId}.jpg?v=" . time() . "' 
+                                    <img src='/assets/images/{$safeSintaId}.jpg?v=" . time() . "' 
                                          class='w-32 h-32 rounded-xl object-cover shadow-sm border border-gray-300 dark:border-gray-700' 
                                          alt='Foto Dosen' />
                                 </div>
                             ");
                         }
 
-                        return new HtmlString('<span class="text-danger-600 dark:text-danger-400 text-sm">Foto lokal tidak ditemukan di public/assets/images/' . $sintaId . '.jpg</span>');
+                        return new HtmlString('<span class="text-danger-600 dark:text-danger-400 text-sm">Foto lokal tidak ditemukan di public/assets/images/' . e($safeSintaId ?: $sintaId) . '.jpg</span>');
                     })
                     ->columnSpanFull(),
 
@@ -69,7 +72,12 @@ class DetailDosenForm
                 FileUpload::make('image_upload')
                     ->label('Upload / Ganti Foto Profil (.jpg)')
                     ->image()
-                    ->directory('assets/images')
+                    ->acceptedFileTypes(['image/jpeg', 'image/jpg'])
+                    ->maxSize(2048)
+                    ->fetchFileInformation(false)
+                    ->previewable(false)
+                    ->openable(false)
+                    ->downloadable(false)
                     ->dehydrated(false) // Jangan simpan path string temporary Livewire ke DB
                     ->columnSpanFull()
                     ->visible(fn ($context) => $context !== 'view')
@@ -79,20 +87,38 @@ class DetailDosenForm
                             return null;
                         }
 
+                        $safeSintaId = Str::of($sintaId)->trim()->replaceMatches('/[^A-Za-z0-9_-]/', '')->toString();
+                        if (! $safeSintaId) {
+                            return null;
+                        }
+
                         $targetDirectory = public_path('assets/images');
-                        if (!file_exists($targetDirectory)) {
-                            mkdir($targetDirectory, 0755, true);
+                        if (! is_dir($targetDirectory) && ! mkdir($targetDirectory, 0755, true) && ! is_dir($targetDirectory)) {
+                            throw new RuntimeException('Folder public/assets/images tidak bisa dibuat.');
                         }
 
-                        $filename = "{$sintaId}.jpg";
-                        
-                        // Timpa file lama jika sudah ada
-                        if (file_exists($targetDirectory . '/' . $filename)) {
-                            @unlink($targetDirectory . '/' . $filename);
+                        if (! is_writable($targetDirectory)) {
+                            throw new RuntimeException('Folder public/assets/images tidak bisa ditulis.');
                         }
 
-                        // Pindahkan langsung ke public/assets/images/{sinta_id}.jpg
-                        $file->move($targetDirectory, $filename);
+                        $filename = "{$safeSintaId}.jpg";
+                        $targetPath = $targetDirectory . DIRECTORY_SEPARATOR . $filename;
+                        $temporaryPath = $file->getRealPath();
+
+                        if (! $temporaryPath || ! is_file($temporaryPath)) {
+                            throw new RuntimeException('File temporary upload Livewire tidak ditemukan.');
+                        }
+
+                        $contents = file_get_contents($temporaryPath);
+                        if ($contents === false) {
+                            throw new RuntimeException('File temporary upload Livewire tidak bisa dibaca.');
+                        }
+
+                        if (file_put_contents($targetPath, $contents, LOCK_EX) === false) {
+                            throw new RuntimeException('File foto dosen tidak bisa disimpan ke public/assets/images.');
+                        }
+
+                        @chmod($targetPath, 0644);
 
                         return $filename;
                     }),
