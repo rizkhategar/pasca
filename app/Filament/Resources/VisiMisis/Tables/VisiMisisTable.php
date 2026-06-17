@@ -2,12 +2,12 @@
 
 namespace App\Filament\Resources\VisiMisis\Tables;
 
-use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
 
 class VisiMisisTable
 {
@@ -20,12 +20,12 @@ class VisiMisisTable
                     ->html()
                     ->limit(50)
                     ->weight('bold'),
-                    
+
                 TextColumn::make('misi')
                     ->label('Mission')
                     ->html()
                     ->limit(50),
-                    
+
                 TextColumn::make('updated_at')
                     ->label('Last Updated')
                     ->dateTime('d M Y, H:i')
@@ -38,12 +38,14 @@ class VisiMisisTable
                 EditAction::make()
                     ->label('Edit')
                     ->icon('heroicon-o-pencil-square')
-                    ->button()
+                    ->iconButton()
+                    ->tooltip('Edit')
                     ->color('warning'),
                 DeleteAction::make()
                     ->label('Delete')
                     ->icon('heroicon-o-trash')
-                    ->button()
+                    ->iconButton()
+                    ->tooltip('Delete')
                     ->color('danger'),
             ])
             ->toolbarActions([
