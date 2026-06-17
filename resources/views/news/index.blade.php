@@ -759,22 +759,30 @@
         }
 
         .page-jump button {
+            width: 42px;
             height: 42px;
             border: 0;
             border-radius: 13px;
-            background: var(--primary);
+            background: linear-gradient(135deg, var(--primary), var(--blue));
             color: #fff;
-            font-size: 12px;
-            font-weight: 900;
-            padding: 0 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
             transition: .2s ease;
+            padding: 0;
+            box-shadow: 0 8px 18px rgba(6, 47, 95, .16);
+        }
+
+        .page-jump button i {
+            font-size: 14px;
         }
 
         .page-jump button:hover {
-            background: var(--yellow);
-            color: var(--primary);
+            background: linear-gradient(135deg, var(--blue), var(--blue-light));
+            color: #fff;
             transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(6, 47, 95, .22);
         }
 
         /* ================= STATES ================= */
@@ -1067,7 +1075,8 @@
 
         <div class="hero-wave">
             <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
-                <path d="M0,74 C180,122 384,36 650,62 C930,90 1120,128 1440,44 L1440,120 L0,120 Z" fill="#ffffff"></path>
+                <path d="M0,74 C180,122 384,36 650,62 C930,90 1120,128 1440,44 L1440,120 L0,120 Z" fill="#ffffff">
+                </path>
             </svg>
         </div>
     </section>
@@ -1078,12 +1087,8 @@
                 <div class="news-toolbar">
                     <div class="filter-wrap">
                         <div class="compact-dropdown category-filter" id="categoryDropdown">
-                            <button
-                                class="dropdown-trigger"
-                                type="button"
-                                id="categoryDropdownButton"
-                                aria-label="Pilih Kategori"
-                                aria-expanded="false">
+                            <button class="dropdown-trigger" type="button" id="categoryDropdownButton"
+                                aria-label="Pilih Kategori" aria-expanded="false">
                                 <i class="fas fa-layer-group left-icon"></i>
                                 <span class="selected-text" id="categorySelectedText">Memuat...</span>
                                 <i class="fas fa-chevron-down chevron-icon"></i>
@@ -1093,19 +1098,16 @@
                         </div>
 
                         <div class="compact-dropdown sort-filter" id="sortDropdown">
-                            <button
-                                class="dropdown-trigger"
-                                type="button"
-                                id="sortDropdownButton"
-                                aria-label="Urutkan Berita"
-                                aria-expanded="false">
+                            <button class="dropdown-trigger" type="button" id="sortDropdownButton"
+                                aria-label="Urutkan Berita" aria-expanded="false">
                                 <i class="fas fa-arrow-down-wide-short left-icon"></i>
                                 <span class="selected-text" id="sortSelectedText">Terbaru</span>
                                 <i class="fas fa-chevron-down chevron-icon"></i>
                             </button>
 
                             <div class="dropdown-menu" id="sortDropdownMenu">
-                                <button type="button" class="dropdown-option active" data-value="desc" data-label="Terbaru">
+                                <button type="button" class="dropdown-option active" data-value="desc"
+                                    data-label="Terbaru">
                                     <i class="fas fa-check"></i>
                                     <span>Terbaru</span>
                                 </button>
@@ -1119,17 +1121,9 @@
                     </div>
 
                     <div class="news-search-wrap">
-                        <input
-                            class="search-box"
-                            id="newsSearch"
-                            type="search"
-                            placeholder="Cari berita...">
+                        <input class="search-box" id="newsSearch" type="search" placeholder="Cari berita...">
 
-                        <button
-                            class="search-icon-btn"
-                            id="newsSearchButton"
-                            type="button"
-                            title="Cari Berita"
+                        <button class="search-icon-btn" id="newsSearchButton" type="button" title="Cari Berita"
                             aria-label="Cari berita">
                             <i class="fas fa-magnifying-glass"></i>
                         </button>
@@ -1153,7 +1147,7 @@
     @include('component.footer')
 
     <script>
-        (function () {
+        (function() {
             const API_ORIGIN = 'https://panel-web.unw.ac.id';
 
             const API = {
@@ -1190,14 +1184,14 @@
             const sortText = document.getElementById('sortSelectedText');
 
             function esc(value) {
-                return String(value ?? '').replace(/[&<>'"]/g, function (char) {
+                return String(value ?? '').replace(/[&<>'"]/g, function(char) {
                     return {
                         '&': '&amp;',
                         '<': '&lt;',
                         '>': '&gt;',
                         "'": '&#039;',
                         '"': '&quot;'
-                    }[char];
+                    } [char];
                 });
             }
 
@@ -1257,7 +1251,7 @@
             /* ================= DROPDOWN FIX ================= */
 
             function closeDropdowns(except = null) {
-                [categoryDropdown, sortDropdown].forEach(function (dropdown) {
+                [categoryDropdown, sortDropdown].forEach(function(dropdown) {
                     if (!dropdown) return;
 
                     if (dropdown !== except) {
@@ -1307,7 +1301,7 @@
             function setActiveOption(menu, value) {
                 if (!menu) return;
 
-                menu.querySelectorAll('.dropdown-option').forEach(function (option) {
+                menu.querySelectorAll('.dropdown-option').forEach(function(option) {
                     option.classList.toggle('active', String(option.dataset.value) === String(value));
                 });
             }
@@ -1315,13 +1309,13 @@
             function setupDropdownButton(button, dropdown) {
                 if (!button || !dropdown) return;
 
-                button.addEventListener('pointerdown', function (event) {
+                button.addEventListener('pointerdown', function(event) {
                     event.preventDefault();
                     event.stopPropagation();
                     toggleDropdown(dropdown);
                 });
 
-                button.addEventListener('keydown', function (event) {
+                button.addEventListener('keydown', function(event) {
                     if (event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault();
                         toggleDropdown(dropdown);
@@ -1336,11 +1330,11 @@
             function setupDropdownArea(dropdown) {
                 if (!dropdown) return;
 
-                dropdown.addEventListener('pointerdown', function (event) {
+                dropdown.addEventListener('pointerdown', function(event) {
                     event.stopPropagation();
                 });
 
-                dropdown.addEventListener('click', function (event) {
+                dropdown.addEventListener('click', function(event) {
                     event.stopPropagation();
                 });
             }
@@ -1350,7 +1344,7 @@
             setupDropdownArea(categoryDropdown);
             setupDropdownArea(sortDropdown);
 
-            document.addEventListener('pointerdown', function (event) {
+            document.addEventListener('pointerdown', function(event) {
                 const clickedInsideDropdown = event.target.closest('.compact-dropdown');
 
                 if (!clickedInsideDropdown) {
@@ -1358,13 +1352,13 @@
                 }
             });
 
-            document.addEventListener('keydown', function (event) {
+            document.addEventListener('keydown', function(event) {
                 if (event.key === 'Escape') {
                     closeDropdowns();
                 }
             });
 
-            categoryMenu?.addEventListener('pointerdown', function (event) {
+            categoryMenu?.addEventListener('pointerdown', function(event) {
                 const option = event.target.closest('.dropdown-option');
                 if (!option) return;
 
@@ -1382,7 +1376,7 @@
                 load();
             });
 
-            sortMenu?.addEventListener('pointerdown', function (event) {
+            sortMenu?.addEventListener('pointerdown', function(event) {
                 const option = event.target.closest('.dropdown-option');
                 if (!option) return;
 
@@ -1447,7 +1441,7 @@
                     return;
                 }
 
-                grid.innerHTML = items.map(function (news) {
+                grid.innerHTML = items.map(function(news) {
                     const title = esc(news.title);
                     const url = '/berita/' + encodeURIComponent(news.slug);
                     const imageUrl = img(news.image);
@@ -1455,15 +1449,15 @@
                     const categoryName = esc(news.categoryName);
                     const newsDate = esc(date(news.date));
 
-                    const imageHtml = imageUrl
-                        ? `<div class="news-page-thumb">
+                    const imageHtml = imageUrl ?
+                        `<div class="news-page-thumb">
                                 <img src="${esc(imageUrl)}" alt="${title}">
                                 <div class="news-page-category">
                                     <i class="fas fa-tag"></i>
                                     ${categoryName}
                                 </div>
-                           </div>`
-                        : `<div class="news-page-thumb no-image">
+                           </div>` :
+                        `<div class="news-page-thumb no-image">
                                 <i class="fas fa-newspaper"></i>
                                 <div class="news-page-category">
                                     <i class="fas fa-tag"></i>
@@ -1513,29 +1507,34 @@
                     start = Math.max(1, end - visiblePages + 1);
                 }
 
-                let html = `<button class="page-btn" data-page="${current - 1}" ${current <= 1 ? 'disabled' : ''}>‹</button>`;
+                let html =
+                    `<button class="page-btn" data-page="${current - 1}" ${current <= 1 ? 'disabled' : ''}>‹</button>`;
 
                 for (let page = start; page <= end; page++) {
-                    html += `<button class="page-btn ${page === current ? 'active' : ''}" data-page="${page}">${page}</button>`;
+                    html +=
+                        `<button class="page-btn ${page === current ? 'active' : ''}" data-page="${page}">${page}</button>`;
                 }
 
                 if (end < last) {
-                    html += `<span class="page-dots">...</span><button class="page-btn" data-page="${last}">${last}</button>`;
+                    html +=
+                        `<span class="page-dots">...</span><button class="page-btn" data-page="${last}">${last}</button>`;
                 }
 
                 html += `
                     <button class="page-btn" data-page="${current + 1}" ${current >= last ? 'disabled' : ''}>›</button>
 
                     <div class="page-jump">
-                        <input type="number" min="1" max="${last}" value="${current}" aria-label="Pilih halaman">
-                        <button type="button">Go</button>
+                    <input type="number" min="1" max="${last}" value="${current}" aria-label="Pilih halaman">
+                    <button type="button" aria-label="Cari halaman">
+                      <i class="fas fa-magnifying-glass"></i>
+                    </button>
                     </div>
                 `;
 
                 pagination.innerHTML = html;
 
-                pagination.querySelectorAll('[data-page]').forEach(function (button) {
-                    button.onclick = function () {
+                pagination.querySelectorAll('[data-page]').forEach(function(button) {
+                    button.onclick = function() {
                         const page = Number(button.dataset.page);
 
                         if (page >= 1 && page <= last && page !== current) {
@@ -1559,7 +1558,7 @@
 
                 button?.addEventListener('click', jump);
 
-                input?.addEventListener('keydown', function (event) {
+                input?.addEventListener('keydown', function(event) {
                     if (event.key === 'Enter') {
                         jump();
                     }
@@ -1612,7 +1611,7 @@
                         </button>`
                     ];
 
-                    arr(payload).forEach(function (category) {
+                    arr(payload).forEach(function(category) {
                         categoryOptions.push(`
                             <button
                                 type="button"
@@ -1642,7 +1641,7 @@
                 }
             }
 
-            search.addEventListener('input', function () {
+            search.addEventListener('input', function() {
                 clearTimeout(searchTimer);
 
                 state.q = search.value;
@@ -1651,7 +1650,7 @@
                 searchTimer = setTimeout(load, 400);
             });
 
-            searchButton?.addEventListener('click', function () {
+            searchButton?.addEventListener('click', function() {
                 state.q = search.value;
                 state.page = 1;
 
@@ -1662,10 +1661,10 @@
             loadFilters();
             load();
 
-            window.addEventListener('resize', function () {
+            window.addEventListener('resize', function() {
                 clearTimeout(window.resizeTimer);
 
-                window.resizeTimer = setTimeout(function () {
+                window.resizeTimer = setTimeout(function() {
                     closeDropdowns();
                     renderPages();
                 }, 200);

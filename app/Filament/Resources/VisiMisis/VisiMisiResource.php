@@ -20,9 +20,11 @@ class VisiMisiResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
 
-    protected static ?string $navigationLabel = 'Visi & Misi';
+    protected static ?string $navigationLabel = 'Vision & Mission';
 
-    protected static ?string $pluralModelLabel = 'Visi & Misi';
+    protected static ?string $modelLabel = 'Vision & Mission';
+
+    protected static ?string $pluralModelLabel = 'Vision & Mission';
 
     protected static string|UnitEnum|null $navigationGroup = 'Profil';
 

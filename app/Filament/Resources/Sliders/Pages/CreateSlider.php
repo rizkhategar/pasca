@@ -3,17 +3,38 @@
 namespace App\Filament\Resources\Sliders\Pages;
 
 use App\Filament\Resources\Sliders\SliderResource;
-use Filament\Resources\Pages\Page;
+use Filament\Resources\Pages\CreateRecord;
 
-class CreateSlider extends Page
+class CreateSlider extends CreateRecord
 {
     protected static string $resource = SliderResource::class;
-    
-    // Memanggil custom form HTML murni buatan Anda
-    protected string $view = 'filament.resources.sliders.pages.create-slider';
 
-    public function getTitle(): string
+    protected function mutateFormDataBeforeCreate(array $data): array
     {
-        return 'Create Slider';
+        $data['image_path'] = $this->extractUploadedPath($data['image_path_upload'] ?? null)
+            ?? ($data['image_path'] ?? null);
+
+        unset($data['image_path_upload'], $data['current_image_preview']);
+
+        return $data;
+    }
+
+    private function extractUploadedPath(mixed $value): ?string
+    {
+        if (is_string($value) && $value !== '') {
+            return $value;
+        }
+
+        if (is_array($value)) {
+            foreach (array_reverse($value) as $item) {
+                $path = $this->extractUploadedPath($item);
+
+                if ($path) {
+                    return $path;
+                }
+            }
+        }
+
+        return null;
     }
 }

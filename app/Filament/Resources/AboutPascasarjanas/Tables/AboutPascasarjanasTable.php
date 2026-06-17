@@ -2,12 +2,12 @@
 
 namespace App\Filament\Resources\AboutPascasarjanas\Tables;
 
-use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
 
 class AboutPascasarjanasTable
 {
@@ -18,11 +18,11 @@ class AboutPascasarjanasTable
                 TextColumn::make('subheading')
                     ->label('Sub Judul')
                     ->weight('bold'),
-                    
+
                 TextColumn::make('heading')
                     ->label('Judul Utama')
                     ->limit(40),
-                    
+
                 TextColumn::make('updated_at')
                     ->label('Terakhir Diubah')
                     ->dateTime('d M Y, H:i')
@@ -32,14 +32,25 @@ class AboutPascasarjanasTable
                 //
             ])
             ->recordActions([
-                EditAction::make()->button()->color('primary'),
-                DeleteAction::make()->button()->color('danger'),
+                EditAction::make()
+                    ->label('Edit')
+                    ->icon('heroicon-o-pencil-square')
+                    ->iconButton()
+                    ->tooltip('Edit')
+                    ->color('warning'),
+                DeleteAction::make()
+                    ->label('Delete')
+                    ->icon('heroicon-o-trash')
+                    ->iconButton()
+                    ->tooltip('Delete')
+                    ->color('danger'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->icon('heroicon-o-trash'),
                 ]),
             ])
-            ->paginated(false); // Karena datanya cuma 1
+            ->paginated(false);
     }
 }
