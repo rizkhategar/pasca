@@ -4,7 +4,6 @@ namespace App\Filament\Resources\VisiMisis\Schemas;
 
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\RichEditor;
 
@@ -15,85 +14,103 @@ class VisiMisiForm
         return $schema
             ->columns(1)
             ->components([
-                // ==========================================
-                // BAGIAN 1: VISI & MISI
-                // ==========================================
-                Section::make('Visi & Misi')
-                    ->description('Pengaturan konten Visi dan Misi Pascasarjana.')
+                Section::make('Vision & Mission')
+                    ->description('Manage the Vision and Mission content for the postgraduate profile page.')
                     ->icon('heroicon-o-document-text')
                     ->columnSpanFull()
                     ->schema([
                         RichEditor::make('visi')
                             ->required()
-                            ->label('Visi')
+                            ->label('Vision')
                             ->toolbarButtons([
-                                'bold', 'italic', 'underline', 'bulletList', 'orderedList', 'redo', 'undo'
+                                'bold',
+                                'italic',
+                                'underline',
+                                'bulletList',
+                                'orderedList',
+                                'redo',
+                                'undo',
                             ]),
                         RichEditor::make('misi')
                             ->required()
-                            ->label('Misi')
+                            ->label('Mission')
                             ->toolbarButtons([
-                                'bold', 'italic', 'underline', 'bulletList', 'orderedList', 'redo', 'undo'
+                                'bold',
+                                'italic',
+                                'underline',
+                                'bulletList',
+                                'orderedList',
+                                'redo',
+                                'undo',
                             ]),
                     ]),
 
-                // ==========================================
-                // BAGIAN 2: TUJUAN
-                // ==========================================
-                Section::make('Tujuan')
-                    ->description('Pengaturan judul dan konten Tujuan.')
+                Section::make('Objectives')
+                    ->description('Manage the title and content for the Objectives section.')
                     ->icon('heroicon-o-academic-cap')
                     ->columnSpanFull()
                     ->schema([
                         TextInput::make('judul_tujuan')
                             ->required()
-                            ->default('Tujuan')
-                            ->label('Judul Tujuan'),
+                            ->default('Objectives')
+                            ->label('Objectives Title'),
                         RichEditor::make('tujuan')
                             ->required()
-                            ->label('Konten Tujuan')
+                            ->label('Objectives Content')
                             ->toolbarButtons([
-                                'bold', 'italic', 'underline', 'bulletList', 'orderedList', 'redo', 'undo'
+                                'bold',
+                                'italic',
+                                'underline',
+                                'bulletList',
+                                'orderedList',
+                                'redo',
+                                'undo',
                             ]),
                     ]),
 
-                // ==========================================
-                // BAGIAN 3: TUJUAN BIDANG
-                // ==========================================
-                Section::make('Tujuan Dalam Bidang')
-                    ->description('Pengaturan judul dan konten Tujuan dalam Bidang.')
+                Section::make('Field Objectives')
+                    ->description('Manage the title and content for the Field Objectives section.')
                     ->icon('heroicon-o-briefcase')
                     ->columnSpanFull()
                     ->schema([
                         TextInput::make('judul_tujuan_bidang')
                             ->required()
-                            ->default('Tujuan UNW Dalam Bidang')
-                            ->label('Judul Tujuan Bidang'),
+                            ->default('UNW Field Objectives')
+                            ->label('Field Objectives Title'),
                         RichEditor::make('tujuan_bidang')
                             ->required()
-                            ->label('Konten Tujuan Bidang')
+                            ->label('Field Objectives Content')
                             ->toolbarButtons([
-                                'bold', 'italic', 'underline', 'bulletList', 'orderedList', 'redo', 'undo'
+                                'bold',
+                                'italic',
+                                'underline',
+                                'bulletList',
+                                'orderedList',
+                                'redo',
+                                'undo',
                             ]),
                     ]),
 
-                // ==========================================
-                // BAGIAN 4: SASARAN & TARGET
-                // ==========================================
-                Section::make('Sasaran & Target')
-                    ->description('Pengaturan judul dan konten Sasaran serta Target.')
+                Section::make('Goals & Targets')
+                    ->description('Manage the title and content for the Goals and Targets section.')
                     ->icon('heroicon-o-flag')
                     ->columnSpanFull()
                     ->schema([
                         TextInput::make('judul_sasaran_target')
                             ->required()
-                            ->default('Sasaran dan Target')
-                            ->label('Judul Sasaran & Target'),
+                            ->default('Goals and Targets')
+                            ->label('Goals & Targets Title'),
                         RichEditor::make('sasaran_target')
                             ->required()
-                            ->label('Konten Sasaran & Target')
+                            ->label('Goals & Targets Content')
                             ->toolbarButtons([
-                                'bold', 'italic', 'underline', 'bulletList', 'orderedList', 'redo', 'undo'
+                                'bold',
+                                'italic',
+                                'underline',
+                                'bulletList',
+                                'orderedList',
+                                'redo',
+                                'undo',
                             ]),
                     ]),
             ]);

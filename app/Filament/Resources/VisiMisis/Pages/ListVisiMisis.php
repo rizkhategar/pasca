@@ -3,9 +3,9 @@
 namespace App\Filament\Resources\VisiMisis\Pages;
 
 use App\Filament\Resources\VisiMisis\VisiMisiResource;
+use App\Models\VisiMisi;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
-use App\Models\VisiMisi; // Tambahan untuk memanggil model
 
 class ListVisiMisis extends ListRecords
 {
@@ -15,7 +15,8 @@ class ListVisiMisis extends ListRecords
     {
         return [
             CreateAction::make()
-                // Tombol akan disembunyikan (hidden) jika jumlah data VisiMisi lebih dari 0
+                ->label('Create Vision & Mission')
+                ->icon('heroicon-o-plus')
                 ->hidden(fn () => VisiMisi::count() > 0),
         ];
     }

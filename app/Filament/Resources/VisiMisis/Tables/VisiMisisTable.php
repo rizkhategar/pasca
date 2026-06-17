@@ -16,18 +16,18 @@ class VisiMisisTable
         return $table
             ->columns([
                 TextColumn::make('visi')
-                    ->label('Visi')
+                    ->label('Vision')
                     ->html()
                     ->limit(50)
                     ->weight('bold'),
                     
                 TextColumn::make('misi')
-                    ->label('Misi')
+                    ->label('Mission')
                     ->html()
                     ->limit(50),
                     
                 TextColumn::make('updated_at')
-                    ->label('Terakhir Diubah')
+                    ->label('Last Updated')
                     ->dateTime('d M Y, H:i')
                     ->sortable(),
             ])
@@ -35,14 +35,23 @@ class VisiMisisTable
                 //
             ])
             ->recordActions([
-                EditAction::make()->button()->color('primary'),
-                DeleteAction::make()->button()->color('danger'),
+                EditAction::make()
+                    ->label('Edit')
+                    ->icon('heroicon-o-pencil-square')
+                    ->button()
+                    ->color('warning'),
+                DeleteAction::make()
+                    ->label('Delete')
+                    ->icon('heroicon-o-trash')
+                    ->button()
+                    ->color('danger'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->icon('heroicon-o-trash'),
                 ]),
             ])
-            ->paginated(false); // Karena datanya hanya 1
+            ->paginated(false);
     }
 }
