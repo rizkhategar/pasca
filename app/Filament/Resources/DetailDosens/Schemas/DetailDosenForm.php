@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\DetailDosens\Schemas;
 
+use App\Support\FilamentImageUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Placeholder; // Import Placeholder
@@ -10,7 +11,6 @@ use Filament\Schemas\Schema;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
-use RuntimeException;
 
 class DetailDosenForm
 {
@@ -92,35 +92,7 @@ class DetailDosenForm
                             return null;
                         }
 
-                        $targetDirectory = public_path('assets/images');
-                        if (! is_dir($targetDirectory) && ! mkdir($targetDirectory, 0755, true) && ! is_dir($targetDirectory)) {
-                            throw new RuntimeException('Folder public/assets/images tidak bisa dibuat.');
-                        }
-
-                        if (! is_writable($targetDirectory)) {
-                            throw new RuntimeException('Folder public/assets/images tidak bisa ditulis.');
-                        }
-
-                        $filename = "{$safeSintaId}.jpg";
-                        $targetPath = $targetDirectory . DIRECTORY_SEPARATOR . $filename;
-                        $temporaryPath = $file->getRealPath();
-
-                        if (! $temporaryPath || ! is_file($temporaryPath)) {
-                            throw new RuntimeException('File temporary upload Livewire tidak ditemukan.');
-                        }
-
-                        $contents = file_get_contents($temporaryPath);
-                        if ($contents === false) {
-                            throw new RuntimeException('File temporary upload Livewire tidak bisa dibaca.');
-                        }
-
-                        if (file_put_contents($targetPath, $contents, LOCK_EX) === false) {
-                            throw new RuntimeException('File foto dosen tidak bisa disimpan ke public/assets/images.');
-                        }
-
-                        @chmod($targetPath, 0644);
-
-                        return $filename;
+                        return FilamentImageUpload::saveToPublicPath($file, 'assets/images', "{$safeSintaId}.jpg");
                     }),
 
                 // Teks input URL bawaan SINTA/Scholar tetap dipertahankan untuk referensi data scraping
