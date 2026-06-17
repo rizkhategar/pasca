@@ -439,3 +439,4 @@
 
 @include('component.frontend-enhancements')
 @include('component.typography')
+@include('component.home-ui-fixes')
