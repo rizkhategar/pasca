@@ -14,7 +14,10 @@ class EditAboutPascasarjana extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
+            DeleteAction::make()
+                ->label('Delete')
+                ->icon('heroicon-o-trash')
+                ->color('danger'),
         ];
     }
 
