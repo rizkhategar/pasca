@@ -15,18 +15,14 @@ class ContactsTable
     {
         return $table
             ->columns([
-                TextColumn::make('primary_admin_name')
-                    ->label('Primary Admin')
-                    ->searchable(),
-                TextColumn::make('primary_whatsapp')
-                    ->label('Primary WhatsApp')
-                    ->copyable(),
-                TextColumn::make('secondary_admin_name')
-                    ->label('Secondary Admin')
-                    ->searchable(),
-                TextColumn::make('secondary_whatsapp')
-                    ->label('Secondary WhatsApp')
-                    ->copyable(),
+                TextColumn::make('whatsapp_admins')
+                    ->label('WhatsApp Admins')
+                    ->getStateUsing(function (Contact $record): string {
+                        return collect($record->resolvedWhatsAppAdmins())
+                            ->map(fn (array $admin): string => $admin['name'] . ' — ' . $admin['number'])
+                            ->implode("\n");
+                    })
+                    ->wrap(),
                 TextColumn::make('updated_at')
                     ->label('Updated At')
                     ->dateTime('d M Y H:i')
