@@ -6,13 +6,27 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 use Rap2hpoutre\FastExcel\FastExcel;
-use App\Models\DaftarDosen;
-use App\Models\DetailDosen;
+
+// Import Model-Model Baru yang Sudah Konsisten Berbahasa Inggris
+use App\Models\SintaLecturer;
+use App\Models\SintaLecturerDetail;
+use App\Models\SintaScopusPublication;
+use App\Models\SintaScopusYearlyStat;
+use App\Models\SintaScholarPublication;
+use App\Models\SintaScholarYearlyStat;
+use App\Models\SintaGarudaPublication;
+use App\Models\SintaGarudaYearlyStat;
+use App\Models\SintaBookPublication;
+use App\Models\SintaResearch;
+use App\Models\SintaResearchYearly;
+use App\Models\SintaService;
+use App\Models\SintaServiceYearly;
 
 class ScrapController extends Controller
 {
-    private $pythonExe = 'python'; // Sesuaikan jika perlu, misal: 'C:\\Python310\\python.exe'
+    private $pythonExe = 'python';
 
     /**
      * Menampilkan halaman utama panel dan membaca data untuk dropdown
@@ -20,16 +34,13 @@ class ScrapController extends Controller
     public function index()
     {
         try {
-            // Tembak API Python di Docker untuk membaca data dosen awal
-            // (Gunakan 127.0.0.1 untuk uji coba antar kontainer lokal saat ini)
-            $response = \Illuminate\Support\Facades\Http::get('http://127.0.0.1:8000/api/baca-dosen');
+            $response = Http::get('http://127.0.0.1:8000/api/baca-dosen');
             $dosenList = $response->successful() ? $response->json() : [];
         } catch (\Exception $e) {
             $dosenList = [];
-            \Illuminate\Support\Facades\Log::error("Gagal mengambil data dosen dari API Python: " . $e->getMessage());
+            Log::error("Gagal mengambil data dosen dari API Python: " . $e->getMessage());
         }
 
-        // Sesuaikan nama view di bawah ini dengan nama file Blade dropdown Anda
         return view('filament.resources.detail-dosens.pages.import-detail-dosen', compact('dosenList'));
     }
 
@@ -45,7 +56,6 @@ class ScrapController extends Controller
             $baseUrl = env('PYTHON_SCRAPER_URL', 'http://127.0.0.1:8000');
             $streamUrl = $baseUrl . '/api/scrape-dosen';
 
-            // Inisialisasi cURL POST Stream untuk membaca log scraping real-time
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $streamUrl);
             curl_setopt($ch, CURLOPT_POST, true);
@@ -54,7 +64,6 @@ class ScrapController extends Controller
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
             curl_setopt($ch, CURLOPT_BUFFERSIZE, 256);
 
-            // Callback capturing log terminal secara interaktif
             curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $chunk) {
                 $lines = explode("\n", $chunk);
                 foreach ($lines as $line) {
@@ -84,9 +93,6 @@ class ScrapController extends Controller
             }
             curl_close($ch);
 
-            // =========================================================================
-            // PROSES AMBIL FILE EXCEL & SINKRONISASI KE DATABASE MYSQL (LANGKAH 1)
-            // =========================================================================
             if ($success) {
                 $downloadUrl = $baseUrl . '/api/download-excel-dosen';
 
@@ -94,56 +100,55 @@ class ScrapController extends Controller
                 ob_flush();
                 flush();
 
-                $fileResponse = \Illuminate\Support\Facades\Http::get($downloadUrl);
+                $fileResponse = Http::get($downloadUrl);
 
                 if ($fileResponse->successful() && !isset($fileResponse->json()['error'])) {
                     $excelPath = base_path('scripts/output/dosen_universitas_ngudi_waluyo.xlsx');
 
-                    // Pastikan folder output lokal laptop tersedia
                     if (!file_exists(dirname($excelPath))) {
                         mkdir(dirname($excelPath), 0777, true);
                     }
 
-                    // Ambil binary body dari API dan tulis menjadi file excel fisik di Windows
                     file_put_contents($excelPath, $fileResponse->body());
 
-                    echo "data: " . json_encode(['output' => "<span class='text-success-400 font-bold'>[OK]</span> Berkas Excel berhasil diunduh. Memulai migrasi data ke tabel daftar_dosen...\n"]) . "\n\n";
+                    echo "data: " . json_encode(['output' => "<span class='text-success-400 font-bold'>[OK]</span> Berkas Excel berhasil diunduh. Memulai migrasi data ke tabel sinta_lecturers...\n"]) . "\n\n";
                     ob_flush();
                     flush();
 
                     try {
-                        $rows = (new \Rap2hpoutre\FastExcel\FastExcel)->import($excelPath);
+                        $rows = (new FastExcel)->import($excelPath);
                         $insertedCount = 0;
 
-                        \Illuminate\Support\Facades\DB::beginTransaction();
+                        DB::beginTransaction();
                         foreach ($rows as $row) {
                             $r = array_change_key_case((array)$row, CASE_LOWER);
                             $sintaId = isset($r['sinta id']) ? preg_replace('/[^0-9]/', '', $r['sinta id']) : null;
 
-                            if (empty($sintaId) || empty($r['nama'])) {
+                            if (empty($sintaId) || (empty($r['nama']) && empty($r['name']))) {
                                 continue;
                             }
 
-                            \App\Models\DaftarDosen::updateOrCreate(
+                            // diarahkan ke model SintaLecturer dengan kolom bahasa Inggris baru
+                            SintaLecturer::updateOrCreate(
                                 ['sinta_id' => $sintaId],
                                 [
-                                    'nama'                    => $r['nama'],
-                                    'departemen'              => $r['departemen'] ?? null,
+                                    'name'                    => $r['nama'] ?? $r['name'],
+                                    'department'              => $r['departemen'] ?? $r['department'] ?? null,
                                     'scopus_h_index'          => $r['scopus h-index'] ?? null,
                                     'google_scholar_h_index'  => $r['google scholar h-index'] ?? null,
                                     'sinta_score_3yr'         => isset($r['sinta score 3yr']) ? (int) str_replace('.', '', $r['sinta score 3yr']) : null,
                                     'sinta_score'             => isset($r['sinta score']) ? (int) str_replace('.', '', $r['sinta score']) : null,
                                     'affiliation_score_3yr'   => isset($r['affiliation score 3yr']) ? (int) str_replace('.', '', $r['affiliation score 3yr']) : null,
                                     'affiliation_score'       => isset($r['affiliation score']) ? (int) str_replace('.', '', $r['affiliation score']) : null,
-                                    'profile_url'             => $r['profile url'] ?? null,
+                                    'profile_url'             => $r['profile url'] ?? $r['profile_url'] ?? null,
                                 ]
                             );
                             $insertedCount++;
                         }
-                        \Illuminate\Support\Facades\DB::commit();
-                        echo "data: " . json_encode(['output' => "<span class='text-success-400 font-bold'>[SUKSES] Auto-Import Selesai!</span> Berhasil memperbarui {$insertedCount} dosen ke tabel database MySQL.\n----------------------------------------\n"]) . "\n\n";
+                        DB::commit();
+                        echo "data: " . json_encode(['output' => "<span class='text-success-400 font-bold'>[SUKSES] Auto-Import Selesai!</span> Berhasil memperbarui {$insertedCount} dosen ke tabel database sinta_lecturers.\n----------------------------------------\n"]) . "\n\n";
                     } catch (\Throwable $importError) {
-                        \Illuminate\Support\Facades\DB::rollBack();
+                        DB::rollBack();
                         $errMsg = addslashes($importError->getMessage());
                         echo "data: " . json_encode(['output' => "\n<span class='text-danger-500 font-bold'>[DATABASE ERROR]</span> Gagal menyimpan data: {$errMsg}\n----------------------------------------\n"]) . "\n\n";
                     }
@@ -164,20 +169,20 @@ class ScrapController extends Controller
         ]);
     }
 
-    public function tambahDosenManual(\Illuminate\Http\Request $request)
+    public function tambahDosenManual(Request $request)
     {
+        // Validasi ke nama tabel baru: sinta_lecturers
         $request->validate([
-            'sinta_id' => 'required|unique:daftar_dosen,sinta_id',
+            'sinta_id' => 'required|unique:sinta_lecturers,sinta_id',
             'nama'     => 'required|string|max:255',
         ]);
 
-        // Hilangkan karakter non-angka pada SINTA ID untuk keamanan database
         $cleanSintaId = preg_replace('/[^0-9]/', '', $request->sinta_id);
 
-        DaftarDosen::create([
-            'sinta_id' => $cleanSintaId,
-            'nama'     => $request->nama,
-            'departemen' => 'Pendaftaran Manual',
+        SintaLecturer::create([
+            'sinta_id'   => $cleanSintaId,
+            'name'       => $request->nama,
+            'department' => 'Manual Registration',
         ]);
 
         return response()->json([
@@ -189,7 +194,6 @@ class ScrapController extends Controller
     /**
      * SSE Stream: Menjalankan 6 script detail publikasi + merge (Langkah 2)
      */
-
     public function ambilDetail($sinta_id)
     {
         $sintaId = preg_replace('/[^0-9]/', '', $sinta_id);
@@ -201,7 +205,6 @@ class ScrapController extends Controller
             $baseUrl = env('PYTHON_SCRAPER_URL', 'http://127.0.0.1:8000');
             $streamUrl = $baseUrl . "/api/scrape-detail/{$sintaId}";
 
-            // Inisialisasi cURL POST Stream untuk memantau 6 robot detail + script merge
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $streamUrl);
             curl_setopt($ch, CURLOPT_POST, true);
@@ -239,9 +242,6 @@ class ScrapController extends Controller
             }
             curl_close($ch);
 
-            // =========================================================================
-            // PROSES AMBIL FILE EXCEL MERGED DETAIL & SINKRONISASI (LANGKAH 2)
-            // =========================================================================
             if ($success) {
                 $downloadUrl = $baseUrl . "/api/download-excel-detail/{$sintaId}";
 
@@ -249,7 +249,7 @@ class ScrapController extends Controller
                 ob_flush();
                 flush();
 
-                $fileResponse = \Illuminate\Support\Facades\Http::get($downloadUrl);
+                $fileResponse = Http::get($downloadUrl);
 
                 if ($fileResponse->successful() && !isset($fileResponse->json()['error'])) {
                     $excelPath = base_path("scripts/output/merged_data_{$sintaId}.xlsx");
@@ -258,7 +258,6 @@ class ScrapController extends Controller
                         mkdir(dirname($excelPath), 0777, true);
                     }
 
-                    // Simpan berkas hasil gabungan robot ke folder Windows
                     file_put_contents($excelPath, $fileResponse->body());
 
                     echo "data: " . json_encode(['output' => "<span class='text-success-400 font-bold'>[OK]</span> Berkas merged_data_{$sintaId}.xlsx sukses diunduh ke laptop. Memulai sinkronisasi Database...\n"]) . "\n\n";
@@ -266,10 +265,6 @@ class ScrapController extends Controller
                     flush();
 
                     try {
-                        // 💡 TEMPAT LOGIKA FASTEXCEL SINKRONISASI DETAIL DOSEN ANDA (Books, Garuda, dll.)
-                        // Contoh membaca lembar Sheet Buku:
-                        // $books = (new \Rap2hpoutre\FastExcel\FastExcel)->sheet(1)->import($excelPath);
-
                         echo "data: " . json_encode(['output' => "<span class='text-success-400 font-bold'>[LARAVEL SUCCESS]</span> Seluruh data kualifikasi SINTA Dosen sukses bermigrasi ke MySQL.\n----------------------------------------\n"]) . "\n\n";
                     } catch (\Exception $e) {
                         echo "data: " . json_encode(['output' => "<span class='text-danger-500'>[LARAVEL ERROR]</span> Gagal melakukan update database: " . $e->getMessage() . "\n----------------------------------------\n"]) . "\n\n";
@@ -294,12 +289,12 @@ class ScrapController extends Controller
     /**
      * Import Excel ke Database dengan SSE (Real-time Stream per Sheet)
      */
-    public function importData(\Illuminate\Http\Request $request, $sinta_id)
+    public function importData(Request $request, $sinta_id)
     {
         $jurusan = $request->query('jurusan');
         $sintaId = preg_replace('/[^0-9]/', '', $sinta_id);
 
-        return new \Symfony\Component\HttpFoundation\StreamedResponse(function () use ($sintaId, $jurusan) {
+        return new StreamedResponse(function () use ($sintaId, $jurusan) {
             set_time_limit(0);
             ignore_user_abort(true);
 
@@ -318,7 +313,7 @@ class ScrapController extends Controller
                 ob_flush();
                 flush();
 
-                $sheets = (new \Rap2hpoutre\FastExcel\FastExcel)->importSheets($filePath);
+                $sheets = (new FastExcel)->importSheets($filePath);
 
                 $expectedSheets = [
                     0 => 'DATA_DOSEN',
@@ -367,28 +362,25 @@ class ScrapController extends Controller
                         continue;
                     }
 
-                    \Illuminate\Support\Facades\DB::beginTransaction();
+                    DB::beginTransaction();
                     $insertedCount = 0;
 
                     foreach ($rows as $row) {
                         $r = array_change_key_case((array)$row, CASE_LOWER);
 
                         if ($sheetNameUpper === 'DATA_DOSEN') {
-                            $photoValue = $r['profile photo'] ?? null;
+                            $photoValue = $r['profile photo'] ?? $r['profile_photo'] ?? null;
 
-                            // FITUR UNDUH FOTO PROFIL DENGAN LOG TERMINAL DETAIL
                             if (!empty($photoValue) && filter_var($photoValue, FILTER_VALIDATE_URL)) {
                                 try {
-                                    // 1. Log Menemukan URL
                                     echo "data: " . json_encode(['output' => "<span style='color: #0ea5e9;'>[FOTO]</span> URL foto ditemukan: {$photoValue}\n"]) . "\n\n";
                                     echo "data: " . json_encode(['output' => "<span style='color: #0ea5e9;'>[FOTO]</span> Memulai proses unduh (download)...\n"]) . "\n\n";
                                     ob_flush();
                                     flush();
 
-                                    $response = \Illuminate\Support\Facades\Http::withoutVerifying()->timeout(15)->get($photoValue);
+                                    $response = Http::withoutVerifying()->timeout(15)->get($photoValue);
 
                                     if ($response->successful()) {
-                                        // 2. Log Unduhan Berhasil
                                         echo "data: " . json_encode(['output' => "<span class='text-success-400'>[FOTO]</span> ✔ File foto berhasil diunduh dari server SINTA.\n"]) . "\n\n";
                                         ob_flush();
                                         flush();
@@ -400,16 +392,13 @@ class ScrapController extends Controller
                                             mkdir($destinationFolder, 0755, true);
                                         }
 
-                                        // 3. Log Rename
                                         echo "data: " . json_encode(['output' => "<span style='color: #0ea5e9;'>[FOTO]</span> Melakukan rename file menjadi: <b>{$photoName}</b>\n"]) . "\n\n";
                                         ob_flush();
                                         flush();
 
-                                        // Simpan Gambar
                                         file_put_contents($destinationFolder . '/' . $photoName, $response->body());
                                         $photoValue = $photoName;
 
-                                        // 4. Log Sukses Tersimpan
                                         echo "data: " . json_encode(['output' => "<span class='text-success-400'>[FOTO]</span> ✔ Foto profil berhasil disimpan ke direktori: public/assets/images/{$photoName}\n"]) . "\n\n";
                                     } else {
                                         echo "data: " . json_encode(['output' => "<span class='text-warning-500'>[FOTO - WARN] Gagal mengunduh foto (Status HTTP: " . $response->status() . "). Tetap menggunakan URL asli.</span>\n"]) . "\n\n";
@@ -423,119 +412,138 @@ class ScrapController extends Controller
                                 }
                             }
 
-                            // KODE BARU YANG BENAR (Ganti bagian skor menjadi seperti ini)
-                            \App\Models\DetailDosen::updateOrCreate(['sinta_id' => $sintaId], [
-                                'nama' => $r['nama'] ?? null,
-                                'institusi' => $r['institusi'] ?? $r['afiliasi'] ?? null,
-                                'program_studi' => $r['program studi'] ?? null,
-                                'profile_photo' => $photoValue,
-                                'bidang_minat' => $r['bidang minat'] ?? null,
-
-                                // PEMBERSIHAN TITIK:
+                            // Model Baru: SintaLecturerDetail & Atribut Bahasa Inggris
+                            SintaLecturerDetail::updateOrCreate(['sinta_id' => $sintaId], [
+                                'name'                => $r['nama'] ?? $r['name'] ?? null,
+                                'institution'         => $r['institusi'] ?? $r['institution'] ?? $r['afiliasi'] ?? null,
+                                'study_program'       => $r['program studi'] ?? $r['program_studi'] ?? $r['study_program'] ?? null,
+                                'profile_photo'       => $photoValue,
+                                'research_interests'  => $r['bidang minat'] ?? $r['bidang_minat'] ?? $r['research_interests'] ?? null,
                                 'sinta_score_overall' => isset($r['sinta score overall']) ? (int) str_replace('.', '', $r['sinta score overall']) : 0,
                                 'sinta_score_3yr'     => isset($r['sinta score 3yr']) ? (int) str_replace('.', '', $r['sinta score 3yr']) : 0,
                                 'affil_score'         => isset($r['affil score']) ? (int) str_replace('.', '', $r['affil score']) : 0,
                                 'affil_score_3yr'     => isset($r['affil score 3yr']) ? (int) str_replace('.', '', $r['affil score 3yr']) : 0,
-
-                                'jurusan' => $jurusan,
+                                'department'          => $jurusan, // Parameter kustom tetap terjaga aman
                             ]);
                             $insertedCount++;
+
                         } elseif ($sheetNameUpper === 'SCOPUS_PUBLICATIONS') {
                             if (empty($r['judul']) && empty($r['title'])) continue;
-                            \App\Models\ScopusPublication::updateOrCreate(['sinta_id' => $sintaId, 'judul' => $r['judul'] ?? $r['title']], [
-                                'tahun' => $r['tahun'] ?? $r['year'] ?? null,
-                                'citation' => isset($r['citation']) ? (int)$r['citation'] : (isset($r['sitasi']) ? (int)$r['sitasi'] : 0),
-                                'quartile' => $r['quartile'] ?? null,
-                                'journal' => $r['journal'] ?? $r['jurnal'] ?? null,
-                                'author_order' => $r['author order'] ?? null,
-                                'creator' => $r['creator'] ?? null,
-                                'url_artikel' => $r['url artikel'] ?? null,
-                                'url_journal' => $r['url journal'] ?? null,
+                            SintaScopusPublication::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], [
+                                'year'         => $r['tahun'] ?? $r['year'] ?? null,
+                                'citation'     => isset($r['citation']) ? (int)$r['citation'] : (isset($r['sitasi']) ? (int)$r['sitasi'] : 0),
+                                'quartile'     => $r['quartile'] ?? null,
+                                'journal'      => $r['journal'] ?? $r['jurnal'] ?? null,
+                                'author_order' => $r['author order'] ?? $r['author_order'] ?? null,
+                                'creator'      => $r['creator'] ?? null,
+                                'article_url'  => $r['url artikel'] ?? $r['url_artikel'] ?? $r['article_url'] ?? null,
+                                'journal_url'  => $r['url journal'] ?? $r['url_journal'] ?? $r['journal_url'] ?? null,
                             ]);
                             $insertedCount++;
+
                         } elseif ($sheetNameUpper === 'SCOPUS_YEARLY_STATS') {
                             if (empty($r['tahun']) && empty($r['year'])) continue;
-                            \App\Models\ScopusYearlyStat::updateOrCreate(['sinta_id' => $sintaId, 'tahun' => $r['tahun'] ?? $r['year']], ['jumlah' => isset($r['jumlah']) ? (int)$r['jumlah'] : (isset($r['count']) ? (int)$r['count'] : 0)]);
-                            $insertedCount++;
-                        } elseif ($sheetNameUpper === 'SCHOLAR_PUBLICATIONS') {
-                            if (empty($r['judul']) && empty($r['title'])) continue;
-                            \App\Models\ScholarPublication::updateOrCreate(['sinta_id' => $sintaId, 'judul' => $r['judul'] ?? $r['title']], [
-                                'url_scholar' => $r['url scholar'] ?? null,
-                                'authors' => $r['authors'] ?? $r['penulis'] ?? null,
-                                'source' => $r['source'] ?? $r['sumber'] ?? null,
-                                'tahun' => $r['tahun'] ?? $r['year'] ?? null,
-                                'citation' => isset($r['citation']) ? (int)$r['citation'] : (isset($r['sitasi']) ? (int)$r['sitasi'] : 0),
+                            SintaScopusYearlyStat::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], [
+                                'count' => isset($r['jumlah']) ? (int)$r['jumlah'] : (isset($r['count']) ? (int)$r['count'] : 0)
                             ]);
                             $insertedCount++;
+
+                        } elseif ($sheetNameUpper === 'SCHOLAR_PUBLICATIONS') {
+                            if (empty($r['judul']) && empty($r['title'])) continue;
+                            SintaScholarPublication::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], [
+                                'scholar_url' => $r['url scholar'] ?? $r['url_scholar'] ?? $r['scholar_url'] ?? null,
+                                'authors'     => $r['authors'] ?? $r['penulis'] ?? null,
+                                'source'      => $r['source'] ?? $r['sumber'] ?? null,
+                                'year'        => $r['tahun'] ?? $r['year'] ?? null,
+                                'citation'    => isset($r['citation']) ? (int)$r['citation'] : (isset($r['sitasi']) ? (int)$r['sitasi'] : 0),
+                            ]);
+                            $insertedCount++;
+
                         } elseif ($sheetNameUpper === 'SCHOLAR_YEARLY_STATS') {
                             if (empty($r['tahun']) && empty($r['year'])) continue;
-                            \App\Models\ScholarYearlyStat::updateOrCreate(['sinta_id' => $sintaId, 'tahun' => $r['tahun'] ?? $r['year']], ['publications' => isset($r['publications']) ? (int)$r['publications'] : 0, 'citations' => isset($r['citations']) ? (int)$r['citations'] : 0]);
+                            SintaScholarYearlyStat::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], [
+                                'publications' => isset($r['publications']) ? (int)$r['publications'] : 0, 
+                                'citations'    => isset($r['citations']) ? (int)$r['citations'] : 0
+                            ]);
                             $insertedCount++;
+
                         } elseif ($sheetNameUpper === 'GARUDA_PUBLICATIONS') {
                             if (empty($r['judul']) && empty($r['title'])) continue;
-                            \App\Models\GarudaPublication::updateOrCreate(['sinta_id' => $sintaId, 'judul' => $r['judul'] ?? $r['title']], [
-                                'url_artikel' => $r['url_artikel'] ?? $r['url artikel'] ?? null,
-                                'publisher' => $r['publisher'] ?? $r['penerbit'] ?? null,
-                                'journal' => $r['journal'] ?? $r['jurnal'] ?? null,
-                                'url_journal' => $r['url_journal'] ?? $r['url journal'] ?? null,
-                                'author_order' => $r['author_order'] ?? $r['author order'] ?? null,
-                                'authors' => $r['authors'] ?? $r['penulis'] ?? null,
-                                'tahun' => $r['tahun'] ?? $r['year'] ?? null,
-                                'doi' => $r['doi'] ?? null,
+                            SintaGarudaPublication::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], [
+                                'article_url'   => $r['url_artikel'] ?? $r['url artikel'] ?? $r['article_url'] ?? null,
+                                'publisher'     => $r['publisher'] ?? $r['penerbit'] ?? null,
+                                'journal'       => $r['journal'] ?? $r['jurnal'] ?? null,
+                                'journal_url'   => $r['url_journal'] ?? $r['url journal'] ?? $r['journal_url'] ?? null,
+                                'author_order'  => $r['author_order'] ?? $r['author order'] ?? null,
+                                'authors'       => $r['authors'] ?? $r['penulis'] ?? null,
+                                'year'          => $r['tahun'] ?? $r['year'] ?? null,
+                                'doi'           => $r['doi'] ?? null,
                                 'accreditation' => $r['accreditation'] ?? $r['akreditasi'] ?? null,
                             ]);
                             $insertedCount++;
+
                         } elseif ($sheetNameUpper === 'GARUDA_YEARLY_STATS') {
                             if (empty($r['tahun']) && empty($r['year'])) continue;
-                            \App\Models\GarudaYearlyStat::updateOrCreate(['sinta_id' => $sintaId, 'tahun' => $r['tahun'] ?? $r['year']], ['articles' => isset($r['articles']) ? (int)$r['articles'] : (isset($r['jumlah']) ? (int)$r['jumlah'] : 0)]);
+                            SintaGarudaYearlyStat::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], [
+                                'articles' => isset($r['articles']) ? (int)$r['articles'] : (isset($r['jumlah']) ? (int)$r['jumlah'] : 0)
+                            ]);
                             $insertedCount++;
+
                         } elseif ($sheetNameUpper === 'BOOKS') {
                             if (empty($r['judul']) && empty($r['title'])) continue;
-                            \App\Models\Book::updateOrCreate(['sinta_id' => $sintaId, 'judul' => $r['judul'] ?? $r['title']], [
-                                'kategori' => $r['kategori'] ?? $r['category'] ?? null,
-                                'penulis' => $r['penulis'] ?? $r['authors'] ?? null,
-                                'penerbit' => $r['penerbit'] ?? $r['publisher'] ?? null,
-                                'tahun' => $r['tahun'] ?? $r['year'] ?? null,
-                                'kota' => $r['kota'] ?? $r['city'] ?? null,
-                                'isbn' => $r['isbn'] ?? null,
+                            SintaBookPublication::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], [
+                                'category'  => $r['kategori'] ?? $r['category'] ?? null,
+                                'authors'   => $r['penulis'] ?? $r['authors'] ?? null,
+                                'publisher' => $r['penerbit'] ?? $r['publisher'] ?? null,
+                                'year'      => $r['tahun'] ?? $r['year'] ?? null,
+                                'city'      => $r['kota'] ?? $r['city'] ?? null,
+                                'isbn'      => $r['isbn'] ?? null,
                             ]);
                             $insertedCount++;
+
                         } elseif ($sheetNameUpper === 'RESEARCHES') {
                             if (empty($r['judul']) && empty($r['title'])) continue;
-                            \App\Models\Research::updateOrCreate(['sinta_id' => $sintaId, 'judul' => $r['judul'] ?? $r['title']], [
-                                'leader' => $r['leader'] ?? null,
-                                'skema' => $r['skema'] ?? null,
-                                'personils' => $r['personils'] ?? null,
-                                'tahun' => $r['tahun'] ?? $r['year'] ?? null,
-                                'dana' => $r['dana'] ?? null,
-                                'status' => $r['status'] ?? null,
-                                'source' => $r['source'] ?? null,
+                            SintaResearch::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], [
+                                'leader'    => $r['leader'] ?? null,
+                                'scheme'    => $r['skema'] ?? $r['scheme'] ?? null,
+                                'personnel' => $r['personils'] ?? $r['personnel'] ?? null,
+                                'year'      => $r['tahun'] ?? $r['year'] ?? null,
+                                'funding'   => $r['dana'] ?? $r['funding'] ?? null,
+                                'status'    => $r['status'] ?? null,
+                                'source'    => $r['source'] ?? null,
                             ]);
                             $insertedCount++;
+
                         } elseif ($sheetNameUpper === 'RESEARCH_YEARLY') {
                             if (empty($r['tahun']) && empty($r['year'])) continue;
-                            \App\Models\ResearchYearly::updateOrCreate(['sinta_id' => $sintaId, 'tahun' => $r['tahun'] ?? $r['year']], ['jumlah' => isset($r['jumlah']) ? (int)$r['jumlah'] : 0]);
-                            $insertedCount++;
-                        } elseif ($sheetNameUpper === 'SERVICES') {
-                            if (empty($r['judul']) && empty($r['title'])) continue;
-                            \App\Models\Service::updateOrCreate(['sinta_id' => $sintaId, 'judul' => $r['judul'] ?? $r['title']], [
-                                'leader' => $r['leader'] ?? null,
-                                'skema' => $r['skema'] ?? null,
-                                'personils' => $r['personils'] ?? null,
-                                'tahun' => $r['tahun'] ?? $r['year'] ?? null,
-                                'dana' => $r['dana'] ?? null,
-                                'status' => $r['status'] ?? null,
-                                'source' => $r['source'] ?? null,
+                            SintaResearchYearly::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], [
+                                'count' => isset($r['jumlah']) ? (int)$r['jumlah'] : (isset($r['count']) ? (int)$r['count'] : 0)
                             ]);
                             $insertedCount++;
+
+                        } elseif ($sheetNameUpper === 'SERVICES') {
+                            if (empty($r['judul']) && empty($r['title'])) continue;
+                            SintaService::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], [
+                                'leader'    => $r['leader'] ?? null,
+                                'scheme'    => $r['skema'] ?? $r['scheme'] ?? null,
+                                'personnel' => $r['personils'] ?? $r['personnel'] ?? null,
+                                'year'      => $r['tahun'] ?? $r['year'] ?? null,
+                                'funding'   => $r['dana'] ?? $r['funding'] ?? null,
+                                'status'    => $r['status'] ?? null,
+                                'source'    => $r['source'] ?? null,
+                            ]);
+                            $insertedCount++;
+
                         } elseif ($sheetNameUpper === 'SERVICE_YEARLY') {
                             if (empty($r['tahun']) && empty($r['year'])) continue;
-                            \App\Models\ServiceYearly::updateOrCreate(['sinta_id' => $sintaId, 'tahun' => $r['tahun'] ?? $r['year']], ['jumlah' => isset($r['jumlah']) ? (int)$r['jumlah'] : 0]);
+                            SintaServiceYearly::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], [
+                                'count' => isset($r['jumlah']) ? (int)$r['jumlah'] : (isset($r['count']) ? (int)$r['count'] : 0)
+                            ]);
                             $insertedCount++;
                         }
                     }
 
-                    \Illuminate\Support\Facades\DB::commit();
+                    DB::commit();
 
                     if ($insertedCount > 0) {
                         echo "data: " . json_encode(['output' => "<span class='text-success-400'>[OK] Berhasil menyimpan {$insertedCount} baris ke database.</span>\n"]) . "\n\n";
@@ -551,7 +559,7 @@ class ScrapController extends Controller
                 ob_flush();
                 flush();
             } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\DB::rollBack();
+                DB::rollBack();
                 $errMsg = addslashes($e->getMessage());
                 echo "data: " . json_encode(['output' => "\n<span class='text-danger-500 font-bold'>[ERROR FATAL]</span> {$errMsg} (Baris: {$e->getLine()})\n"]) . "\n\n";
                 echo "data: " . json_encode(['done' => true]) . "\n\n";

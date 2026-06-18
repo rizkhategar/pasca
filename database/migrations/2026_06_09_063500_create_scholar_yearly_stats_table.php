@@ -14,11 +14,20 @@ return new class extends Migration
         Schema::create('sinta_scholar_yearly_stats', function (Blueprint $table) {
             $table->id();
             $table->string('sinta_id');
-            $table->foreign('sinta_id')->references('sinta_id')->on('sinta_detail_dosens')->onDelete('cascade');
-            $table->string('tahun');
+            
+            // Kolom yang ditranslasi ke bahasa Inggris
+            $table->string('year'); // menggantikan tahun
+            
+            // Kolom yang sudah berbahasa Inggris
             $table->integer('publications')->default(0);
             $table->integer('citations')->default(0);
             $table->timestamps();
+
+            // Foreign key constraint ke sinta_lecturers
+            $table->foreign('sinta_id')
+                  ->references('sinta_id')
+                  ->on('sinta_lecturers')
+                  ->onDelete('cascade');
         });
     }
 

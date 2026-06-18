@@ -2,16 +2,32 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Service extends Model
+class SintaService extends Model
 {
-    protected $table = 'sinta_services';
-    protected $guarded = [];
+    use HasFactory;
 
-    public function detailDosen(): BelongsTo
+    protected $table = 'sinta_services';
+
+    protected $fillable = [
+        'sinta_id',
+        'title',
+        'leader',
+        'scheme',
+        'personnel',
+        'year',
+        'funding',
+        'status',
+        'source',
+    ];
+
+    /**
+     * Relasi balik ke dosen pemilik data pengabdian
+     */
+    public function lecturer()
     {
-        return $this->belongsTo(DetailDosen::class, 'sinta_id', 'sinta_id');
+        return $this->belongsTo(SintaLecturer::class, 'sinta_id', 'sinta_id');
     }
 }

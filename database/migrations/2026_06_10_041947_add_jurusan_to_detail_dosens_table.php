@@ -6,18 +6,24 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
-        Schema::table('sinta_detail_dosens', function (Blueprint $table) {
-            // Menambahkan kolom jurusan setelah program_studi
-            $table->string('jurusan')->nullable()->after('program_studi');
+        Schema::table('sinta_lecturer_details', function (Blueprint $table) {
+            // Menambahkan kolom department setelah research_interests
+            $table->string('department')->nullable()->after('research_interests');
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
-        Schema::table('sinta_detail_dosens', function (Blueprint $table) {
-            $table->dropColumn('jurusan');
+        Schema::table('sinta_lecturer_details', function (Blueprint $table) {
+            $table->dropColumn('department');
         });
     }
 };

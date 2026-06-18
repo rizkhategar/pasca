@@ -13,18 +13,29 @@ return new class extends Migration
     {
         Schema::create('sinta_scopus_publications', function (Blueprint $table) {
             $table->id();
-            $table->string('sinta_id');
-            $table->foreign('sinta_id')->references('sinta_id')->on('sinta_detail_dosens')->onDelete('cascade');
-            $table->text('judul')->nullable();
-            $table->string('tahun')->nullable();
-            $table->integer('citation')->default(0);
+            // Menghubungkan ke tabel sinta_lecturers yang baru
+            $table->string('sinta_id'); 
+            
+            // Kolom yang ditranslasi ke bahasa Inggris
+            $table->string('title'); // menggantikan judul
+            $table->string('year')->nullable(); // menggantikan tahun
+            $table->text('article_url')->nullable(); // menggantikan url_artikel
+            $table->text('journal_url')->nullable(); // menggantikan url_journal
+            
+            // Kolom yang sudah berbahasa Inggris
+            $table->integer('citation')->nullable();
             $table->string('quartile')->nullable();
             $table->string('journal')->nullable();
-            $table->string('author_order')->nullable();
+            $table->integer('author_order')->nullable();
             $table->string('creator')->nullable();
-            $table->text('url_artikel')->nullable();
-            $table->text('url_journal')->nullable();
+            
             $table->timestamps();
+
+            // Menambahkan foreign key constraint ke tabel sinta_lecturers
+            $table->foreign('sinta_id')
+                  ->references('sinta_id')
+                  ->on('sinta_lecturers')
+                  ->onDelete('cascade');
         });
     }
 
