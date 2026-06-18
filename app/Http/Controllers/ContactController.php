@@ -37,6 +37,24 @@ class ContactController extends Controller
         $page = str_replace('https://wa.me/6285730339469', $primaryUrl, $page);
         $page = str_replace('+62 857-3033-9469', $primaryNumber, $page);
 
+        $modal = str_replace([
+            'Contact Admin',
+            'Choose WhatsApp Admin',
+            'Close WhatsApp admin options',
+            'Select an admin below to open a direct chat in WhatsApp.',
+            'Choose an admin',
+            'WhatsApp Admin',
+            'Choose WhatsApp Admin',
+        ], [
+            'Admin WhatsApp',
+            'Pilih Admin WhatsApp',
+            'Tutup pilihan admin WhatsApp',
+            'Silakan pilih salah satu admin untuk membuka chat WhatsApp secara langsung.',
+            'Pilih admin',
+            'Admin WhatsApp',
+            'Pilih Admin WhatsApp',
+        ], $modal);
+
         return response(str_replace('</body>', $modal . '</body>', $page));
     }
 }
