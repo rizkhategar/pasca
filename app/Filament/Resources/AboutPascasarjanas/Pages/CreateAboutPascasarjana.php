@@ -11,8 +11,11 @@ class CreateAboutPascasarjana extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['direktur_image'] = $this->extractUploadedPath($data['direktur_image_upload'] ?? null)
-            ?? ($data['direktur_image'] ?? null);
+        $uploadedDirectorImage = $this->extractUploadedPath($data['direktur_image_upload'] ?? null);
+
+        if ($uploadedDirectorImage) {
+            $data['direktur_image'] = $uploadedDirectorImage;
+        }
 
         unset($data['direktur_image_upload']);
 
