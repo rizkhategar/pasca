@@ -39,6 +39,6 @@ class AboutController extends Controller
             }
         }
 
-        return view('about', compact('tentang'));
+        return view('profil.about', compact('tentang'));
     }
 }

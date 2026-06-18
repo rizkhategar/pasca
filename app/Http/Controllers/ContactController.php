@@ -11,28 +11,49 @@ class ContactController extends Controller
     {
         $contact = Contact::query()->latest('updated_at')->latest('id')->first();
 
-        $whatsappAdmins = [
-            [
-                'name' => $contact?->primary_admin_name ?: 'Admin 1',
-                'number' => $contact?->primary_whatsapp ?: '+62 857-3033-9469',
-                'url' => Contact::whatsappUrl($contact?->primary_whatsapp ?: '+62 857-3033-9469'),
-            ],
-            [
-                'name' => $contact?->secondary_admin_name ?: 'Admin 2',
-                'number' => $contact?->secondary_whatsapp ?: '+62 811-2758-575',
-                'url' => Contact::whatsappUrl($contact?->secondary_whatsapp ?: '+62 811-2758-575'),
-            ],
-        ];
+        $whatsappAdmins = $contact?->resolvedWhatsAppAdmins() ?? Contact::fallbackWhatsAppAdmins([
+            'primary_admin_name' => 'Admin 1',
+            'primary_whatsapp' => '+62 857-3033-9469',
+            'secondary_admin_name' => 'Admin 2',
+            'secondary_whatsapp' => '+62 811-2758-575',
+        ]);
+
+        $whatsappAdmins = collect($whatsappAdmins)
+            ->map(fn (array $admin): array => [
+                ...$admin,
+                'url' => $admin['url'] ?? Contact::whatsappUrl($admin['number'] ?? null),
+            ])
+            ->filter(fn (array $admin): bool => ! empty($admin['url']))
+            ->values()
+            ->all();
 
         $viewData = compact('whatsappAdmins');
         $page = view('contact.index', $viewData)->render();
         $modal = view('component.contact-whatsapp-modal', $viewData)->render();
-        $primaryNumber = htmlspecialchars((string) $whatsappAdmins[0]['number'], ENT_QUOTES, 'UTF-8');
-        $primaryUrl = (string) $whatsappAdmins[0]['url'];
+        $primaryNumber = htmlspecialchars((string) data_get($whatsappAdmins, '0.number', '+62 857-3033-9469'), ENT_QUOTES, 'UTF-8');
+        $primaryUrl = (string) data_get($whatsappAdmins, '0.url', 'https://wa.me/6285730339469');
 
-        // Existing Contact markup keeps its layout while values come from Filament settings.
+        // Preserve the current Contact Blade layout while reading live values from Filament settings.
         $page = str_replace('https://wa.me/6285730339469', $primaryUrl, $page);
         $page = str_replace('+62 857-3033-9469', $primaryNumber, $page);
+
+        $modal = str_replace([
+            'Contact Admin',
+            'Choose WhatsApp Admin',
+            'Close WhatsApp admin options',
+            'Select an admin below to open a direct chat in WhatsApp.',
+            'Choose an admin',
+            'WhatsApp Admin',
+            'Choose WhatsApp Admin',
+        ], [
+            'Admin WhatsApp',
+            'Pilih Admin WhatsApp',
+            'Tutup pilihan admin WhatsApp',
+            'Silakan pilih salah satu admin untuk membuka chat WhatsApp secara langsung.',
+            'Pilih admin',
+            'Admin WhatsApp',
+            'Pilih Admin WhatsApp',
+        ], $modal);
 
         return response(str_replace('</body>', $modal . '</body>', $page));
     }
