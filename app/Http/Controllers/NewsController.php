@@ -16,11 +16,16 @@ class NewsController extends Controller
     private const NEWS_API_URL = 'https://panel-web.unw.ac.id/api/news';
     private const NEWS_CACHE_KEY = 'pascasarjana_all_news_api_data_v2';
     private const CACHE_TTL_HOURS = 6;
+    private const PAGE_CACHE_TTL_MINUTES = 10;
     private const API_PER_PAGE = 100;
 
     public function index(): View
     {
-        return view('news.index');
+        // Avoid blocking the first page render. Cached page-one data is injected when available,
+        // while the browser refreshes it in the background through the JSON endpoint.
+        $initialNewsPayload = Cache::get($this->pageCacheKey(1, 9));
+
+        return view('news.index', compact('initialNewsPayload'));
     }
 
     public function search(Request $request): JsonResponse
@@ -30,8 +35,17 @@ class NewsController extends Controller
         $perPage = min(30, max(1, (int) $request->query('paginate', 9)));
         $categoryId = (string) $request->query('category_id', 'all');
         $categorySlug = (string) $request->query('category', 'all');
+        $sort = strtolower((string) $request->query('sort', 'desc')) === 'asc' ? 'asc' : 'desc';
 
         try {
+            // The normal landing state should never wait for every API page to be fetched.
+            // It requests and caches only the page currently viewed, so news appears quickly.
+            if ($query === '' && $categoryId === 'all' && $categorySlug === 'all' && $sort === 'desc') {
+                return response()
+                    ->json($this->getFastNewsPage($page, $perPage))
+                    ->header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+            }
+
             $items = collect($this->getAllNewsFromCache());
 
             if ($categoryId !== 'all' && $categoryId !== '') {
@@ -44,19 +58,21 @@ class NewsController extends Controller
                 $items = $items->filter(fn (array $item): bool => $this->matchesNewsQuery($item, $query));
             }
 
-            $items = $items
-                ->sortByDesc(fn (array $item): string => (string) $this->newsDate($item))
-                ->values();
+            $items = $sort === 'asc'
+                ? $items->sortBy(fn (array $item): string => (string) $this->newsDate($item))->values()
+                : $items->sortByDesc(fn (array $item): string => (string) $this->newsDate($item))->values();
 
             $total = $items->count();
             $lastPage = max(1, (int) ceil($total / $perPage));
             $page = min($page, $lastPage);
             $pagedItems = $items->slice(($page - 1) * $perPage, $perPage)->values();
 
-            return response()->json([
-                'data' => $pagedItems,
-                'meta' => $this->paginationMeta($page, $lastPage, $perPage, $total),
-            ]);
+            return response()
+                ->json([
+                    'data' => $pagedItems,
+                    'meta' => $this->paginationMeta($page, $lastPage, $perPage, $total),
+                ])
+                ->header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
         } catch (\Throwable $exception) {
             return response()->json([
                 'data' => [],
@@ -71,6 +87,54 @@ class NewsController extends Controller
         return view('news.show', [
             'slug' => $slug,
         ]);
+    }
+
+    private function getFastNewsPage(int $page, int $perPage): array
+    {
+        return Cache::remember(
+            $this->pageCacheKey($page, $perPage),
+            now()->addMinutes(self::PAGE_CACHE_TTL_MINUTES),
+            fn (): array => $this->fetchNewsPageFromApi($page, $perPage),
+        );
+    }
+
+    private function fetchNewsPageFromApi(int $page, int $perPage): array
+    {
+        $response = $this->newsApiRequest([
+            'paginate' => $perPage,
+            'page' => $page,
+        ]);
+
+        if (! $response->successful()) {
+            return [
+                'data' => [],
+                'meta' => $this->paginationMeta($page, 1, $perPage, 0),
+            ];
+        }
+
+        $payload = $response->json();
+        $items = $this->extractNewsItems($payload)->values();
+        $lastPage = $this->lastPageFromPayload($payload);
+        $currentPage = max(1, (int) (
+            data_get($payload, 'meta.current_page')
+            ?? data_get($payload, 'data.current_page')
+            ?? $page
+        ));
+        $total = max($items->count(), (int) (
+            data_get($payload, 'meta.total')
+            ?? data_get($payload, 'data.total')
+            ?? 0
+        ));
+
+        return [
+            'data' => $items,
+            'meta' => $this->paginationMeta($currentPage, $lastPage, $perPage, $total),
+        ];
+    }
+
+    private function pageCacheKey(int $page, int $perPage): string
+    {
+        return "pascasarjana_news_page_v1_{$perPage}_{$page}";
     }
 
     private function getAllNewsFromCache(): array
@@ -134,8 +198,9 @@ class NewsController extends Controller
     {
         return Http::withoutVerifying()
             ->acceptJson()
-            ->timeout(15)
-            ->retry(1, 250)
+            ->connectTimeout(5)
+            ->timeout(12)
+            ->retry(1, 200)
             ->get(self::NEWS_API_URL, $params);
     }
 
