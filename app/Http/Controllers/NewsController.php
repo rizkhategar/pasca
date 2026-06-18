@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -19,13 +20,19 @@ class NewsController extends Controller
     private const PAGE_CACHE_TTL_MINUTES = 10;
     private const API_PER_PAGE = 100;
 
-    public function index(): View
+    public function index(): Response
     {
-        // Avoid blocking the first page render. Cached page-one data is injected when available,
-        // while the browser refreshes it in the background through the JSON endpoint.
+        // Do not block the HTML response. Reuse the last cached first page when it exists,
+        // then the page JavaScript still refreshes future requests from the JSON endpoint.
         $initialNewsPayload = Cache::get($this->pageCacheKey(1, 9));
+        $viewData = compact('initialNewsPayload');
+        $page = view('news.index', $viewData)->render();
+        $bootstrap = view('component.news-fast-first-render', $viewData)->render();
 
-        return view('news.index', compact('initialNewsPayload'));
+        $marker = "<script>\n        (function() {";
+        $replacement = $bootstrap . "\n    <script>\n        (function() {";
+
+        return response(str_replace($marker, $replacement, $page));
     }
 
     public function search(Request $request): JsonResponse
@@ -38,8 +45,8 @@ class NewsController extends Controller
         $sort = strtolower((string) $request->query('sort', 'desc')) === 'asc' ? 'asc' : 'desc';
 
         try {
-            // The normal landing state should never wait for every API page to be fetched.
-            // It requests and caches only the page currently viewed, so news appears quickly.
+            // The normal landing state never waits for every remote API page.
+            // It requests and caches only the current page so the first cards appear quickly.
             if ($query === '' && $categoryId === 'all' && $categorySlug === 'all' && $sort === 'desc') {
                 return response()
                     ->json($this->getFastNewsPage($page, $perPage))
