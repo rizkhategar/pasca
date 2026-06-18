@@ -13,17 +13,27 @@ return new class extends Migration
     {
         Schema::create('sinta_services', function (Blueprint $table) {
             $table->id();
+            // Menghubungkan ke tabel sinta_lecturers yang baru
             $table->string('sinta_id');
-            $table->foreign('sinta_id')->references('sinta_id')->on('sinta_detail_dosens')->onDelete('cascade');
-            $table->text('judul')->nullable();
+            
+            // Kolom yang ditranslasi ke bahasa Inggris
+            $table->text('title'); // menggantikan judul
+            $table->string('scheme')->nullable(); // menggantikan skema
+            $table->text('personnel')->nullable(); // menggantikan personils
+            $table->string('year')->nullable(); // menggantikan tahun
+            $table->string('funding')->nullable(); // menggantikan dana
+            
+            // Kolom yang sudah berbahasa Inggris
             $table->string('leader')->nullable();
-            $table->string('skema')->nullable();
-            $table->text('personils')->nullable(); // Tambahkan kolom ini
-            $table->string('tahun')->nullable();
-            $table->string('dana')->nullable();
-            $table->string('status')->nullable();  // Tambahkan kolom ini
-            $table->string('source')->nullable();  // Tambahkan kolom ini
+            $table->string('status')->nullable();
+            $table->string('source')->nullable();
             $table->timestamps();
+
+            // Foreign key constraint ke sinta_lecturers
+            $table->foreign('sinta_id')
+                  ->references('sinta_id')
+                  ->on('sinta_lecturers')
+                  ->onDelete('cascade');
         });
     }
 

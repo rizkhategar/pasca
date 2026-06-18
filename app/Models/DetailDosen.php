@@ -2,96 +2,43 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class DetailDosen extends Model
+class SintaLecturerDetail extends Model
 {
-    protected $table = 'sinta_detail_dosens';
+    use HasFactory;
+
+    // Menegaskan nama tabel baru
+    protected $table = 'sinta_lecturer_details';
+
+    // Mendefinisikan primary key kustom
     protected $primaryKey = 'sinta_id';
+
+    // Konfigurasi primary key non-incrementing string
     public $incrementing = false;
     protected $keyType = 'string';
 
-    protected $guarded = [];
+    // Menyesuaikan dengan properti baru yang berbahasa Inggris
+    protected $fillable = [
+        'sinta_id',
+        'name',
+        'institution',
+        'study_program',
+        'profile_photo',
+        'research_interests',
+        'sinta_score_overall',
+        'sinta_score_3yr',
+        'affil_score',
+        'affil_score_3yr',
+        'department',
+    ];
 
-    // PENTING: Menjamin data anak otomatis terhapus saat DetailDosen dihapus dari list Filament
-    protected static function booted()
+    /**
+     * Relasi ke tabel SintaLecturer (jika diperlukan)
+     */
+    public function lecturer()
     {
-        static::deleting(function ($dosen) {
-
-            $imagePath = public_path("assets/images/{$dosen->sinta_id}.jpg");
-            if (file_exists($imagePath)) {
-                @unlink($imagePath);
-            }
-
-            $dosen->researches()->delete();
-            $dosen->researchYearlies()->delete();
-            $dosen->services()->delete();
-            $dosen->serviceYearlies()->delete();
-            $dosen->books()->delete();
-            $dosen->garudaPublications()->delete();
-            $dosen->garudaYearlyStats()->delete();
-            $dosen->scholarPublications()->delete();
-            $dosen->scholarYearlyStats()->delete();
-            $dosen->scopusPublications()->delete();
-            $dosen->scopusYearlyStats()->delete();
-        });
-    }
-
-    // --- DAFTAR RELASI UTAMA & YEARLY STATS ---
-
-    public function researches(): HasMany
-    {
-        return $this->hasMany(Research::class, 'sinta_id', 'sinta_id');
-    }
-
-    public function researchYearlies(): HasMany
-    {
-        return $this->hasMany(ResearchYearly::class, 'sinta_id', 'sinta_id');
-    }
-
-    public function services(): HasMany
-    {
-        return $this->hasMany(Service::class, 'sinta_id', 'sinta_id');
-    }
-
-    public function serviceYearlies(): HasMany
-    {
-        return $this->hasMany(ServiceYearly::class, 'sinta_id', 'sinta_id');
-    }
-
-    public function books(): HasMany
-    {
-        return $this->hasMany(Book::class, 'sinta_id', 'sinta_id');
-    }
-
-    public function garudaPublications(): HasMany
-    {
-        return $this->hasMany(GarudaPublication::class, 'sinta_id', 'sinta_id');
-    }
-
-    public function garudaYearlyStats(): HasMany
-    {
-        return $this->hasMany(GarudaYearlyStat::class, 'sinta_id', 'sinta_id');
-    }
-
-    public function scholarPublications(): HasMany
-    {
-        return $this->hasMany(ScholarPublication::class, 'sinta_id', 'sinta_id');
-    }
-
-    public function scholarYearlyStats(): HasMany
-    {
-        return $this->hasMany(ScholarYearlyStat::class, 'sinta_id', 'sinta_id');
-    }
-
-    public function scopusPublications(): HasMany
-    {
-        return $this->hasMany(ScopusPublication::class, 'sinta_id', 'sinta_id');
-    }
-
-    public function scopusYearlyStats(): HasMany
-    {
-        return $this->hasMany(ScopusYearlyStat::class, 'sinta_id', 'sinta_id');
+        return $this->belongsTo(SintaLecturer::class, 'sinta_id', 'sinta_id');
     }
 }

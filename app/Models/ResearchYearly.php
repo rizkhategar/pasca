@@ -2,16 +2,26 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ResearchYearly extends Model
+class SintaResearchYearly extends Model
 {
-    protected $table = 'sinta_research_yearlies';
-    protected $guarded = [];
+    use HasFactory;
 
-    public function detailDosen(): BelongsTo
+    protected $table = 'sinta_research_yearlies';
+
+    protected $fillable = [
+        'sinta_id',
+        'year',
+        'count',
+    ];
+
+    /**
+     * Relasi balik ke dosen pemilik data statistik penelitian
+     */
+    public function lecturer()
     {
-        return $this->belongsTo(DetailDosen::class, 'sinta_id', 'sinta_id');
+        return $this->belongsTo(SintaLecturer::class, 'sinta_id', 'sinta_id');
     }
 }

@@ -13,15 +13,26 @@ return new class extends Migration
     {
         Schema::create('sinta_scholar_publications', function (Blueprint $table) {
             $table->id();
+            // Menghubungkan ke tabel sinta_lecturers yang baru
             $table->string('sinta_id');
-            $table->foreign('sinta_id')->references('sinta_id')->on('sinta_detail_dosens')->onDelete('cascade');
-            $table->text('judul')->nullable();
-            $table->text('url_scholar')->nullable();
+            
+            // Kolom yang ditranslasi ke bahasa Inggris
+            $table->string('title'); // menggantikan judul
+            $table->text('scholar_url')->nullable(); // menggantikan url_scholar
+            $table->string('year')->nullable(); // menggantikan tahun
+            
+            // Kolom yang sudah berbahasa Inggris
             $table->text('authors')->nullable();
             $table->string('source')->nullable();
-            $table->string('tahun')->nullable();
-            $table->integer('citation')->default(0);
+            $table->integer('citation')->nullable();
+            
             $table->timestamps();
+
+            // Menambahkan foreign key constraint ke tabel sinta_lecturers
+            $table->foreign('sinta_id')
+                  ->references('sinta_id')
+                  ->on('sinta_lecturers')
+                  ->onDelete('cascade');
         });
     }
 

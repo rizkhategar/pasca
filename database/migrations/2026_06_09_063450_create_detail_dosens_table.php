@@ -6,25 +6,37 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
-        Schema::create('sinta_detail_dosens', function (Blueprint $table) {
-            $table->string('sinta_id')->primary(); // Menjadikan sinta_id sebagai primary key
-            $table->string('nama')->nullable();
-            $table->string('institusi')->nullable();
-            $table->string('program_studi')->nullable();
+        Schema::create('sinta_lecturer_details', function (Blueprint $table) {
+            // Menggunakan sinta_id sebagai Primary Key
+            $table->string('sinta_id')->primary();
+            
+            // Kolom yang ditranslasi ke bahasa Inggris
+            $table->string('name')->nullable();
+            $table->string('institution')->nullable();
+            $table->string('study_program')->nullable();
+            $table->string('research_interests')->nullable(); // menggantikan bidang_minat
+            
+            // Kolom yang sudah berbahasa Inggris
             $table->text('profile_photo')->nullable();
-            $table->string('bidang_minat')->nullable();
             $table->integer('sinta_score_overall')->nullable();
             $table->integer('sinta_score_3yr')->nullable();
             $table->integer('affil_score')->nullable();
             $table->integer('affil_score_3yr')->nullable();
+            
             $table->timestamps();
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
-        Schema::dropIfExists('sinta_detail_dosens');
+        Schema::dropIfExists('sinta_lecturer_details');
     }
 };
