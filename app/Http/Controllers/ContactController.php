@@ -27,6 +27,12 @@ class ContactController extends Controller
         $viewData = compact('whatsappAdmins');
         $page = view('contact.index', $viewData)->render();
         $modal = view('component.contact-whatsapp-modal', $viewData)->render();
+        $primaryNumber = htmlspecialchars((string) $whatsappAdmins[0]['number'], ENT_QUOTES, 'UTF-8');
+        $primaryUrl = (string) $whatsappAdmins[0]['url'];
+
+        // Existing Contact markup keeps its layout while values come from Filament settings.
+        $page = str_replace('https://wa.me/6285730339469', $primaryUrl, $page);
+        $page = str_replace('+62 857-3033-9469', $primaryNumber, $page);
 
         return response(str_replace('</body>', $modal . '</body>', $page));
     }

@@ -4,20 +4,22 @@
             cursor: pointer;
         }
 
+        /* Keep the existing blue Contact card identity. */
         .whatsapp-contact-card .contact-icon {
-            background: linear-gradient(135deg, #25d366, #128c46) !important;
-            box-shadow: 0 12px 28px rgba(37, 211, 102, .28) !important;
+            background: linear-gradient(135deg, #032f5b, #0b5f9f) !important;
+            box-shadow: 0 12px 28px rgba(6, 59, 112, .26) !important;
         }
 
         .whatsapp-contact-card .contact-info a {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            color: #128c46 !important;
+            color: #0f3763 !important;
             font-weight: 800;
         }
 
         .whatsapp-contact-card .contact-info a i {
+            color: #0b5f9f;
             font-size: 12px;
         }
 
@@ -68,7 +70,7 @@
             color: #ffffff;
             background:
                 radial-gradient(circle at 84% 15%, rgba(255, 255, 255, .18), transparent 27%),
-                linear-gradient(135deg, #128c46, #25d366);
+                linear-gradient(135deg, #032f5b, #0b5f9f);
         }
 
         .wa-admin-modal__eyebrow {
@@ -127,9 +129,9 @@
             align-items: center;
             gap: 12px;
             padding: 14px;
-            border: 1px solid rgba(18, 140, 70, .14);
+            border: 1px solid rgba(6, 59, 112, .14);
             border-radius: 16px;
-            background: #f8fffa;
+            background: #f8fbff;
             color: #0f172a;
             text-decoration: none;
             transition: transform .2s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
@@ -137,9 +139,9 @@
 
         .wa-admin-option:hover {
             transform: translateY(-2px);
-            border-color: rgba(37, 211, 102, .58);
-            background: #f0fff5;
-            box-shadow: 0 12px 26px rgba(18, 140, 70, .12);
+            border-color: rgba(11, 95, 159, .52);
+            background: #f0f8ff;
+            box-shadow: 0 12px 26px rgba(6, 59, 112, .12);
         }
 
         .wa-admin-option__icon {
@@ -150,7 +152,7 @@
             justify-content: center;
             border-radius: 14px;
             color: #ffffff;
-            background: linear-gradient(135deg, #25d366, #128c46);
+            background: linear-gradient(135deg, #032f5b, #0b5f9f);
             font-size: 21px;
         }
 
@@ -180,7 +182,7 @@
         }
 
         .wa-admin-option__arrow {
-            color: #128c46;
+            color: #0b5f9f;
             font-size: 14px;
         }
 
@@ -248,6 +250,8 @@
             const modal = document.getElementById('waAdminModal');
             if (!modal) return;
 
+            const primaryAdmin = @json($whatsappAdmins[0] ?? null);
+
             const openModal = function () {
                 modal.classList.add('is-open');
                 modal.setAttribute('aria-hidden', 'false');
@@ -277,8 +281,8 @@
                 const number = card.querySelector('.contact-info a, .contact-info p');
 
                 if (title) title.textContent = 'WhatsApp Admin';
-                if (number) {
-                    number.innerHTML = 'Choose an admin <i class="fas fa-chevron-right"></i>';
+                if (number && primaryAdmin) {
+                    number.innerHTML = `${primaryAdmin.number} <i class="fas fa-chevron-right"></i>`;
                     number.setAttribute('href', '#waAdminModal');
                 }
 
