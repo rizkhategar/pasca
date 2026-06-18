@@ -56,7 +56,7 @@ class AcademicController extends Controller
         if ($response->successful() && $response->json('data')) {
             $program = $response->json('data');
 
-            return view('akademik', compact('program', 'academicProgramsNav'));
+            return view('profil.akademik', compact('program', 'academicProgramsNav'));
         }
 
         abort(404, 'Program Studi tidak ditemukan.');
