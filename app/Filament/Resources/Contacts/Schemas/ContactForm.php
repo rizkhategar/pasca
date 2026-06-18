@@ -25,6 +25,7 @@ class ContactForm
 
                         TextInput::make('primary_whatsapp')
                             ->label('Primary WhatsApp Number')
+                            ->default('+62 857-3033-9469')
                             ->placeholder('+62 857-3033-9469')
                             ->helperText('Use an Indonesian WhatsApp number. Example: +62 857-3033-9469.')
                             ->required()
@@ -39,6 +40,7 @@ class ContactForm
 
                         TextInput::make('secondary_whatsapp')
                             ->label('Secondary WhatsApp Number')
+                            ->default('+62 811-2758-575')
                             ->placeholder('+62 811-2758-575')
                             ->helperText('Use an Indonesian WhatsApp number. Example: +62 811-2758-575.')
                             ->required()
