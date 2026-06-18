@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('visi_misis', function (Blueprint $table) {
+        Schema::table('vision_mission', function (Blueprint $table) {
             $table->string('hero_title')->default('Visi & Misi')->nullable();
             $table->string('hero_subtitle')->default('Pascasarjana Universitas Ngudi Waluyo')->nullable();
             $table->string('hero_image')->nullable();
@@ -17,7 +17,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('visi_misis', function (Blueprint $table) {
+        Schema::table('vision_mission', function (Blueprint $table) {
             $table->dropColumn(['hero_title', 'hero_subtitle', 'hero_image']);
         });
     }

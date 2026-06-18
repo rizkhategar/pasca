@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('visi_misis', function (Blueprint $table) {
+        Schema::table('vision_mission', function (Blueprint $table) {
             $table->string('judul_visi')->default('Visi')->after('id');
             $table->string('judul_misi')->default('Misi')->after('visi');
         });
@@ -16,7 +16,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('visi_misis', function (Blueprint $table) {
+        Schema::table('vision_mission', function (Blueprint $table) {
             $table->dropColumn(['judul_visi', 'judul_misi']);
         });
     }
