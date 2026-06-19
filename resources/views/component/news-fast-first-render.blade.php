@@ -1,3 +1,21 @@
+<script>
+    /*
+     * Header dropdowns use the same generic class as the News filters.
+     * On desktop, do not keep Academic/Profile visually active after a dropdown click.
+     */
+    document.addEventListener('click', function (event) {
+        const trigger = event.target.closest('#siteHeader .nav-link.dropdown-trigger');
+
+        if (!trigger || window.innerWidth <= 992) {
+            return;
+        }
+
+        requestAnimationFrame(function () {
+            trigger.classList.remove('nav-click-active');
+        });
+    }, true);
+</script>
+
 @if (!empty($initialNewsPayload))
     <script>
         /*

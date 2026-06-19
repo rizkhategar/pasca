@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Filament\Resources\VisiMisis\Schemas;
+namespace App\Filament\Resources\VisionMissions\Schemas;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 
-class VisiMisiForm
+class VisionMissionForm
 {
     public static function configure(Schema $schema): Schema
     {

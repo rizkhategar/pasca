@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\VisiMisis\Tables;
+namespace App\Filament\Resources\VisionMissions\Tables;
 
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -9,7 +9,7 @@ use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
-class VisiMisisTable
+class VisionMissionsTable
 {
     public static function configure(Table $table): Table
     {
@@ -20,19 +20,14 @@ class VisiMisisTable
                     ->html()
                     ->limit(50)
                     ->weight('bold'),
-
                 TextColumn::make('misi')
                     ->label('Mission')
                     ->html()
                     ->limit(50),
-
                 TextColumn::make('updated_at')
                     ->label('Last Updated')
                     ->dateTime('d M Y, H:i')
                     ->sortable(),
-            ])
-            ->filters([
-                //
             ])
             ->recordActions([
                 EditAction::make()

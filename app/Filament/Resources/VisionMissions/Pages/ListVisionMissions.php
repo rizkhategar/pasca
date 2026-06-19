@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Filament\Resources\VisiMisis\Pages;
+namespace App\Filament\Resources\VisionMissions\Pages;
 
-use App\Filament\Resources\VisiMisis\VisiMisiResource;
+use App\Filament\Resources\VisionMissions\VisionMissionResource;
 use App\Models\VisiMisi;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
-class ListVisiMisis extends ListRecords
+class ListVisionMissions extends ListRecords
 {
-    protected static string $resource = VisiMisiResource::class;
+    protected static string $resource = VisionMissionResource::class;
 
     protected function getHeaderActions(): array
     {
@@ -17,7 +17,7 @@ class ListVisiMisis extends ListRecords
             CreateAction::make()
                 ->label('Create Vision & Mission')
                 ->icon('heroicon-o-plus')
-                ->hidden(fn () => VisiMisi::count() > 0),
+                ->hidden(fn (): bool => VisiMisi::count() > 0),
         ];
     }
 }
