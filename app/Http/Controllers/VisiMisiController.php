@@ -9,7 +9,8 @@ class VisiMisiController extends Controller
     public function index()
     {
         $visionMission = VisionMission::first();
+        $visiMisi = $visionMission;
 
-        return view('profile.vision-mission', compact('visionMission'));
+        return view('profile.vision-mission', compact('visionMission', 'visiMisi'));
     }
 }
