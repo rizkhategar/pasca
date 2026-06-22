@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 
 class AboutPascasarjana extends Model
 {
-    protected $table = 'tentang_pascasarjanas';
+    protected $table = 'about_postgraduate_programs';
 
     protected $fillable = [
         'hero_image',

@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Storage;
 
 class OrganizationStructure extends Model
 {
-    protected $table = 'struktur_organisasis';
+    protected $table = 'organizational_structure';
 
     protected $fillable = ['title', 'image_path', 'is_active'];
 

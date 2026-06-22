@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('home_hero_slides', function (Blueprint $table) {
+        Schema::create('sliders', function (Blueprint $table) {
             $table->id();
             $table->string('title')->default('Pascasarjana Universitas Ngudi Waluyo');
             $table->string('subtitle')->default('Pascasarjana Universitas Ngudi Waluyo');
@@ -21,6 +21,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('home_hero_slides');
+        Schema::dropIfExists('sliders');
     }
 };

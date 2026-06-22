@@ -8,14 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('home_hero_slides', function (Blueprint $table) {
+        Schema::table('sliders', function (Blueprint $table) {
             $table->unsignedInteger('duration_ms')->default(3000)->after('sort_order');
         });
     }
 
     public function down(): void
     {
-        Schema::table('home_hero_slides', function (Blueprint $table) {
+        Schema::table('sliders', function (Blueprint $table) {
             $table->dropColumn('duration_ms');
         });
     }

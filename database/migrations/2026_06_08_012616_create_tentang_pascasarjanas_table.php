@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('tentang_pascasarjanas', function (Blueprint $table) {
+        Schema::create('about_postgraduate_programs', function (Blueprint $table) {
             $table->id();
             $table->string('subheading')->default('Tentang Kami');
             $table->string('heading');
@@ -20,6 +20,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('tentang_pascasarjanas');
+        Schema::dropIfExists('about_postgraduate_programs');
     }
 };

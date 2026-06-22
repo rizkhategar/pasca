@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Storage;
 
 class Slider extends Model
 {
-    protected $table = 'home_hero_slides';
+    protected $table = 'sliders';
 
     protected $fillable = [
         'title',

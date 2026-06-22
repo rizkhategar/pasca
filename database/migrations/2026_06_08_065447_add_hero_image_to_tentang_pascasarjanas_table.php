@@ -8,14 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('tentang_pascasarjanas', function (Blueprint $table) {
+        Schema::table('about_postgraduate_programs', function (Blueprint $table) {
             $table->string('hero_image')->nullable()->after('id');
         });
     }
 
     public function down(): void
     {
-        Schema::table('tentang_pascasarjanas', function (Blueprint $table) {
+        Schema::table('about_postgraduate_programs', function (Blueprint $table) {
             $table->dropColumn('hero_image');
         });
     }
