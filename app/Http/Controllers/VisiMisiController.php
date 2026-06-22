@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\VisiMisi;
+use App\Models\VisionMission;
 
 class VisiMisiController extends Controller
 {
     public function index()
     {
-        $visiMisi = VisiMisi::first();
+        $visionMission = VisionMission::first();
 
-        return view('profile.vision-mission', compact('visiMisi'));
+        return view('profile.vision-mission', compact('visionMission'));
     }
 }
