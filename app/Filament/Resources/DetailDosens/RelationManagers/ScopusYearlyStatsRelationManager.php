@@ -19,18 +19,22 @@ class ScopusYearlyStatsRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         return $schema->components([
-            TextInput::make('tahun')->required(),
-            TextInput::make('jumlah')->numeric()->label('Jumlah Dokumen')->default(0),
+            // Mengubah 'tahun' menjadi 'year'
+            TextInput::make('year')->label('Tahun')->required(),
+            // Mengubah 'jumlah' menjadi 'count'
+            TextInput::make('count')->numeric()->label('Jumlah Dokumen')->default(0),
         ]);
     }
 
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('tahun')
+            // Mengubah record title attribute menjadi 'year'
+            ->recordTitleAttribute('year')
             ->columns([
-                TextColumn::make('tahun')->sortable(),
-                TextColumn::make('jumlah')->label('Jumlah Dokumen')->sortable(),
+                // Penyesuaian nama kolom ke Bahasa Inggris dengan label tetap Bahasa Indonesia
+                TextColumn::make('year')->label('Tahun')->sortable(),
+                TextColumn::make('count')->label('Jumlah Dokumen')->sortable(),
             ])
             ->actions([
                 ViewAction::make(),

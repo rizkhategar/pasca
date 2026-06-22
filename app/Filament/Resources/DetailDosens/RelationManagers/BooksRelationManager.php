@@ -20,10 +20,15 @@ class BooksRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         return $schema->components([
-            Textarea::make('judul')->required()->columnSpanFull(),
-            TextInput::make('kategori'),
-            TextInput::make('penerbit'),
-            TextInput::make('tahun'),
+            // Mengubah 'judul' menjadi 'title'
+            Textarea::make('title')->label('Judul')->required()->columnSpanFull(),
+            TextInput::make('authors')->label('Penulis'),
+            // Mengubah 'penerbit' menjadi 'publisher'
+            TextInput::make('publisher')->label('Penerbit'),
+            // Mengubah 'tahun' menjadi 'year'
+            TextInput::make('year')->label('Tahun'),
+            // MENAMBAHKAN KOLOM BARU: city
+            TextInput::make('city')->label('Kota'),
             TextInput::make('isbn')->label('ISBN'),
         ]);
     }
@@ -31,12 +36,16 @@ class BooksRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('judul')
+            // Mengubah record title attribute menjadi 'title'
+            ->recordTitleAttribute('title')
             ->columns([
-                TextColumn::make('judul')->wrap()->searchable(),
-                TextColumn::make('kategori'),
-                TextColumn::make('penerbit'),
-                TextColumn::make('tahun'),
+                // Penyesuaian nama kolom ke Bahasa Inggris dengan label tetap Bahasa Indonesia
+                TextColumn::make('title')->label('Judul')->wrap()->searchable(),
+                TextColumn::make('authors')->label('Penulis'),
+                TextColumn::make('publisher')->label('Penerbit'),
+                TextColumn::make('year')->label('Tahun'),
+                // MENAMBAHKAN KOLOM BARU: city
+                TextColumn::make('city')->label('Kota'),
                 TextColumn::make('isbn')->label('ISBN'),
             ])
             ->actions([

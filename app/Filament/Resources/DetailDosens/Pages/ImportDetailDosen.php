@@ -23,7 +23,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
-use App\Models\DaftarDosen;
+use App\Models\SintaLecturer;
+use App\Models\SintaLecturerDetail;
 use Illuminate\Support\HtmlString;
 
 class ImportDetailDosen extends Page implements HasSchemas
@@ -56,9 +57,9 @@ class ImportDetailDosen extends Page implements HasSchemas
             if (!$response->successful()) return [];
 
             return collect($response->json('data', []))
-                ->filter(fn($item) => isset($item['slug'], $item['nama'], $item['unwFakultas']['nama']) && trim($item['unwFakultas']['nama']) === 'Pascasarjana')
+                ->filter(fn($item) => isset($item['id'], $item['nama'], $item['unwFakultas']['nama']) && trim($item['unwFakultas']['nama']) === 'Pascasarjana')
                 ->mapWithKeys(fn($item) => [
-                    $item['slug'] => trim(($item['jenjang'] ?? '') . ' ' . ($item['nama'] ?? ''))
+                    $item['id'] => trim(($item['jenjang'] ?? '') . ' ' . ($item['nama'] ?? ''))
                 ])
                 ->sortBy(fn($value) => $value)
                 ->toArray();
@@ -152,13 +153,20 @@ class ImportDetailDosen extends Page implements HasSchemas
                         const jurusan = this.\$wire.get('data.jurusan');
 
                         if (!sintaId) return alert('SINTA ID tidak ditemukan. Pilih dosen dulu pada langkah 2.');
-                        if (!jurusan) return alert('Silakan pilih Jurusan terlebih dahulu!');
+                        
+                        if (!jurusan || (Array.isArray(jurusan) && jurusan.length === 0)) {
+                            return alert('Silakan pilih sekurang-kurangnya satu Jurusan!');
+                        }
 
-                        appendTerminal('\\n>>> Memulai migrasi streaming data Excel ke MySQL untuk SINTA ID: ' + sintaId + ' (Jurusan: ' + jurusan + ')...\\n');
+                        /* PERBAIKAN PIVOT: Mengubah join(', ') menjadi join(',') murni tanpa spasi 
+                           agar string ID terkirim padat (misal '21,22') untuk diexplode langsung ke tabel pivot */
+                        let jurusanString = Array.isArray(jurusan) ? jurusan.join(',') : jurusan;
+
+                        appendTerminal('\\n>>> Memulai migrasi streaming data Excel ke MySQL untuk SINTA ID: ' + sintaId + ' (ID Pivot Departemen: ' + jurusanString + ')...\\n');
                         toggleLoading(btnImport, true, 'Import ke Database');
 
                         let targetUrl = '{$urlImport}'.replace(':id', sintaId);
-                        targetUrl += '?jurusan=' + encodeURIComponent(jurusan);
+                        targetUrl += '?jurusan=' + encodeURIComponent(jurusanString);
 
                         const eventSource = new EventSource(targetUrl);
                         eventSource.onmessage = (event) => {
@@ -224,7 +232,7 @@ class ImportDetailDosen extends Page implements HasSchemas
                             ->schema([
                                 Select::make('sinta_id')
                                     ->label('Pilih Dosen SINTA')
-                                    ->options(DaftarDosen::orderBy('nama', 'asc')->pluck('nama', 'sinta_id'))
+                                    ->options(SintaLecturer::orderBy('name', 'asc')->pluck('name', 'sinta_id'))
                                     ->searchable()
                                     ->placeholder('-- Silakan Pilih Dosen --')
                                     ->required()
@@ -246,7 +254,7 @@ class ImportDetailDosen extends Page implements HasSchemas
                                                     ->required(),
                                             ])
                                             ->action(function (array $data) {
-                                                $exists = DaftarDosen::where('sinta_id', $data['sinta_id'])->exists();
+                                                $exists = SintaLecturer::where('sinta_id', $data['sinta_id'])->exists();
                                                 if ($exists) {
                                                     Notification::make()
                                                         ->title('Gagal Menyimpan')
@@ -256,9 +264,9 @@ class ImportDetailDosen extends Page implements HasSchemas
                                                     return;
                                                 }
 
-                                                DaftarDosen::create([
+                                                SintaLecturer::create([
                                                     'sinta_id' => $data['sinta_id'],
-                                                    'nama' => $data['nama'],
+                                                    'name'     => $data['nama'],
                                                 ]);
 
                                                 Notification::make()
@@ -288,6 +296,7 @@ class ImportDetailDosen extends Page implements HasSchemas
                                     ->label('Pilih Jurusan')
                                     ->options($jurusans)
                                     ->searchable()
+                                    ->multiple()
                                     ->placeholder('-- Silakan Pilih Jurusan --')
                                     ->required()
                                     ->native(false),
@@ -305,7 +314,7 @@ class ImportDetailDosen extends Page implements HasSchemas
                     ]),
 
                 Placeholder::make('terminal_sync')
-                    ->label('')
+                    ->hiddenLabel()
                     ->content(new HtmlString($terminalHtml)),
             ])
             ->statePath('data');

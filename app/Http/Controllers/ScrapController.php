@@ -289,12 +289,12 @@ class ScrapController extends Controller
     /**
      * Import Excel ke Database dengan SSE (Real-time Stream per Sheet)
      */
-    public function importData(Request $request, $sinta_id)
+    public function importData(\Illuminate\Http\Request $request, $sinta_id)
     {
         $jurusan = $request->query('jurusan');
         $sintaId = preg_replace('/[^0-9]/', '', $sinta_id);
 
-        return new StreamedResponse(function () use ($sintaId, $jurusan) {
+        return new \Symfony\Component\HttpFoundation\StreamedResponse(function () use ($sintaId, $jurusan) {
             set_time_limit(0);
             ignore_user_abort(true);
 
@@ -313,7 +313,7 @@ class ScrapController extends Controller
                 ob_flush();
                 flush();
 
-                $sheets = (new FastExcel)->importSheets($filePath);
+                $sheets = (new \Rap2hpoutre\FastExcel\FastExcel)->importSheets($filePath);
 
                 $expectedSheets = [
                     0 => 'DATA_DOSEN',
@@ -362,7 +362,7 @@ class ScrapController extends Controller
                         continue;
                     }
 
-                    DB::beginTransaction();
+                    \Illuminate\Support\Facades\DB::beginTransaction();
                     $insertedCount = 0;
 
                     foreach ($rows as $row) {
@@ -378,7 +378,7 @@ class ScrapController extends Controller
                                     ob_flush();
                                     flush();
 
-                                    $response = Http::withoutVerifying()->timeout(15)->get($photoValue);
+                                    $response = \Illuminate\Support\Facades\Http::withoutVerifying()->timeout(15)->get($photoValue);
 
                                     if ($response->successful()) {
                                         echo "data: " . json_encode(['output' => "<span class='text-success-400'>[FOTO]</span> ✔ File foto berhasil diunduh dari server SINTA.\n"]) . "\n\n";
@@ -412,8 +412,9 @@ class ScrapController extends Controller
                                 }
                             }
 
-                            // Model Baru: SintaLecturerDetail & Atribut Bahasa Inggris
-                            SintaLecturerDetail::updateOrCreate(['sinta_id' => $sintaId], [
+                            // 1. TETAP UPDATE DATA RAW SCRAPING (SintaLecturerDetail)
+                            // Langkah ini wajib agar basis data skor kualifikasi ilmiah dosen selalu ter-update otomatis
+                            \App\Models\SintaLecturerDetail::updateOrCreate(['sinta_id' => $sintaId], [
                                 'name'                => $r['nama'] ?? $r['name'] ?? null,
                                 'institution'         => $r['institusi'] ?? $r['institution'] ?? $r['afiliasi'] ?? null,
                                 'study_program'       => $r['program studi'] ?? $r['program_studi'] ?? $r['study_program'] ?? null,
@@ -423,13 +424,42 @@ class ScrapController extends Controller
                                 'sinta_score_3yr'     => isset($r['sinta score 3yr']) ? (int) str_replace('.', '', $r['sinta score 3yr']) : 0,
                                 'affil_score'         => isset($r['affil score']) ? (int) str_replace('.', '', $r['affil score']) : 0,
                                 'affil_score_3yr'     => isset($r['affil score 3yr']) ? (int) str_replace('.', '', $r['affil score 3yr']) : 0,
-                                'department'          => $jurusan, // Parameter kustom tetap terjaga aman
                             ]);
-                            $insertedCount++;
 
+                            // 2. AMAN & TERKUNCI: Daftarkan ke tabel PascaLecturer menggunakan firstOrCreate
+                            // Jika sinta_id sudah ada, data profil utama buatan admin TIDAK AKAN PERNAH BERUBAH.
+                            \App\Models\PascaLecturer::firstOrCreate(
+                                ['sinta_id' => $sintaId],
+                                [
+                                    'name'          => $r['nama'] ?? $r['name'] ?? null,
+                                    'institution'   => $r['institusi'] ?? $r['institution'] ?? $r['afiliasi'] ?? null,
+                                    'study_program' => $r['program studi'] ?? $r['program_studi'] ?? $r['study_program'] ?? null,
+                                    'profile_photo' => $photoValue,
+                                ]
+                            );
+
+                            // 3. SINKRONISASI TABEL PIVOT DEPARTEMENT
+                            if (!empty($jurusan)) {
+                                $idDepartements = explode(',', $jurusan);
+
+                                // Bersihkan pivot lama khusus sinta_id ini
+                                \App\Models\Departement::where('sinta_id', $sintaId)->delete();
+
+                                // Masukkan relasi baru
+                                foreach ($idDepartements as $idDept) {
+                                    if (trim($idDept) !== '') {
+                                        \App\Models\Departement::create([
+                                            'sinta_id'       => $sintaId,
+                                            'id_departement' => trim($idDept),
+                                        ]);
+                                    }
+                                }
+                            }
+
+                            $insertedCount++;
                         } elseif ($sheetNameUpper === 'SCOPUS_PUBLICATIONS') {
                             if (empty($r['judul']) && empty($r['title'])) continue;
-                            SintaScopusPublication::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], [
+                            \App\Models\SintaScopusPublication::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], [
                                 'year'         => $r['tahun'] ?? $r['year'] ?? null,
                                 'citation'     => isset($r['citation']) ? (int)$r['citation'] : (isset($r['sitasi']) ? (int)$r['sitasi'] : 0),
                                 'quartile'     => $r['quartile'] ?? null,
@@ -440,17 +470,15 @@ class ScrapController extends Controller
                                 'journal_url'  => $r['url journal'] ?? $r['url_journal'] ?? $r['journal_url'] ?? null,
                             ]);
                             $insertedCount++;
-
                         } elseif ($sheetNameUpper === 'SCOPUS_YEARLY_STATS') {
                             if (empty($r['tahun']) && empty($r['year'])) continue;
-                            SintaScopusYearlyStat::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], [
+                            \App\Models\SintaScopusYearlyStat::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], [
                                 'count' => isset($r['jumlah']) ? (int)$r['jumlah'] : (isset($r['count']) ? (int)$r['count'] : 0)
                             ]);
                             $insertedCount++;
-
                         } elseif ($sheetNameUpper === 'SCHOLAR_PUBLICATIONS') {
                             if (empty($r['judul']) && empty($r['title'])) continue;
-                            SintaScholarPublication::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], [
+                            \App\Models\SintaScholarPublication::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], [
                                 'scholar_url' => $r['url scholar'] ?? $r['url_scholar'] ?? $r['scholar_url'] ?? null,
                                 'authors'     => $r['authors'] ?? $r['penulis'] ?? null,
                                 'source'      => $r['source'] ?? $r['sumber'] ?? null,
@@ -458,18 +486,16 @@ class ScrapController extends Controller
                                 'citation'    => isset($r['citation']) ? (int)$r['citation'] : (isset($r['sitasi']) ? (int)$r['sitasi'] : 0),
                             ]);
                             $insertedCount++;
-
                         } elseif ($sheetNameUpper === 'SCHOLAR_YEARLY_STATS') {
                             if (empty($r['tahun']) && empty($r['year'])) continue;
-                            SintaScholarYearlyStat::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], [
-                                'publications' => isset($r['publications']) ? (int)$r['publications'] : 0, 
+                            \App\Models\SintaScholarYearlyStat::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], [
+                                'publications' => isset($r['publications']) ? (int)$r['publications'] : 0,
                                 'citations'    => isset($r['citations']) ? (int)$r['citations'] : 0
                             ]);
                             $insertedCount++;
-
                         } elseif ($sheetNameUpper === 'GARUDA_PUBLICATIONS') {
                             if (empty($r['judul']) && empty($r['title'])) continue;
-                            SintaGarudaPublication::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], [
+                            \App\Models\SintaGarudaPublication::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], [
                                 'article_url'   => $r['url_artikel'] ?? $r['url artikel'] ?? $r['article_url'] ?? null,
                                 'publisher'     => $r['publisher'] ?? $r['penerbit'] ?? null,
                                 'journal'       => $r['journal'] ?? $r['jurnal'] ?? null,
@@ -481,17 +507,15 @@ class ScrapController extends Controller
                                 'accreditation' => $r['accreditation'] ?? $r['akreditasi'] ?? null,
                             ]);
                             $insertedCount++;
-
                         } elseif ($sheetNameUpper === 'GARUDA_YEARLY_STATS') {
                             if (empty($r['tahun']) && empty($r['year'])) continue;
-                            SintaGarudaYearlyStat::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], [
+                            \App\Models\SintaGarudaYearlyStat::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], [
                                 'articles' => isset($r['articles']) ? (int)$r['articles'] : (isset($r['jumlah']) ? (int)$r['jumlah'] : 0)
                             ]);
                             $insertedCount++;
-
                         } elseif ($sheetNameUpper === 'BOOKS') {
                             if (empty($r['judul']) && empty($r['title'])) continue;
-                            SintaBookPublication::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], [
+                            \App\Models\SintaBookPublication::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], [
                                 'category'  => $r['kategori'] ?? $r['category'] ?? null,
                                 'authors'   => $r['penulis'] ?? $r['authors'] ?? null,
                                 'publisher' => $r['penerbit'] ?? $r['publisher'] ?? null,
@@ -500,10 +524,9 @@ class ScrapController extends Controller
                                 'isbn'      => $r['isbn'] ?? null,
                             ]);
                             $insertedCount++;
-
                         } elseif ($sheetNameUpper === 'RESEARCHES') {
                             if (empty($r['judul']) && empty($r['title'])) continue;
-                            SintaResearch::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], [
+                            \App\Models\SintaResearch::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], [
                                 'leader'    => $r['leader'] ?? null,
                                 'scheme'    => $r['skema'] ?? $r['scheme'] ?? null,
                                 'personnel' => $r['personils'] ?? $r['personnel'] ?? null,
@@ -513,17 +536,15 @@ class ScrapController extends Controller
                                 'source'    => $r['source'] ?? null,
                             ]);
                             $insertedCount++;
-
                         } elseif ($sheetNameUpper === 'RESEARCH_YEARLY') {
                             if (empty($r['tahun']) && empty($r['year'])) continue;
-                            SintaResearchYearly::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], [
+                            \App\Models\SintaResearchYearly::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], [
                                 'count' => isset($r['jumlah']) ? (int)$r['jumlah'] : (isset($r['count']) ? (int)$r['count'] : 0)
                             ]);
                             $insertedCount++;
-
                         } elseif ($sheetNameUpper === 'SERVICES') {
                             if (empty($r['judul']) && empty($r['title'])) continue;
-                            SintaService::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], [
+                            \App\Models\SintaService::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], [
                                 'leader'    => $r['leader'] ?? null,
                                 'scheme'    => $r['skema'] ?? $r['scheme'] ?? null,
                                 'personnel' => $r['personils'] ?? $r['personnel'] ?? null,
@@ -533,17 +554,16 @@ class ScrapController extends Controller
                                 'source'    => $r['source'] ?? null,
                             ]);
                             $insertedCount++;
-
                         } elseif ($sheetNameUpper === 'SERVICE_YEARLY') {
                             if (empty($r['tahun']) && empty($r['year'])) continue;
-                            SintaServiceYearly::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], [
+                            \App\Models\SintaServiceYearly::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], [
                                 'count' => isset($r['jumlah']) ? (int)$r['jumlah'] : (isset($r['count']) ? (int)$r['count'] : 0)
                             ]);
                             $insertedCount++;
                         }
                     }
 
-                    DB::commit();
+                    \Illuminate\Support\Facades\DB::commit();
 
                     if ($insertedCount > 0) {
                         echo "data: " . json_encode(['output' => "<span class='text-success-400'>[OK] Berhasil menyimpan {$insertedCount} baris ke database.</span>\n"]) . "\n\n";
@@ -559,7 +579,7 @@ class ScrapController extends Controller
                 ob_flush();
                 flush();
             } catch (\Throwable $e) {
-                DB::rollBack();
+                \Illuminate\Support\Facades\DB::rollBack();
                 $errMsg = addslashes($e->getMessage());
                 echo "data: " . json_encode(['output' => "\n<span class='text-danger-500 font-bold'>[ERROR FATAL]</span> {$errMsg} (Baris: {$e->getLine()})\n"]) . "\n\n";
                 echo "data: " . json_encode(['done' => true]) . "\n\n";

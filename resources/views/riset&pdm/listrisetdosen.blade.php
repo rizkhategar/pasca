@@ -11,7 +11,8 @@
     <title>Daftar Dosen & Riset - Pascasarjana UNW</title>
 
     <link rel="icon" href="{{ asset('logo_unwnobg.png') }}" type="image/png">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <style>
@@ -602,6 +603,14 @@
             padding-top: 16px;
         }
 
+        .rd-stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: auto;
+            padding-top: 16px;
+        }
+
         .rd-stat {
             min-width: 0;
             padding: 12px 8px;
@@ -711,14 +720,12 @@
             width: 100%;
         }
 
-        /* Menyembunyikan teks info "Showing X to Y of Z results" bawaan Laravel agar terlihat bersih seperti halaman berita */
-        .rd-pagination nav > div:first-child {
+        .rd-pagination nav>div:first-child {
             display: none !important;
         }
 
-        /* Menyelaraskan pembungkus tombol utama pagination */
-        .rd-pagination nav > div:last-child,
-        .rd-pagination nav > div {
+        .rd-pagination nav>div:last-child,
+        .rd-pagination nav>div {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -726,7 +733,6 @@
             flex-wrap: wrap;
         }
 
-        /* Gaya dasar tombol angka & panah (Menyamakan penuh dengan .page-btn) */
         .rd-pagination a,
         .rd-pagination span {
             display: inline-flex !important;
@@ -747,7 +753,6 @@
             box-sizing: border-box !important;
         }
 
-        /* Efek Hover untuk Link Aktif & Gaya untuk Halaman yang Sedang Aktif (Current Page) */
         .rd-pagination a:hover,
         .rd-pagination span[aria-current="page"],
         .rd-pagination .active span,
@@ -759,7 +764,6 @@
             box-shadow: 0 12px 24px rgba(6, 47, 95, .18) !important;
         }
 
-        /* Gaya untuk Tombol yang Dinonaktifkan (Disabled Previous / Next) */
         .rd-pagination span[aria-disabled="true"] {
             opacity: .45 !important;
             cursor: not-allowed !important;
@@ -770,7 +774,6 @@
             border: 1px solid rgba(6, 47, 95, .14) !important;
         }
 
-        /* Merapikan elemen tiga titik (...) pemisah halaman jika ada */
         .rd-pagination span:not([aria-disabled="true"]):not([aria-current="page"]) {
             border: none !important;
             background: transparent !important;
@@ -780,7 +783,6 @@
             cursor: default;
         }
 
-        /* Menyelaraskan ukuran ikon SVG panah bawaan Laravel */
         .rd-pagination svg {
             width: 16px !important;
             height: 16px !important;
@@ -924,7 +926,8 @@
                     <h1 class="rd-title">Daftar Riset Dosen</h1>
 
                     <p class="rd-desc">
-                        Temukan profil dosen, program studi, dan capaian riset berdasarkan data SINTA Pascasarjana Universitas Ngudi Waluyo.
+                        Temukan profil dosen, program studi, dan capaian riset berdasarkan data SINTA Pascasarjana
+                        Universitas Ngudi Waluyo.
                     </p>
 
                     <div class="rd-hero-meta">
@@ -946,7 +949,8 @@
 
             <div class="rd-hero-wave">
                 <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
-                    <path d="M0,74 C180,122 384,36 650,62 C930,90 1120,128 1440,44 L1440,120 L0,120 Z" fill="#ffffff"></path>
+                    <path d="M0,74 C180,122 384,36 650,62 C930,90 1120,128 1440,44 L1440,120 L0,120 Z" fill="#ffffff">
+                    </path>
                 </svg>
             </div>
         </section>
@@ -964,7 +968,8 @@
 
                                 <div>
                                     <h2>Filter Data Dosen</h2>
-                                    <p>Gunakan pencarian atau pilih jurusan untuk menemukan dosen secara lebih cepat.</p>
+                                    <p>Gunakan pencarian atau pilih jurusan untuk menemukan dosen secara lebih cepat.
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -978,14 +983,9 @@
 
                                 <div class="rd-input-wrap">
                                     <i class="fas fa-search"></i>
-                                    <input
-                                        type="text"
-                                        name="search"
-                                        id="searchInput"
-                                        value="{{ request('search') }}"
-                                        placeholder="Cari nama dosen atau ID SINTA..."
-                                        class="rd-input has-icon"
-                                        autocomplete="off">
+                                    <input type="text" name="search" id="searchInput"
+                                        value="{{ request('search') }}" placeholder="Cari nama dosen atau ID SINTA..."
+                                        class="rd-input has-icon" autocomplete="off">
                                 </div>
                             </div>
 
@@ -998,8 +998,8 @@
                                 <select name="jurusan" id="jurusanSelect" class="rd-input">
                                     <option value="">Semua Jurusan</option>
                                     @foreach ($academicProgramsNav as $jurusan)
-                                        <option value="{{ $jurusan['slug'] }}"
-                                            {{ request('jurusan') == $jurusan['slug'] ? 'selected' : '' }}>
+                                        <option value="{{ $jurusan['id'] }}"
+                                            {{ request('jurusan') == $jurusan['id'] ? 'selected' : '' }}>
                                             {{ $jurusan['display_name'] }}
                                         </option>
                                     @endforeach
@@ -1034,10 +1034,15 @@
                             @forelse($dosens as $dosen)
                                 <a href="{{ route('riset.detail', $dosen->sinta_id) }}" class="rd-list-item">
                                     <div class="rd-list-photo">
-                                        @if ($dosen->profile_photo && file_exists(public_path('assets/images/' . $dosen->sinta_id . '.jpg')))
-                                            <img src="{{ asset('assets/images/' . $dosen->sinta_id . '.jpg') }}" alt="{{ $dosen->nama }}" class="rd-photo">
+                                        @if (file_exists(public_path('assets/images/' . $dosen->sinta_id . '_PL.jpg')))
+                                            <img src="{{ asset('assets/images/' . $dosen->sinta_id . '_PL.jpg') }}"
+                                                alt="{{ $dosen->nama }}" class="rd-photo">
+                                        @elseif (file_exists(public_path('assets/images/' . $dosen->sinta_id . '.jpg')))
+                                            <img src="{{ asset('assets/images/' . $dosen->sinta_id . '.jpg') }}"
+                                                alt="{{ $dosen->nama }}" class="rd-photo">
                                         @else
-                                            <img src="{{ asset('assets/images/default-user.png') }}" alt="{{ $dosen->nama }}" class="rd-photo">
+                                            <img src="{{ asset('assets/images/default-user.png') }}"
+                                                alt="{{ $dosen->nama }}" class="rd-photo">
                                         @endif
                                     </div>
 
@@ -1054,22 +1059,26 @@
 
                                         <div class="rd-stats">
                                             <div class="rd-stat">
-                                                <div class="rd-stat-value">{{ number_format($dosen->sinta_score_overall ?? 0) }}</div>
+                                                <div class="rd-stat-value">
+                                                    {{ number_format($dosen->sinta_score_overall ?? 0) }}</div>
                                                 <div class="rd-stat-label">Overall Score</div>
                                             </div>
 
                                             <div class="rd-stat">
-                                                <div class="rd-stat-value">{{ number_format($dosen->sinta_score_3yr ?? 0) }}</div>
+                                                <div class="rd-stat-value">
+                                                    {{ number_format($dosen->sinta_score_3yr ?? 0) }}</div>
                                                 <div class="rd-stat-label">3 Year Score</div>
                                             </div>
 
                                             <div class="rd-stat">
-                                                <div class="rd-stat-value">{{ number_format($dosen->affil_score ?? 0) }}</div>
+                                                <div class="rd-stat-value">
+                                                    {{ number_format($dosen->affil_score ?? 0) }}</div>
                                                 <div class="rd-stat-label">Affil Score</div>
                                             </div>
 
                                             <div class="rd-stat">
-                                                <div class="rd-stat-value">{{ number_format($dosen->affil_score_3yr ?? 0) }}</div>
+                                                <div class="rd-stat-value">
+                                                    {{ number_format($dosen->affil_score_3yr ?? 0) }}</div>
                                                 <div class="rd-stat-label">Affil 3Yr</div>
                                             </div>
                                         </div>
@@ -1105,22 +1114,22 @@
     @include('component.footer')
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('filterForm');
             const searchInput = document.getElementById('searchInput');
             const jurusanSelect = document.getElementById('jurusanSelect');
 
             if (jurusanSelect) {
-                jurusanSelect.addEventListener('change', function () {
+                jurusanSelect.addEventListener('change', function() {
                     form.submit();
                 });
             }
 
             let debounceTimer;
             if (searchInput) {
-                searchInput.addEventListener('input', function () {
+                searchInput.addEventListener('input', function() {
                     clearTimeout(debounceTimer);
-                    debounceTimer = setTimeout(function () {
+                    debounceTimer = setTimeout(function() {
                         form.submit();
                     }, 800);
                 });
@@ -1128,4 +1137,5 @@
         });
     </script>
 </body>
+
 </html>

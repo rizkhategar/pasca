@@ -20,26 +20,40 @@ class ServicesRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         return $schema->components([
-            Textarea::make('judul')->required()->columnSpanFull(),
-            TextInput::make('leader'),
-            TextInput::make('skema'),
-            TextInput::make('tahun'),
-            TextInput::make('dana'),
-            TextInput::make('status'),
+            // Mengubah 'judul' menjadi 'title'
+            Textarea::make('title')->label('Judul')->required()->columnSpanFull(),
+            TextInput::make('leader')->label('Leader'),
+            // Mengubah 'skema' menjadi 'scheme'
+            TextInput::make('scheme')->label('Skema'),
+            // MENAMBAHKAN KOLOM BARU: personnel
+            TextInput::make('personnel')->label('Personil/Anggota'),
+            // Mengubah 'tahun' menjadi 'year'
+            TextInput::make('year')->label('Tahun'),
+            // Mengubah 'dana' menjadi 'funding'
+            TextInput::make('funding')->label('Dana'),
+            TextInput::make('status')->label('Status'),
+            // MENAMBAHKAN KOLOM BARU: source
+            TextInput::make('source')->label('Sumber Dana'),
         ]);
     }
 
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('judul')
+            // Mengubah record title attribute menjadi 'title'
+            ->recordTitleAttribute('title')
             ->columns([
-                TextColumn::make('judul')->wrap()->searchable(),
-                TextColumn::make('leader'),
-                TextColumn::make('skema'),
-                TextColumn::make('tahun'),
-                TextColumn::make('dana'),
-                TextColumn::make('status'),
+                // Penyesuaian nama kolom ke Bahasa Inggris dengan label tetap Bahasa Indonesia
+                TextColumn::make('title')->label('Judul')->wrap()->searchable(),
+                TextColumn::make('leader')->label('Leader'),
+                TextColumn::make('scheme')->label('Skema'),
+                // MENAMBAHKAN KOLOM BARU: personnel
+                TextColumn::make('personnel')->label('Personil/Anggota'),
+                TextColumn::make('year')->label('Tahun')->sortable(),
+                TextColumn::make('funding')->label('Dana'),
+                TextColumn::make('status')->label('Status'),
+                // MENAMBAHKAN KOLOM BARU: source
+                TextColumn::make('source')->label('Sumber Dana'),
             ])
             ->actions([
                 ViewAction::make(),

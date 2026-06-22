@@ -29,11 +29,13 @@ class AcademicController extends Controller
 
             return collect($response->json('data', []))
                 ->filter(function ($item) {
-                    return isset($item['slug'], $item['unwFakultas']['nama'])
+                    return isset($item['id'], $item['slug'], $item['unwFakultas']['nama'])
                         && trim($item['unwFakultas']['nama']) === 'Pascasarjana';
                 })
                 ->map(function ($item) {
                     return [
+                        // MENAMBAHKAN: Mengambil properti ID dari API untuk kebutuhan filter frontend
+                        'id' => $item['id'],
                         'slug' => $item['slug'],
                         'display_name' => trim(($item['jenjang'] ?? '') . ' ' . ($item['nama'] ?? '')),
                     ];

@@ -23,25 +23,72 @@ class DetailDosenForm
                     ->required()
                     ->disabled(fn ($context) => $context === 'edit'),
 
-                TextInput::make('nama')
-                    ->default(null),
-                TextInput::make('institusi')
-                    ->default(null),
-                TextInput::make('program_studi')
-                    ->default(null),
-                
-                Select::make('jurusan')
-                    ->label('Jurusan')
-                    ->options([
-                        'magister keperawatan' => 'Magister Keperawatan',
-                        'magister kesehatan masyarakat' => 'Magister Kesehatan Masyarakat',
-                        'magister manajemen pendidikan' => 'Magister Manajemen Pendidikan',
-                        'magister hukum' => 'Magister Hukum',
-                    ])
-                    ->searchable()
+                // DISESUAIKAN: Mengunci nilai Nama Lengkap agar tidak bisa diedit oleh admin
+                TextInput::make('name')
+                    ->label('Nama Lengkap')
+                    ->disabled()
                     ->default(null),
 
-                // PERBAIKAN 1: Tampilkan Pratinjau Gambar Lokal dari folder public
+                TextInput::make('institution')
+                    ->label('Institusi')
+                    ->default(null),
+
+                TextInput::make('study_program')
+                    ->label('Program Studi')
+                    ->default(null),
+                
+                Select::make('department')
+                    ->label('Jurusan')
+                    ->options(function () {
+                        return \Illuminate\Support\Facades\Cache::remember('academic_programs_select_import', now()->addHours(12), function () {
+                            $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get('https://panel-web.unw.ac.id/api/unw-program-studi');
+                            if (!$response->successful()) return [];
+
+                            return collect($response->json('data', []))
+                                ->filter(fn($item) => isset($item['id'], $item['nama'], $item['unwFakultas']['nama']) && trim($item['unwFakultas']['nama']) === 'Pascasarjana')
+                                ->mapWithKeys(fn($item) => [
+                                    $item['id'] => trim(($item['jenjang'] ?? '') . ' ' . ($item['nama'] ?? ''))
+                                ])
+                                ->sortBy(fn($value) => $value)
+                                ->toArray();
+                        });
+                    })
+                    ->searchable()
+                    ->multiple()
+                    ->afterStateHydrated(function (Select $component, $record) {
+                        if (! $record) return;
+
+                        $associatedDepartments = \Illuminate\Support\Facades\DB::table('departement')
+                            ->where('sinta_id', $record->sinta_id)
+                            ->pluck('id_departement')
+                            ->toArray();
+
+                        $component->state($associatedDepartments);
+                    })
+                    ->saveRelationshipsUsing(function ($record, $state) {
+                        $sintaId = $record->sinta_id;
+                        if (! $sintaId) return;
+
+                        \Illuminate\Support\Facades\DB::table('departement')
+                            ->where('sinta_id', $sintaId)
+                            ->delete();
+
+                        if (!empty($state)) {
+                            $pivotData = collect($state)->map(function ($idDepartement) use ($sintaId) {
+                                return [
+                                    'sinta_id' => $sintaId,
+                                    'id_departement' => $idDepartement,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ];
+                            })->toArray();
+
+                            \Illuminate\Support\Facades\DB::table('departement')->insert($pivotData);
+                        }
+                    })
+                    ->dehydrated(false)
+                    ->default(null),
+
                 Placeholder::make('local_image_preview')
                     ->label('Foto Profil Saat Ini')
                     ->content(function ($record, $get) {
@@ -51,26 +98,38 @@ class DetailDosenForm
                         }
 
                         $safeSintaId = Str::of($sintaId)->trim()->replaceMatches('/[^A-Za-z0-9_-]/', '')->toString();
-                        $imagePath = public_path("assets/images/{$safeSintaId}.jpg");
                         
-                        // Cek apakah file foto sinta_id.jpg benar-scale ada di folder public
-                        if ($safeSintaId && file_exists($imagePath)) {
+                        $customPath = public_path("assets/images/{$safeSintaId}_PL.jpg");
+                        $scrapedPath = public_path("assets/images/{$safeSintaId}.jpg");
+                        
+                        if (file_exists($customPath)) {
+                            return new HtmlString("
+                                <div class='flex items-center gap-4 py-2'>
+                                    <img src='/assets/images/{$safeSintaId}_PL.jpg?v=" . time() . "' 
+                                         class='w-32 h-32 rounded-xl object-cover shadow-sm border border-success-300 dark:border-success-700' 
+                                         alt='Foto Kustom Dosen' />
+                                    <span class='text-xs font-semibold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800/50'>Foto Resmi Admin (_PL)</span>
+                                </div>
+                            ");
+                        }
+                        
+                        if (file_exists($scrapedPath)) {
                             return new HtmlString("
                                 <div class='flex items-center gap-4 py-2'>
                                     <img src='/assets/images/{$safeSintaId}.jpg?v=" . time() . "' 
                                          class='w-32 h-32 rounded-xl object-cover shadow-sm border border-gray-300 dark:border-gray-700' 
-                                         alt='Foto Dosen' />
+                                         alt='Foto Bawaan SINTA' />
+                                    <span class='text-xs font-semibold px-2.5 py-1 rounded-md bg-gray-50 text-gray-600 border border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700'>Foto Bawaan Scraping SINTA</span>
                                 </div>
                             ");
                         }
 
-                        return new HtmlString('<span class="text-danger-600 dark:text-danger-400 text-sm">Foto lokal tidak ditemukan di public/assets/images/' . e($safeSintaId ?: $sintaId) . '.jpg</span>');
+                        return new HtmlString('<span class="text-gray-400 text-sm">Foto tidak ditemukan di public/assets/images/</span>');
                     })
                     ->columnSpanFull(),
 
-                // PERBAIKAN 2: Tempat Upload Gambar Baru khusus di mode Edit/Create (Sembunyi di mode View)
                 FileUpload::make('image_upload')
-                    ->label('Upload / Ganti Foto Profil (.jpg)')
+                    ->label('Upload / Ganti Foto Profil Baru (.jpg)')
                     ->image()
                     ->acceptedFileTypes(['image/jpeg', 'image/jpg'])
                     ->maxSize(2048)
@@ -78,43 +137,28 @@ class DetailDosenForm
                     ->previewable(false)
                     ->openable(false)
                     ->downloadable(false)
-                    ->dehydrated(false) // Jangan simpan path string temporary Livewire ke DB
+                    ->dehydrated(false) 
                     ->columnSpanFull()
                     ->visible(fn ($context) => $context !== 'view')
                     ->saveUploadedFileUsing(function (TemporaryUploadedFile $file, $record, $get) {
                         $sintaId = $record?->sinta_id ?? $get('sinta_id');
-                        if (! $sintaId) {
-                            return null;
-                        }
+                        if (! $sintaId) return null;
 
                         $safeSintaId = Str::of($sintaId)->trim()->replaceMatches('/[^A-Za-z0-9_-]/', '')->toString();
-                        if (! $safeSintaId) {
-                            return null;
+                        if (! $safeSintaId) return null;
+
+                        $destinationFolder = public_path('assets/images');
+                        $customFileName = "{$safeSintaId}_PL.jpg";
+                        $customFilePath = $destinationFolder . '/' . $customFileName;
+
+                        if (file_exists($customFilePath)) {
+                            @unlink($customFilePath);
                         }
 
-                        return FilamentImageUpload::saveToPublicPath($file, 'assets/images', "{$safeSintaId}.jpg");
+                        return FilamentImageUpload::saveToPublicPath($file, 'assets/images', $customFileName);
                     }),
-
-                // Teks input URL bawaan SINTA/Scholar tetap dipertahankan untuk referensi data scraping
-                TextInput::make('profile_photo')
-                    ->label('Original Scraped Photo URL')
-                    ->default(null)
-                    ->columnSpanFull(),
-
-                TextInput::make('bidang_minat')
-                    ->default(null),
-                TextInput::make('sinta_score_overall')
-                    ->numeric()
-                    ->default(null),
-                TextInput::make('sinta_score_3yr')
-                    ->numeric()
-                    ->default(null),
-                TextInput::make('affil_score')
-                    ->numeric()
-                    ->default(null),
-                TextInput::make('affil_score_3yr')
-                    ->numeric()
-                    ->default(null),
+                
+                // BARIS-BARIS YANG DIMINTA DIHAPUS SUDAH BERHASIL DIHILANGKAN DARI SINI
             ]);
     }
 }

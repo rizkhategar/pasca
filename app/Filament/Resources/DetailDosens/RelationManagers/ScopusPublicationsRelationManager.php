@@ -20,9 +20,9 @@ class ScopusPublicationsRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         return $schema->components([
-            Textarea::make('judul')->required()->columnSpanFull(),
+            Textarea::make('title')->required()->columnSpanFull(),
             TextInput::make('journal'),
-            TextInput::make('tahun'),
+            TextInput::make('year'),
             TextInput::make('citation')->numeric(),
             TextInput::make('quartile'),
         ]);
@@ -31,13 +31,26 @@ class ScopusPublicationsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('judul')
+            ->recordTitleAttribute('title')
             ->columns([
-                TextColumn::make('judul')->wrap()->searchable(),
+                TextColumn::make('title')->wrap()->searchable(),
                 TextColumn::make('journal'),
-                TextColumn::make('tahun'),
+                TextColumn::make('year'),
                 TextColumn::make('citation')->label('Sitasi'),
                 TextColumn::make('quartile'),
+                TextColumn::make('author_order')->label('Urutan Penulis'),
+                TextColumn::make('creator')->label('Pembuat'),
+                
+                // PERBAIKAN: Melekatkan state nilai URL agar bisa diklik menuju tab baru
+                TextColumn::make('article_url')
+                    ->label('URL Artikel')
+                    ->url(fn ($state) => $state)
+                    ->openUrlInNewTab(),
+                    
+                TextColumn::make('journal_url')
+                    ->label('URL Jurnal')
+                    ->url(fn ($state) => $state)
+                    ->openUrlInNewTab(),
             ])
             ->actions([
                 ViewAction::make(),
