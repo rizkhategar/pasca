@@ -14,14 +14,34 @@ class VisionMissionForm
         return $schema
             ->columns(1)
             ->components([
+                Section::make('Hero Section')
+                    ->description('Manage the heading shown at the top of the Vision & Mission page.')
+                    ->icon('heroicon-o-photo')
+                    ->columnSpanFull()
+                    ->schema([
+                        TextInput::make('hero_title')
+                            ->label('Hero Title')
+                            ->default('Vision & Mission')
+                            ->maxLength(255),
+                        TextInput::make('hero_subtitle')
+                            ->label('Hero Subtitle')
+                            ->default('Postgraduate School Universitas Ngudi Waluyo')
+                            ->maxLength(255),
+                    ]),
+
                 Section::make('Vision & Mission')
                     ->description('Manage the Vision and Mission content for the postgraduate profile page.')
                     ->icon('heroicon-o-document-text')
                     ->columnSpanFull()
                     ->schema([
-                        RichEditor::make('visi')
+                        TextInput::make('vision_title')
+                            ->label('Vision Title')
+                            ->default('Vision')
                             ->required()
-                            ->label('Vision')
+                            ->maxLength(255),
+                        RichEditor::make('vision')
+                            ->required()
+                            ->label('Vision Content')
                             ->toolbarButtons([
                                 'bold',
                                 'italic',
@@ -31,9 +51,14 @@ class VisionMissionForm
                                 'redo',
                                 'undo',
                             ]),
-                        RichEditor::make('misi')
+                        TextInput::make('mission_title')
+                            ->label('Mission Title')
+                            ->default('Mission')
                             ->required()
-                            ->label('Mission')
+                            ->maxLength(255),
+                        RichEditor::make('mission')
+                            ->required()
+                            ->label('Mission Content')
                             ->toolbarButtons([
                                 'bold',
                                 'italic',
@@ -50,11 +75,11 @@ class VisionMissionForm
                     ->icon('heroicon-o-academic-cap')
                     ->columnSpanFull()
                     ->schema([
-                        TextInput::make('judul_tujuan')
+                        TextInput::make('objectives_title')
                             ->required()
                             ->default('Objectives')
                             ->label('Objectives Title'),
-                        RichEditor::make('tujuan')
+                        RichEditor::make('objectives')
                             ->required()
                             ->label('Objectives Content')
                             ->toolbarButtons([
@@ -73,11 +98,11 @@ class VisionMissionForm
                     ->icon('heroicon-o-briefcase')
                     ->columnSpanFull()
                     ->schema([
-                        TextInput::make('judul_tujuan_bidang')
+                        TextInput::make('field_objectives_title')
                             ->required()
                             ->default('UNW Field Objectives')
                             ->label('Field Objectives Title'),
-                        RichEditor::make('tujuan_bidang')
+                        RichEditor::make('field_objectives')
                             ->required()
                             ->label('Field Objectives Content')
                             ->toolbarButtons([
@@ -96,11 +121,11 @@ class VisionMissionForm
                     ->icon('heroicon-o-flag')
                     ->columnSpanFull()
                     ->schema([
-                        TextInput::make('judul_sasaran_target')
+                        TextInput::make('goals_targets_title')
                             ->required()
                             ->default('Goals and Targets')
                             ->label('Goals & Targets Title'),
-                        RichEditor::make('sasaran_target')
+                        RichEditor::make('goals_targets')
                             ->required()
                             ->label('Goals & Targets Content')
                             ->toolbarButtons([
