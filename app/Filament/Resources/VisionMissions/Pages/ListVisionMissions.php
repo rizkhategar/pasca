@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\VisionMissions\Pages;
 
 use App\Filament\Resources\VisionMissions\VisionMissionResource;
-use App\Models\VisiMisi;
+use App\Models\VisionMission;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
@@ -17,7 +17,7 @@ class ListVisionMissions extends ListRecords
             CreateAction::make()
                 ->label('Create Vision & Mission')
                 ->icon('heroicon-o-plus')
-                ->hidden(fn (): bool => VisiMisi::count() > 0),
+                ->hidden(fn (): bool => VisionMission::count() > 0),
         ];
     }
 }

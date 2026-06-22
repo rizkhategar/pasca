@@ -7,7 +7,7 @@ use App\Http\Controllers\NewsController;
 use App\Http\Controllers\OrganizationStructureController;
 use App\Http\Controllers\RisetController;
 use App\Http\Controllers\ScrapController;
-use App\Http\Controllers\VisiMisiController;
+use App\Http\Controllers\VisionMissionController;
 use App\Models\AboutPascasarjana;
 use App\Models\OrganizationStructure;
 use App\Models\Slider;
@@ -82,7 +82,7 @@ Route::get('/berita/{slug}', [NewsController::class, 'show'])->name('news.show')
 Route::get('/kontak', [ContactController::class, 'index'])->name('contact.index');
 Route::get('/akademik/magister-hukum', [AcademicController::class, 'show'])->defaults('slug', 'magister-hukum')->name('akademik.hukum');
 Route::get('/akademik/{slug}', [AcademicController::class, 'show'])->name('akademik.show');
-Route::get('/visi-misi', [VisiMisiController::class, 'index'])->name('visi-misi');
+Route::get('/visi-misi', [VisionMissionController::class, 'index'])->name('visi-misi');
 Route::get('/profil/struktur-organisasi', [OrganizationStructureController::class, 'index'])->name('profil.struktur-organisasi');
 Route::get('/tentang-pascasarjana', [AboutController::class, 'index'])->name('tentang');
 Route::get('/scrap/ambildatadosen', [ScrapController::class, 'index'])->name('scrap.index');

@@ -15,12 +15,12 @@ class VisionMissionsTable
     {
         return $table
             ->columns([
-                TextColumn::make('visi')
+                TextColumn::make('vision')
                     ->label('Vision')
                     ->html()
                     ->limit(50)
                     ->weight('bold'),
-                TextColumn::make('misi')
+                TextColumn::make('mission')
                     ->label('Mission')
                     ->html()
                     ->limit(50),
