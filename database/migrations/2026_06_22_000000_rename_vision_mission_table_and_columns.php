@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -57,6 +58,22 @@ return new class extends Migration
                 $table->renameColumn('sasaran_target', 'goals_targets');
             }
         });
+
+        DB::table('vision_missions')->where('vision_title', 'Visi')->update(['vision_title' => 'Vision']);
+        DB::table('vision_missions')->where('mission_title', 'Misi')->update(['mission_title' => 'Mission']);
+        DB::table('vision_missions')->where('objectives_title', 'Tujuan')->update(['objectives_title' => 'Objectives']);
+        DB::table('vision_missions')->where('field_objectives_title', 'Tujuan UNW Dalam Bidang')->update(['field_objectives_title' => 'UNW Field Objectives']);
+        DB::table('vision_missions')->where('goals_targets_title', 'Sasaran dan Target')->update(['goals_targets_title' => 'Goals and Targets']);
+        DB::table('vision_missions')->where('hero_title', 'Visi & Misi')->update(['hero_title' => 'Vision & Mission']);
+        DB::table('vision_missions')->where('hero_subtitle', 'Pascasarjana Universitas Ngudi Waluyo')->update(['hero_subtitle' => 'Postgraduate School Universitas Ngudi Waluyo']);
+
+        DB::statement("ALTER TABLE `vision_missions` MODIFY `vision_title` VARCHAR(255) NOT NULL DEFAULT 'Vision'");
+        DB::statement("ALTER TABLE `vision_missions` MODIFY `mission_title` VARCHAR(255) NOT NULL DEFAULT 'Mission'");
+        DB::statement("ALTER TABLE `vision_missions` MODIFY `objectives_title` VARCHAR(255) NULL DEFAULT 'Objectives'");
+        DB::statement("ALTER TABLE `vision_missions` MODIFY `field_objectives_title` VARCHAR(255) NULL DEFAULT 'UNW Field Objectives'");
+        DB::statement("ALTER TABLE `vision_missions` MODIFY `goals_targets_title` VARCHAR(255) NULL DEFAULT 'Goals and Targets'");
+        DB::statement("ALTER TABLE `vision_missions` MODIFY `hero_title` VARCHAR(255) NULL DEFAULT 'Vision & Mission'");
+        DB::statement("ALTER TABLE `vision_missions` MODIFY `hero_subtitle` VARCHAR(255) NULL DEFAULT 'Postgraduate School Universitas Ngudi Waluyo'");
     }
 
     public function down(): void
@@ -64,6 +81,14 @@ return new class extends Migration
         if (! Schema::hasTable('vision_missions')) {
             return;
         }
+
+        DB::statement("ALTER TABLE `vision_missions` MODIFY `vision_title` VARCHAR(255) NOT NULL DEFAULT 'Visi'");
+        DB::statement("ALTER TABLE `vision_missions` MODIFY `mission_title` VARCHAR(255) NOT NULL DEFAULT 'Misi'");
+        DB::statement("ALTER TABLE `vision_missions` MODIFY `objectives_title` VARCHAR(255) NULL DEFAULT 'Tujuan'");
+        DB::statement("ALTER TABLE `vision_missions` MODIFY `field_objectives_title` VARCHAR(255) NULL DEFAULT 'Tujuan UNW Dalam Bidang'");
+        DB::statement("ALTER TABLE `vision_missions` MODIFY `goals_targets_title` VARCHAR(255) NULL DEFAULT 'Sasaran dan Target'");
+        DB::statement("ALTER TABLE `vision_missions` MODIFY `hero_title` VARCHAR(255) NULL DEFAULT 'Visi & Misi'");
+        DB::statement("ALTER TABLE `vision_missions` MODIFY `hero_subtitle` VARCHAR(255) NULL DEFAULT 'Pascasarjana Universitas Ngudi Waluyo'");
 
         Schema::table('vision_missions', function (Blueprint $table): void {
             if (Schema::hasColumn('vision_missions', 'vision_title') && ! Schema::hasColumn('vision_missions', 'judul_visi')) {
