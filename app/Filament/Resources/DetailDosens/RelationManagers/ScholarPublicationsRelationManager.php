@@ -20,22 +20,38 @@ class ScholarPublicationsRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         return $schema->components([
-            Textarea::make('judul')->required()->columnSpanFull(),
-            TextInput::make('source'),
-            TextInput::make('tahun'),
-            TextInput::make('citation')->numeric(),
+            // Mengubah 'judul' menjadi 'title'
+            Textarea::make('title')->label('Judul')->required()->columnSpanFull(),
+            // MENAMBAHKAN KOLOM BARU: authors
+            TextInput::make('authors')->label('Penulis'),
+            TextInput::make('source')->label('Sumber'),
+            // Mengubah 'tahun' menjadi 'year'
+            TextInput::make('year')->label('Tahun'),
+            TextInput::make('citation')->label('Sitasi')->numeric(),
+            // MENAMBAHKAN KOLOM BARU: scholar_url
+            TextInput::make('scholar_url')->label('URL Scholar'),
         ]);
     }
 
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('judul')
+            // Mengubah record title attribute menjadi 'title'
+            ->recordTitleAttribute('title')
             ->columns([
-                TextColumn::make('judul')->wrap()->searchable(),
-                TextColumn::make('source'),
-                TextColumn::make('tahun'),
-                TextColumn::make('citation')->label('Sitasi'),
+                // Penyesuaian nama kolom ke Bahasa Inggris dengan label tetap Bahasa Indonesia
+                TextColumn::make('title')->label('Judul')->wrap()->searchable(),
+                // MENAMBAHKAN KOLOM BARU: authors
+                TextColumn::make('authors')->label('Penulis'),
+                TextColumn::make('source')->label('Sumber'),
+                TextColumn::make('year')->label('Tahun')->sortable(),
+                TextColumn::make('citation')->label('Sitasi')->sortable(),
+                
+                // MENAMBAHKAN KOLOM BARU: scholar_url dengan format link aman
+                TextColumn::make('scholar_url')
+                    ->label('URL Scholar')
+                    ->url(fn ($state) => $state)
+                    ->openUrlInNewTab(),
             ])
             ->actions([
                 ViewAction::make(),

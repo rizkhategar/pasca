@@ -19,18 +19,22 @@ class ResearchYearliesRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         return $schema->components([
-            TextInput::make('tahun')->required(),
-            TextInput::make('jumlah')->numeric()->default(0)->required(),
+            // Mengubah 'tahun' menjadi 'year'
+            TextInput::make('year')->label('Tahun')->required(),
+            // Mengubah 'jumlah' menjadi 'count'
+            TextInput::make('count')->numeric()->default(0)->required()->label('Jumlah Penelitian'),
         ]);
     }
 
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('tahun')
+            // Mengubah record title attribute menjadi 'year'
+            ->recordTitleAttribute('year')
             ->columns([
-                TextColumn::make('tahun')->sortable(),
-                TextColumn::make('jumlah')->label('Jumlah Penelitian')->sortable(),
+                // Penyesuaian nama kolom ke Bahasa Inggris dengan label tetap Bahasa Indonesia
+                TextColumn::make('year')->label('Tahun')->sortable(),
+                TextColumn::make('count')->label('Jumlah Penelitian')->sortable(),
             ])
             ->actions([
                 ViewAction::make(),

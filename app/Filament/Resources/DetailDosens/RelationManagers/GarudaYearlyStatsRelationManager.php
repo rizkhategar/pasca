@@ -19,7 +19,8 @@ class GarudaYearlyStatsRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         return $schema->components([
-            TextInput::make('tahun')->required(),
+            // Mengubah 'tahun' menjadi 'year'
+            TextInput::make('year')->label('Tahun')->required(),
             TextInput::make('articles')->numeric()->label('Artikel')->default(0)->required(),
         ]);
     }
@@ -27,9 +28,11 @@ class GarudaYearlyStatsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('tahun')
+            // Mengubah record title attribute menjadi 'year'
+            ->recordTitleAttribute('year')
             ->columns([
-                TextColumn::make('tahun')->sortable(),
+                // Penyesuaian nama kolom ke Bahasa Inggris dengan label tetap Bahasa Indonesia
+                TextColumn::make('year')->label('Tahun')->sortable(),
                 TextColumn::make('articles')->label('Jumlah Artikel')->sortable(),
             ])
             ->actions([

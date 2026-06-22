@@ -19,7 +19,8 @@ class ScholarYearlyStatsRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         return $schema->components([
-            TextInput::make('tahun')->required(),
+            // Mengubah 'tahun' menjadi 'year'
+            TextInput::make('year')->label('Tahun')->required(),
             TextInput::make('publications')->numeric()->label('Publikasi')->default(0),
             TextInput::make('citations')->numeric()->label('Sitasi')->default(0),
         ]);
@@ -28,9 +29,11 @@ class ScholarYearlyStatsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('tahun')
+            // Mengubah record title attribute menjadi 'year'
+            ->recordTitleAttribute('year')
             ->columns([
-                TextColumn::make('tahun')->sortable(),
+                // Penyesuaian nama kolom ke Bahasa Inggris dengan label tetap Bahasa Indonesia
+                TextColumn::make('year')->label('Tahun')->sortable(),
                 TextColumn::make('publications')->label('Publikasi')->sortable(),
                 TextColumn::make('citations')->label('Sitasi')->sortable(),
             ])

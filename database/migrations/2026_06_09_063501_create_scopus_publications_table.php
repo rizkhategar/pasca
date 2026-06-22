@@ -26,7 +26,7 @@ return new class extends Migration
             $table->integer('citation')->nullable();
             $table->string('quartile')->nullable();
             $table->string('journal')->nullable();
-            $table->integer('author_order')->nullable();
+            $table->string('author_order')->nullable();
             $table->string('creator')->nullable();
             
             $table->timestamps();
