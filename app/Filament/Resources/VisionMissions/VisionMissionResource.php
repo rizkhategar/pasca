@@ -7,7 +7,7 @@ use App\Filament\Resources\VisionMissions\Pages\EditVisionMission;
 use App\Filament\Resources\VisionMissions\Pages\ListVisionMissions;
 use App\Filament\Resources\VisionMissions\Schemas\VisionMissionForm;
 use App\Filament\Resources\VisionMissions\Tables\VisionMissionsTable;
-use App\Models\VisiMisi;
+use App\Models\VisionMission;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -16,7 +16,7 @@ use UnitEnum;
 
 class VisionMissionResource extends Resource
 {
-    protected static ?string $model = VisiMisi::class;
+    protected static ?string $model = VisionMission::class;
 
     protected static ?string $slug = 'vision-missions';
 
@@ -53,6 +53,6 @@ class VisionMissionResource extends Resource
 
     public static function canCreate(): bool
     {
-        return VisiMisi::count() === 0;
+        return VisionMission::count() === 0;
     }
 }
