@@ -29,8 +29,7 @@ class ContactsTable
                     ->sortable(),
             ])
             ->recordActions([
-                EditAction::make()
-                    ->url(fn (Contact $record): string => ContactResource::getUrl('edit', ['record' => $record])),
+                EditAction::make(),
                 DeleteAction::make(),
             ]);
     }

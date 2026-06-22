@@ -32,18 +32,8 @@ class AboutPascasarjanasTable
                 //
             ])
             ->recordActions([
-                EditAction::make()
-                    ->label('Edit')
-                    ->icon('heroicon-o-pencil-square')
-                    ->iconButton()
-                    ->tooltip('Edit')
-                    ->color('warning'),
-                DeleteAction::make()
-                    ->label('Delete')
-                    ->icon('heroicon-o-trash')
-                    ->iconButton()
-                    ->tooltip('Delete')
-                    ->color('danger'),
+               EditAction::make(),
+               DeleteAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

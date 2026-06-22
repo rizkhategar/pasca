@@ -49,8 +49,7 @@ class OrganizationStructuresTable
                     ->sortable(),
             ])
             ->recordActions([
-                EditAction::make()
-                    ->url(fn (OrganizationStructure $record): string => OrganizationStructureResource::getUrl('edit', ['record' => $record])),
+                EditAction::make(),
                 DeleteAction::make(),
             ])
             ->toolbarActions([
