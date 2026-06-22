@@ -1,0 +1,58 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+vendor
+node_modules
+
+# Laravel Storage (exclude contents but keep directories)
+storage/*.key
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/testing/*
+storage/framework/views/*
+storage/logs/*
+!storage/framework/cache/.gitkeep
+!storage/framework/sessions/.gitkeep
+!storage/framework/testing/.gitkeep
+!storage/framework/views/.gitkeep
+!storage/logs/.gitkeep
+
+# Vite
+public/build
+public/hot
+
+# Environment
+.env.backup
+.phpunit.result.cache
+
+# Docker files (not needed inside container)
+Dockerfile
+docker-compose.yml
+docker-compose.prod.yml
+.dockerignore
+docker/
+!docker/scripts/
+!docker/nginx/
+!docker/php/
+!docker/supervisord.conf
+
+# Testing
+tests
+phpunit.xml
+
+# Docs
+README.md
+LICENSE

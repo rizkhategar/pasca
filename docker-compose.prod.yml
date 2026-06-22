@@ -1,0 +1,31 @@
+# =============================================================================
+# PROXY MODE - For use with Nginx on Host
+# =============================================================================
+# This configuration exposes the app on a specific high port (e.g., 8104)
+# Nginx on the host machine handles SSL and proxies traffic here.
+# =============================================================================
+
+services:
+  app:
+    build:
+      context: .
+      # Use the standard Dockerfile (HTTP only), as Nginx on host handles SSL
+      dockerfile: Dockerfile
+    container_name: pascasarjana-app
+    restart: unless-stopped
+    ports:
+      # Map localhost:8104 -> Container:80
+      # We bind to 127.0.0.1 so it's NOT accessible from the outside internet directly
+      - "127.0.0.1:8104:80"
+    volumes:
+      # Live .env: edit on host + restart (no rebuild); artisan key commands write back here
+      - ./.env:/var/www/html/.env
+      # Persist Laravel storage (logs, uploads, etc.)
+      - ./storage:/var/www/html/storage
+      # If you need to persist public assets (e.g. uploaded images linked in public)
+      - ./public/assets:/var/www/html/public/assets
+    extra_hosts:
+      # Connect to MySQL on host machine
+      - "host.docker.internal:host-gateway"
+      # Use the default bridge network (same as docker run) to ensure 172.17.0.1 is reachable
+    network_mode: "bridge"
