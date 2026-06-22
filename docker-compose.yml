@@ -1,0 +1,26 @@
+# Local Development Configuration
+# Usage: docker-compose up -d --build
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pascasarjana-app
+    restart: unless-stopped
+    ports:
+      - "8104:80"
+    volumes:
+      # Mount source code for development (hot reload)
+      - .:/var/www/html
+      # Persist vendor directory (optional, but speeds up container restarts if using host vendor)
+      # - ./vendor:/var/www/html/vendor
+    extra_hosts:
+      # This allows container to access host's localhost (for MySQL on host)
+      - "host.docker.internal:host-gateway"
+    networks:
+      - pascasarjana-network
+
+networks:
+  pascasarjana-network:
+    driver: bridge
