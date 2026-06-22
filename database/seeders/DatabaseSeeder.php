@@ -17,10 +17,7 @@ class DatabaseSeeder extends Seeder
     {
 
         $this->call([
-            MagisterHukumSeeder::class,
-            MagisterManajemenPendidikanSeeder::class,
-            MagisterKesehatanMasyarakatSeeder::class,
-            MagisterKeperawatanSeeder::class,
+
         ]);
     }
 }
