@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\DetailDosens\Tables;
 
 // Import Resource utama agar bisa membaca rute URL panel
-use App\Filament\Resources\DetailDosens\DetailDosenResource; 
+use App\Filament\Resources\DetailDosens\DetailDosenResource;
 
 use Filament\Actions\ViewAction;
 use Filament\Actions\EditAction;
@@ -38,36 +38,10 @@ class DetailDosensTable
                     ->label('Program Studi')
                     ->searchable(),
 
-                // PERBAIKAN: Mengonversi ID (misal: "21, 22") menjadi "Jenjang + Nama" secara real-time
-                TextColumn::make('department')
+                TextColumn::make('department_names')
                     ->label('Jurusan/Departemen')
-                    ->searchable()
-                    ->formatStateUsing(function ($state) {
-                        if (empty($state)) return '-';
-
-                        // Mengambil map data program studi dari cache yang sama
-                        $jurusans = Cache::remember('academic_programs_select_import', now()->addHours(12), function () {
-                            $response = Http::withoutVerifying()->get('https://panel-web.unw.ac.id/api/unw-program-studi');
-                            if (!$response->successful()) return [];
-
-                            return collect($response->json('data', []))
-                                ->filter(fn($item) => isset($item['id'], $item['nama'], $item['unwFakultas']['nama']) && trim($item['unwFakultas']['nama']) === 'Pascasarjana')
-                                ->mapWithKeys(fn($item) => [
-                                    $item['id'] => trim(($item['jenjang'] ?? '') . ' ' . ($item['nama'] ?? ''))
-                                ])
-                                ->sortBy(fn($value) => $value)
-                                ->toArray();
-                        });
-
-                        // Pecah string berkarakter koma menjadi array ID (contoh: "21, 22" -> [21, 22])
-                        $ids = array_map('trim', explode(',', $state));
-                        
-                        // Map setiap ID ke label "Jenjang + Nama" yang sesuai
-                        $mappedNames = array_map(fn($id) => $jurusans[$id] ?? $id, $ids);
-
-                        // Gabungkan kembali menjadi untaian teks terbaca koma
-                        return implode(', ', $mappedNames);
-                    }),
+                    ->getStateUsing(fn ($record): string => self::resolveDepartmentNames($record))
+                    ->wrap(),
 
                 TextColumn::make('research_interests')
                     ->label('Bidang Minat')
@@ -89,11 +63,11 @@ class DetailDosensTable
             ->actions([
                 ViewAction::make()
                     ->url(fn ($record) => DetailDosenResource::getUrl('view', ['record' => $record])),
-                
+
                 EditAction::make()
                     ->url(fn ($record) => DetailDosenResource::getUrl('edit', ['record' => $record])),
-                
-                DeleteAction::make(), 
+
+                DeleteAction::make(),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
@@ -107,16 +81,55 @@ class DetailDosensTable
                 // PERBAIKAN: Paksa mengarah ke rute halaman penuh via getUrl()
                 ViewAction::make()
                     ->url(fn ($record) => DetailDosenResource::getUrl('view', ['record' => $record])),
-                
+
                 EditAction::make()
                     ->url(fn ($record) => DetailDosenResource::getUrl('edit', ['record' => $record])),
-                
-                DeleteAction::make(), 
+
+                DeleteAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    private static function resolveDepartmentNames($record): string
+    {
+        $departmentIds = $record->departments()
+            ->pluck('id_departement')
+            ->filter()
+            ->map(fn ($id) => (string) $id)
+            ->unique()
+            ->values();
+
+        if ($departmentIds->isEmpty()) {
+            return '-';
+        }
+
+        $departmentMap = self::getPascasarjanaDepartmentMap();
+
+        return $departmentIds
+            ->map(fn (string $id): string => $departmentMap[$id] ?? $id)
+            ->implode(', ');
+    }
+
+    private static function getPascasarjanaDepartmentMap(): array
+    {
+        return Cache::remember('academic_programs_select_import', now()->addHours(12), function () {
+            $response = Http::withoutVerifying()->get('https://panel-web.unw.ac.id/api/unw-program-studi');
+
+            if (!$response->successful()) {
+                return [];
+            }
+
+            return collect($response->json('data', []))
+                ->filter(fn ($item) => isset($item['id'], $item['nama'], $item['unwFakultas']['nama']) && trim($item['unwFakultas']['nama']) === 'Pascasarjana')
+                ->mapWithKeys(fn ($item) => [
+                    (string) $item['id'] => trim(($item['jenjang'] ?? '') . ' ' . ($item['nama'] ?? ''))
+                ])
+                ->sortBy(fn ($value) => $value)
+                ->toArray();
+        });
     }
 }
