@@ -11,7 +11,6 @@ use Filament\Schemas\Concerns\InteractsWithSchemas;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Actions;
 use Filament\Actions\Action;
 
 // --- INPUT FIELD FORM ---
@@ -24,7 +23,6 @@ use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
 use App\Models\SintaLecturer;
-use App\Models\SintaLecturerDetail;
 use Illuminate\Support\HtmlString;
 
 class ImportDetailDosen extends Page implements HasSchemas
@@ -69,18 +67,29 @@ class ImportDetailDosen extends Page implements HasSchemas
         $urlAmbilDetail = route('scrap.ambilDetail', ':id');
         $urlImport = route('scrap.importData', ':id');
 
+        $buttonBaseStyle = 'width: 100%; display: inline-flex; align-items: center; justify-content: center; border-radius: 0.5rem; padding: 0.625rem 0.875rem; font-weight: 600; color: #ffffff; border: none; cursor: pointer;';
+        $scrapeButtonHtml = '<button type="button" id="btn-perbarui" style="' . $buttonBaseStyle . ' background-color: #525252;">Mulai Scraping Dosen</button>';
+        $extractButtonHtml = '<button type="button" id="btn-ambil-detail" style="' . $buttonBaseStyle . ' background-color: #2563eb;">Ekstrak Data SINTA</button>';
+        $importButtonHtml = '<button type="button" id="btn-import" style="' . $buttonBaseStyle . ' background-color: #16a34a;">Import ke Database</button>';
+
         $terminalHtml = <<<HTML
         <div wire:ignore x-data="{
             init() {
+                const livewire = this.\$wire;
+                const NL = String.fromCharCode(10);
                 const outputBox = document.getElementById('output-box');
                 const terminalContainer = document.getElementById('terminal-container');
-                const btnPerbarui = document.getElementById('btn-perbarui');
-                const btnAmbilDetail = document.getElementById('btn-ambil-detail');
-                const btnImport = document.getElementById('btn-import');
 
                 const appendTerminal = (text) => {
+                    if (!outputBox || !terminalContainer) return;
                     outputBox.innerHTML += text;
                     terminalContainer.scrollTop = terminalContainer.scrollHeight;
+                };
+
+                const resetTerminal = (text) => {
+                    if (!outputBox) return;
+                    outputBox.innerHTML = text;
+                    if (terminalContainer) terminalContainer.scrollTop = terminalContainer.scrollHeight;
                 };
 
                 const toggleLoading = (button, isLoading, originalText) => {
@@ -96,94 +105,92 @@ class ImportDetailDosen extends Page implements HasSchemas
                     }
                 };
 
-                if (btnPerbarui) {
-                    btnPerbarui.addEventListener('click', () => {
-                        outputBox.innerHTML = '>>> Memulai pembaruan data master dosen (dosen.py)....\n';
-                        toggleLoading(btnPerbarui, true, 'Mulai Scraping Dosen');
+                const openStream = (url, onDone, onErrorText) => {
+                    appendTerminal('[SSE] Membuka koneksi: ' + url + NL);
 
-                        const eventSource = new EventSource('{$urlPerbarui}');
-                        eventSource.onmessage = (event) => {
+                    const eventSource = new EventSource(url);
+
+                    eventSource.onmessage = (event) => {
+                        try {
                             const data = JSON.parse(event.data);
                             if (data.output) appendTerminal(data.output);
                             if (data.done) {
                                 eventSource.close();
-                                appendTerminal('\n[SUKSES] Daftar dosen berhasil diperbarui. Memuat ulang...\n');
-                                setTimeout(() => { window.location.reload(); }, 2000);
+                                if (onDone) onDone();
                             }
-                        };
-                        eventSource.onerror = () => {
-                            eventSource.close();
-                            appendTerminal('\n[ERROR] Koneksi diputus server.\n');
-                            toggleLoading(btnPerbarui, false, 'Mulai Scraping Dosen');
-                        };
-                    });
-                }
-
-                if (btnAmbilDetail) {
-                    btnAmbilDetail.addEventListener('click', () => {
-                        const sintaId = this.\$wire.get('data.sinta_id');
-                        if (!sintaId) return alert('Silakan pilih dosen terlebih dahulu!');
-
-                        outputBox.innerHTML = '>>> Mengekstrak detail modul SINTA untuk ID: ' + sintaId + '...\n\n';
-                        toggleLoading(btnAmbilDetail, true, 'Ekstrak Data SINTA');
-
-                        let targetUrl = '{$urlAmbilDetail}'.replace(':id', sintaId);
-                        const eventSource = new EventSource(targetUrl);
-
-                        eventSource.onmessage = (event) => {
-                            const data = JSON.parse(event.data);
-                            if (data.output) appendTerminal(data.output);
-                            if (data.done) {
-                                eventSource.close();
-                                appendTerminal('\n[SUKSES] Seluruh modul & file gabungan berhasil dibuat.\n');
-                                toggleLoading(btnAmbilDetail, false, 'Ekstrak Data SINTA');
-                            }
-                        };
-                        eventSource.onerror = () => {
-                            eventSource.close();
-                            appendTerminal('\n[ERROR] Ekstraksi terputus.\n');
-                            toggleLoading(btnAmbilDetail, false, 'Ekstrak Data SINTA');
-                        };
-                    });
-                }
-
-                if (btnImport) {
-                    btnImport.addEventListener('click', () => {
-                        const sintaId = this.\$wire.get('data.sinta_id');
-                        const jurusan = this.\$wire.get('data.jurusan');
-
-                        if (!sintaId) return alert('SINTA ID tidak ditemukan. Pilih dosen dulu pada langkah 2.');
-                        
-                        if (!jurusan || (Array.isArray(jurusan) && jurusan.length === 0)) {
-                            return alert('Silakan pilih sekurang-kurangnya satu Jurusan!');
+                        } catch (error) {
+                            appendTerminal(NL + '[ERROR] Gagal membaca response stream: ' + error.message + NL);
                         }
+                    };
 
-                        /* PERBAIKAN PIVOT: Mengubah join(', ') menjadi join(',') murni tanpa spasi 
-                           agar string ID terkirim padat (misal '21,22') untuk diexplode langsung ke tabel pivot */
-                        let jurusanString = Array.isArray(jurusan) ? jurusan.join(',') : jurusan;
+                    eventSource.onerror = () => {
+                        eventSource.close();
+                        appendTerminal(onErrorText + NL);
+                    };
 
-                        appendTerminal('\n>>> Memulai migrasi streaming data Excel ke MySQL untuk SINTA ID: ' + sintaId + ' (ID Pivot Departemen: ' + jurusanString + ')...\n');
-                        toggleLoading(btnImport, true, 'Import ke Database');
+                    return eventSource;
+                };
 
-                        let targetUrl = '{$urlImport}'.replace(':id', sintaId);
-                        targetUrl += '?jurusan=' + encodeURIComponent(jurusanString);
+                document.addEventListener('click', (event) => {
+                    const btnPerbarui = event.target.closest('#btn-perbarui');
+                    if (!btnPerbarui) return;
 
-                        const eventSource = new EventSource(targetUrl);
-                        eventSource.onmessage = (event) => {
-                            const data = JSON.parse(event.data);
-                            if (data.output) appendTerminal(data.output);
-                            if (data.done) {
-                                eventSource.close();
-                                toggleLoading(btnImport, false, 'Import ke Database');
-                            }
-                        };
-                        eventSource.onerror = () => {
-                            eventSource.close();
-                            appendTerminal('\n[ERROR] Gangguan pada proses stream database.\n');
-                            toggleLoading(btnImport, false, 'Import ke Database');
-                        };
-                    });
-                }
+                    event.preventDefault();
+                    resetTerminal('>>> Memulai pembaruan data master dosen (dosen.py)....' + NL);
+                    toggleLoading(btnPerbarui, true, 'Mulai Scraping Dosen');
+
+                    openStream('{$urlPerbarui}', () => {
+                        appendTerminal(NL + '[SUKSES] Daftar dosen berhasil diperbarui. Memuat ulang...' + NL);
+                        setTimeout(() => { window.location.reload(); }, 2000);
+                    }, NL + '[ERROR] Koneksi scraping dosen diputus server. Cek route scrap.perbaruiDosen atau log Laravel.');
+                });
+
+                document.addEventListener('click', (event) => {
+                    const btnAmbilDetail = event.target.closest('#btn-ambil-detail');
+                    if (!btnAmbilDetail) return;
+
+                    event.preventDefault();
+                    const sintaId = livewire.get('data.sinta_id');
+                    if (!sintaId) return alert('Silakan pilih dosen terlebih dahulu!');
+
+                    resetTerminal('>>> Mengekstrak detail modul SINTA untuk ID: ' + sintaId + '...' + NL + NL);
+                    toggleLoading(btnAmbilDetail, true, 'Ekstrak Data SINTA');
+
+                    let targetUrl = '{$urlAmbilDetail}'.replace(':id', sintaId);
+                    openStream(targetUrl, () => {
+                        appendTerminal(NL + '[SUKSES] Seluruh modul & file gabungan berhasil dibuat.' + NL);
+                        toggleLoading(btnAmbilDetail, false, 'Ekstrak Data SINTA');
+                    }, NL + '[ERROR] Ekstraksi terputus. Cek route scrap.ambilDetail atau log Laravel.');
+                });
+
+                document.addEventListener('click', (event) => {
+                    const btnImport = event.target.closest('#btn-import');
+                    if (!btnImport) return;
+
+                    event.preventDefault();
+                    const sintaId = livewire.get('data.sinta_id');
+                    const jurusan = livewire.get('data.jurusan');
+
+                    if (!sintaId) return alert('SINTA ID tidak ditemukan. Pilih dosen dulu pada langkah 2.');
+
+                    if (!jurusan || (Array.isArray(jurusan) && jurusan.length === 0)) {
+                        return alert('Silakan pilih sekurang-kurangnya satu Jurusan!');
+                    }
+
+                    /* PERBAIKAN PIVOT: Mengubah join(', ') menjadi join(',') murni tanpa spasi
+                       agar string ID terkirim padat (misal '21,22') untuk diexplode langsung ke tabel pivot */
+                    let jurusanString = Array.isArray(jurusan) ? jurusan.join(',') : jurusan;
+
+                    resetTerminal('>>> Memulai migrasi streaming data Excel ke MySQL untuk SINTA ID: ' + sintaId + ' (ID Pivot Departemen: ' + jurusanString + ')...' + NL);
+                    toggleLoading(btnImport, true, 'Import ke Database');
+
+                    let targetUrl = '{$urlImport}'.replace(':id', sintaId);
+                    targetUrl += '?jurusan=' + encodeURIComponent(jurusanString);
+
+                    openStream(targetUrl, () => {
+                        toggleLoading(btnImport, false, 'Import ke Database');
+                    }, NL + '[ERROR] Gangguan pada proses stream database. Cek route scrap.importData atau log Laravel.');
+                });
             }
         }" style="background-color: #0a0a0a; border-radius: 0.75rem; border: 1px solid #262626; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; height: 450px; overflow: hidden; margin-top: 1.5rem;">
             <div style="background-color: #171717; padding: 0.75rem 1rem; border-bottom: 1px solid #262626; display: flex; justify-content: space-between; align-items: center;">
@@ -195,7 +202,7 @@ class ImportDetailDosen extends Page implements HasSchemas
                     </div>
                     <span style="color: #a3a3a3; font-family: ui-monospace, monospace; font-size: 0.75rem; letter-spacing: 0.05em;">Terminal Real-time Sync Output</span>
                 </div>
-                <button type="button" onclick="document.getElementById('output-box').innerHTML='Menunggu perintah...\n'" style="color: #a3a3a3; font-family: ui-monospace, monospace; font-size: 0.75rem; background: none; border: none; cursor: pointer;">
+                <button type="button" onclick="document.getElementById('output-box').innerHTML='Menunggu perintah...' + String.fromCharCode(10)" style="color: #a3a3a3; font-family: ui-monospace, monospace; font-size: 0.75rem; background: none; border: none; cursor: pointer;">
                     Clear Log
                 </button>
             </div>
@@ -215,15 +222,9 @@ class ImportDetailDosen extends Page implements HasSchemas
                                 Placeholder::make('status_excel')
                                     ->label('Status Data Dosen')
                                     ->content(new HtmlString($statusHtml)),
-                                Actions::make([
-                                    Action::make('perbaruiDosen')
-                                        ->label('Mulai Scraping Dosen')
-                                        ->color('gray')
-                                        ->extraAttributes([
-                                            'id' => 'btn-perbarui',
-                                            'class' => 'w-full justify-center text-center font-semibold'
-                                        ]),
-                                ]),
+                                Placeholder::make('button_perbarui_dosen')
+                                    ->hiddenLabel()
+                                    ->content(new HtmlString($scrapeButtonHtml)),
                             ])
                             ->columnSpan(1),
 
@@ -304,15 +305,9 @@ class ImportDetailDosen extends Page implements HasSchemas
                                                     ->send();
                                             })
                                     ),
-                                Actions::make([
-                                    Action::make('ambilDetail')
-                                        ->label('Ekstrak Data SINTA')
-                                        ->color('primary')
-                                        ->extraAttributes([
-                                            'id' => 'btn-ambil-detail',
-                                            'class' => 'w-full justify-center text-center font-semibold'
-                                        ]),
-                                ]),
+                                Placeholder::make('button_ambil_detail')
+                                    ->hiddenLabel()
+                                    ->content(new HtmlString($extractButtonHtml)),
                             ])
                             ->columnSpan(1),
 
@@ -328,15 +323,9 @@ class ImportDetailDosen extends Page implements HasSchemas
                                     ->placeholder('-- Silakan Pilih Jurusan --')
                                     ->required()
                                     ->native(false),
-                                Actions::make([
-                                    Action::make('importDatabase')
-                                        ->label('Import ke Database')
-                                        ->color('success')
-                                        ->extraAttributes([
-                                            'id' => 'btn-import',
-                                            'class' => 'w-full justify-center text-center font-semibold'
-                                        ]),
-                                ]),
+                                Placeholder::make('button_import_database')
+                                    ->hiddenLabel()
+                                    ->content(new HtmlString($importButtonHtml)),
                             ])
                             ->columnSpan(1),
                     ]),
