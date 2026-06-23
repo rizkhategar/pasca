@@ -19,7 +19,6 @@ class SintaLecturerDetail extends Model
 
     protected $fillable = [
         'sinta_id',
-        'name',
         'institution',
         'study_program',
         'profile_photo',
@@ -67,6 +66,11 @@ class SintaLecturerDetail extends Model
                 }
             }
         });
+    }
+
+    public function getNameAttribute(): ?string
+    {
+        return $this->lecturer?->name;
     }
 
     public function pascaLecturer()
