@@ -9,13 +9,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('pasca_lecturers', function (Blueprint $table) {
-            // SINTA ID sebagai Primary Key berbentuk String
+            // SINTA ID sebagai Primary Key sekaligus Foreign Key ke sinta_lecturers
             $table->string('sinta_id')->primary();
             $table->string('name')->nullable();
             $table->string('institution')->nullable();
             $table->string('study_program')->nullable();
             $table->string('profile_photo')->nullable();
             $table->timestamps();
+
+            $table->foreign('sinta_id')
+                ->references('sinta_id')
+                ->on('sinta_lecturers')
+                ->cascadeOnDelete();
         });
     }
 
