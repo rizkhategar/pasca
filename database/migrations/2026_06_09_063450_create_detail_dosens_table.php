@@ -15,8 +15,7 @@ return new class extends Migration
             // Menggunakan sinta_id sebagai Primary Key sekaligus Foreign Key ke sinta_lecturers
             $table->string('sinta_id')->primary();
             
-            // Kolom yang ditranslasi ke bahasa Inggris
-            $table->string('name')->nullable();
+            // Kolom detail dosen. Nama dosen diambil dari relasi utama sinta_lecturers.name
             $table->string('institution')->nullable();
             $table->string('study_program')->nullable();
             $table->string('research_interests')->nullable(); // menggantikan bidang_minat
