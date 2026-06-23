@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('sinta_research_yearlies', function (Blueprint $table) {
+        Schema::create('sinta_research_yearly', function (Blueprint $table) {
             $table->id();
             // Menghubungkan ke tabel sinta_lecturers yang baru
             $table->string('sinta_id');
@@ -35,6 +35,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('sinta_research_yearlies');
+        Schema::dropIfExists('sinta_research_yearly');
     }
 };
