@@ -26,7 +26,7 @@ class DetailDosensTable
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('name')
+                TextColumn::make('lecturer.name')
                     ->label('Nama')
                     ->searchable(),
 
