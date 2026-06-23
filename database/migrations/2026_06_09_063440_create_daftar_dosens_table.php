@@ -12,8 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('sinta_lecturers', function (Blueprint $table) {
-            // Menggunakan sinta_id sebagai Primary Key
-            $table->string('sinta_id')->primary(); 
+            // SINTA ID tetap menjadi Primary Key utama aplikasi.
+            $table->string('sinta_id')->primary();
+
+            // ID numerik tambahan untuk kebutuhan tampilan/urutan, bukan primary key.
+            $table->unsignedBigInteger('id', true)->unique();
             
             // Kolom yang ditranslasi ke Bahasa Inggris
             $table->string('name');

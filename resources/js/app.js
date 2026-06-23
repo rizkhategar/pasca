@@ -247,31 +247,22 @@ function setupStudentServiceCards() {
         if (!url) return;
         if (labelElement && label) labelElement.innerHTML = label;
 
-        card.dataset.serviceUrl = url;
         card.setAttribute('role', 'link');
         card.setAttribute('tabindex', '0');
         card.setAttribute('aria-label', `Buka ${labelElement?.innerText || label || rawLabel}`);
+
+        card.addEventListener('click', (event) => {
+            event.preventDefault();
+            openExternal(url);
+        });
+
+        card.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+
+            event.preventDefault();
+            openExternal(url);
+        });
     });
-
-    document.addEventListener('click', (event) => {
-        const card = event.target.closest('.service-card[data-service-url]');
-        if (!card) return;
-
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        openExternal(card.dataset.serviceUrl);
-    }, true);
-
-    document.addEventListener('keydown', (event) => {
-        if (event.key !== 'Enter' && event.key !== ' ') return;
-
-        const card = event.target.closest('.service-card[data-service-url]');
-        if (!card) return;
-
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        openExternal(card.dataset.serviceUrl);
-    }, true);
 }
 
 function setupFooterAboutLinks() {

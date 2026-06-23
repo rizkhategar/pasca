@@ -14,6 +14,9 @@ return new class extends Migration
         Schema::create('sinta_lecturer_details', function (Blueprint $table) {
             // Menggunakan sinta_id sebagai Primary Key sekaligus Foreign Key ke sinta_lecturers
             $table->string('sinta_id')->primary();
+
+            // ID numerik tambahan untuk kebutuhan tampilan/urutan, bukan primary key.
+            $table->unsignedBigInteger('id', true)->unique();
             
             // Kolom detail dosen. Nama dosen diambil dari relasi utama sinta_lecturers.name
             $table->string('institution')->nullable();
