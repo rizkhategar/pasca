@@ -196,7 +196,7 @@ function setupHeroSlider() {
     let items = [];
 
     try {
-        items = JSON.parse(sliderDataElement.textContent || '[]');
+        items = JSON.parse(sliderDataElement.dataset.sliders || '[]');
     } catch (error) {
         items = [];
     }
