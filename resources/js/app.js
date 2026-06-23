@@ -11,7 +11,7 @@ function openExternal(url) {
 }
 
 ready(() => {
-    setupHeaderDropdownCleanup();
+    setupSiteHeaderNavigation();
     setupHeroContactButton();
     setupStudentServiceCards();
     setupFooterAboutLinks();
@@ -19,16 +19,78 @@ ready(() => {
     setupHeroSlider();
 });
 
-function setupHeaderDropdownCleanup() {
-    document.addEventListener('click', (event) => {
-        const trigger = event.target.closest('#siteHeader .nav-link.dropdown-trigger');
+function setupSiteHeaderNavigation() {
+    const siteHeader = document.getElementById('siteHeader');
+    const hamburger = document.getElementById('hamburger');
+    const navMenu = document.getElementById('navMenu');
+    const dropdownTriggers = document.querySelectorAll('#siteHeader .dropdown-trigger');
+    const navLinks = document.querySelectorAll('#siteHeader .nav-link');
 
-        if (!trigger || window.innerWidth <= 992) return;
+    if (!siteHeader) return;
 
-        requestAnimationFrame(() => {
-            trigger.classList.remove('nav-click-active');
+    siteHeader.classList.remove('nav-collapsed');
+
+    const isCompactMode = () => window.innerWidth <= 992;
+    const clearClickActive = () => navLinks.forEach((item) => item.classList.remove('nav-click-active'));
+
+    const closeNavMenu = () => {
+        if (!navMenu || !hamburger) return;
+        navMenu.classList.remove('show');
+        hamburger.setAttribute('aria-expanded', 'false');
+        document.querySelectorAll('#siteHeader .nav-item.has-dropdown').forEach((item) => item.classList.remove('open'));
+    };
+
+    navLinks.forEach((link) => {
+        link.addEventListener('click', () => {
+            clearClickActive();
+            if (link.dataset.externalNav === 'true') return;
+            link.classList.add('nav-click-active');
+
+            if (!isCompactMode() && link.classList.contains('dropdown-trigger')) {
+                requestAnimationFrame(() => link.classList.remove('nav-click-active'));
+            }
         });
-    }, true);
+    });
+
+    window.addEventListener('pageshow', () => {
+        siteHeader.classList.remove('nav-collapsed');
+        clearClickActive();
+        closeNavMenu();
+    });
+
+    if (hamburger && navMenu) {
+        hamburger.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            navMenu.classList.toggle('show');
+            hamburger.setAttribute('aria-expanded', navMenu.classList.contains('show') ? 'true' : 'false');
+        }, true);
+    }
+
+    dropdownTriggers.forEach((trigger) => {
+        trigger.addEventListener('click', (event) => {
+            if (!isCompactMode()) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            const currentItem = trigger.closest('.nav-item');
+            document.querySelectorAll('#siteHeader .nav-item.has-dropdown').forEach((item) => {
+                if (item !== currentItem) item.classList.remove('open');
+            });
+            currentItem?.classList.toggle('open');
+        }, true);
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!navMenu || !hamburger || !isCompactMode()) return;
+        if (!navMenu.contains(event.target) && !hamburger.contains(event.target)) closeNavMenu();
+    });
+
+    window.addEventListener('scroll', () => siteHeader.classList.remove('nav-collapsed'));
+
+    window.addEventListener('resize', () => {
+        siteHeader.classList.remove('nav-collapsed');
+        closeNavMenu();
+    });
 }
 
 function setupHeroContactButton() {
