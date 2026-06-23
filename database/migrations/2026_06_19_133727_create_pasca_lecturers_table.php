@@ -11,6 +11,10 @@ return new class extends Migration
         Schema::create('pasca_lecturers', function (Blueprint $table) {
             // SINTA ID sebagai Primary Key sekaligus Foreign Key ke sinta_lecturers
             $table->string('sinta_id')->primary();
+
+            // ID numerik tambahan untuk kebutuhan tampilan/urutan, bukan primary key.
+            $table->unsignedBigInteger('id', true)->unique();
+
             $table->string('name')->nullable();
             $table->string('institution')->nullable();
             $table->string('study_program')->nullable();
