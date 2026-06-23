@@ -26,7 +26,15 @@ class PascaLecturer extends Model
         'profile_photo',
     ];
 
-   public function sintaDetail()
+    /**
+     * Relasi ke master dosen SINTA.
+     */
+    public function sintaLecturer()
+    {
+        return $this->belongsTo(SintaLecturer::class, 'sinta_id', 'sinta_id');
+    }
+
+    public function sintaDetail()
     {
         return $this->belongsTo(SintaLecturerDetail::class, 'sinta_id', 'sinta_id');
     }

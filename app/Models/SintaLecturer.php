@@ -32,4 +32,20 @@ class SintaLecturer extends Model
         'affiliation_score',
         'profile_url',
     ];
+
+    /**
+     * Relasi ke detail dosen SINTA.
+     */
+    public function detail()
+    {
+        return $this->hasOne(SintaLecturerDetail::class, 'sinta_id', 'sinta_id');
+    }
+
+    /**
+     * Relasi ke data dosen pascasarjana.
+     */
+    public function pascaLecturer()
+    {
+        return $this->hasOne(PascaLecturer::class, 'sinta_id', 'sinta_id');
+    }
 }

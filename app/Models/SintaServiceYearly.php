@@ -9,7 +9,7 @@ class SintaServiceYearly extends Model
 {
     use HasFactory;
 
-    protected $table = 'sinta_service_yearlies';
+    protected $table = 'sinta_service_yearly';
 
     protected $fillable = [
         'sinta_id',

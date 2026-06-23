@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('sinta_lecturer_details', function (Blueprint $table) {
-            // Menggunakan sinta_id sebagai Primary Key
+            // Menggunakan sinta_id sebagai Primary Key sekaligus Foreign Key ke sinta_lecturers
             $table->string('sinta_id')->primary();
             
             // Kolom yang ditranslasi ke bahasa Inggris
@@ -29,6 +29,11 @@ return new class extends Migration
             $table->integer('affil_score_3yr')->nullable();
             
             $table->timestamps();
+
+            $table->foreign('sinta_id')
+                ->references('sinta_id')
+                ->on('sinta_lecturers')
+                ->cascadeOnDelete();
         });
     }
 
