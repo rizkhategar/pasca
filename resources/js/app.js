@@ -10,9 +10,40 @@ function openExternal(url) {
     window.open(url, '_blank', 'noopener,noreferrer');
 }
 
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>'"]/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#039;',
+        '"': '&quot;',
+    }[char]));
+}
+
+function stripHtml(value) {
+    return String(value ?? '')
+        .replace(/<[^>]*>/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function formatDateId(value) {
+    if (!value) return '';
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+
+    return date.toLocaleDateString('id-ID', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+    });
+}
+
 ready(() => {
     setupSiteHeaderNavigation();
     setupHeroContactButton();
+    setupHomeLatestNews();
     setupStudentServiceCards();
     setupFooterAboutLinks();
     setupWhatsAppAdminModal();
@@ -98,6 +129,91 @@ function setupHeroContactButton() {
 
     document.querySelectorAll('.hero .btn-primary').forEach((button) => {
         button.setAttribute('href', contactUrl);
+    });
+}
+
+function setupHomeLatestNews() {
+    const list = document.querySelector('.info-section .news-list');
+    if (!list) return;
+
+    const pagination = document.querySelector('.info-section .pagination');
+    const pills = Array.from(document.querySelectorAll('.info-section .cat-pill'));
+    const apiUrl = '/berita/search?paginate=4&page=1&sort=desc';
+    const apiOrigin = 'https://panel-web.unw.ac.id';
+
+    const normalizeImage = (url) => {
+        url = String(url || '').trim();
+        if (!url) return '';
+        if (/^https?:\/\//i.test(url)) return url;
+        return `${apiOrigin}/${url.replace(/^\/+/, '')}`;
+    };
+
+    const toArray = (payload) => {
+        if (Array.isArray(payload)) return payload;
+        if (Array.isArray(payload?.data)) return payload.data;
+        if (Array.isArray(payload?.data?.data)) return payload.data.data;
+        return [];
+    };
+
+    const normalize = (item) => {
+        const category = item?.category || {};
+
+        return {
+            title: String(item?.title || 'Tanpa Judul'),
+            slug: String(item?.slug || '#'),
+            image: normalizeImage(item?.image_thumbnail || item?.thumbnail || item?.image || item?.cover || item?.photo || ''),
+            excerpt: stripHtml(item?.excerpt || item?.body || item?.content || ''),
+            category: String(category?.name || item?.category_name || 'Umum'),
+            date: String(item?.publishedAt || item?.published_at || item?.createdAt || item?.created_at || ''),
+        };
+    };
+
+    const render = (items) => {
+        if (!items.length) return;
+
+        list.innerHTML = items.map((item) => {
+            const title = escapeHtml(item.title);
+            const category = escapeHtml(item.category);
+            const excerpt = escapeHtml(item.excerpt).slice(0, 170);
+            const date = escapeHtml(formatDateId(item.date) || 'Tanggal belum tersedia');
+            const href = item.slug && item.slug !== '#' ? `/berita/${encodeURIComponent(item.slug)}` : '/berita';
+            const image = item.image
+                ? `<img src="${escapeHtml(item.image)}" alt="${title}" loading="lazy" onerror="this.closest('.news-thumb').classList.add('no-image'); this.remove();">`
+                : `<i class="fas fa-newspaper"></i>`;
+
+            return `
+                <article class="news-item">
+                    <a class="news-item-link" href="${href}">
+                        <div class="news-thumb">${image}</div>
+                        <div class="news-content">
+                            <div class="news-category"><i class="fas fa-tag"></i>${category}</div>
+                            <h3 class="news-title">${title}</h3>
+                            <p class="news-excerpt">${excerpt}</p>
+                            <div class="news-date"><i class="fas fa-calendar-alt"></i>${date}</div>
+                        </div>
+                    </a>
+                </article>
+            `;
+        }).join('');
+    };
+
+    fetch(apiUrl, { headers: { Accept: 'application/json' } })
+        .then((response) => response.ok ? response.json() : Promise.reject())
+        .then((payload) => render(toArray(payload).map(normalize)))
+        .catch(() => {
+            // Keep the static fallback cards from Blade when the API is temporarily unavailable.
+        });
+
+    if (pagination) {
+        pagination.style.display = 'none';
+    }
+
+    pills.forEach((pill, index) => {
+        pill.addEventListener('click', () => {
+            pills.forEach((item) => item.classList.remove('active'));
+            pill.classList.add('active');
+            if (index !== 0) window.location.href = '/berita';
+        });
     });
 }
 
