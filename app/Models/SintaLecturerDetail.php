@@ -19,6 +19,7 @@ class SintaLecturerDetail extends Model
 
     protected $fillable = [
         'sinta_id',
+        'name',
         'institution',
         'study_program',
         'profile_photo',
@@ -71,6 +72,12 @@ class SintaLecturerDetail extends Model
     public function getNameAttribute(): ?string
     {
         return $this->lecturer?->name;
+    }
+
+    public function setNameAttribute($value): void
+    {
+        // Kolom name sudah tidak ada di sinta_lecturer_details.
+        // Nama dosen disimpan dan dibaca dari relasi utama sinta_lecturers.name.
     }
 
     public function pascaLecturer()
