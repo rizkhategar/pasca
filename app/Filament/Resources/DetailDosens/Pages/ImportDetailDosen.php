@@ -76,6 +76,7 @@ class ImportDetailDosen extends Page implements HasSchemas
         <div wire:ignore x-data="{
             init() {
                 const livewire = this.\$wire;
+                const NL = String.fromCharCode(10);
                 const outputBox = document.getElementById('output-box');
                 const terminalContainer = document.getElementById('terminal-container');
 
@@ -105,7 +106,7 @@ class ImportDetailDosen extends Page implements HasSchemas
                 };
 
                 const openStream = (url, onDone, onErrorText) => {
-                    appendTerminal('[SSE] Membuka koneksi: ' + url + '\n');
+                    appendTerminal('[SSE] Membuka koneksi: ' + url + NL);
 
                     const eventSource = new EventSource(url);
 
@@ -118,13 +119,13 @@ class ImportDetailDosen extends Page implements HasSchemas
                                 if (onDone) onDone();
                             }
                         } catch (error) {
-                            appendTerminal('\n[ERROR] Gagal membaca response stream: ' + error.message + '\n');
+                            appendTerminal(NL + '[ERROR] Gagal membaca response stream: ' + error.message + NL);
                         }
                     };
 
                     eventSource.onerror = () => {
                         eventSource.close();
-                        appendTerminal(onErrorText + '\n');
+                        appendTerminal(onErrorText + NL);
                     };
 
                     return eventSource;
@@ -135,13 +136,13 @@ class ImportDetailDosen extends Page implements HasSchemas
                     if (!btnPerbarui) return;
 
                     event.preventDefault();
-                    resetTerminal('>>> Memulai pembaruan data master dosen (dosen.py)....\n');
+                    resetTerminal('>>> Memulai pembaruan data master dosen (dosen.py)....' + NL);
                     toggleLoading(btnPerbarui, true, 'Mulai Scraping Dosen');
 
                     openStream('{$urlPerbarui}', () => {
-                        appendTerminal('\n[SUKSES] Daftar dosen berhasil diperbarui. Memuat ulang...\n');
+                        appendTerminal(NL + '[SUKSES] Daftar dosen berhasil diperbarui. Memuat ulang...' + NL);
                         setTimeout(() => { window.location.reload(); }, 2000);
-                    }, '\n[ERROR] Koneksi scraping dosen diputus server. Cek route scrap.perbaruiDosen atau log Laravel.');
+                    }, NL + '[ERROR] Koneksi scraping dosen diputus server. Cek route scrap.perbaruiDosen atau log Laravel.');
                 });
 
                 document.addEventListener('click', (event) => {
@@ -152,14 +153,14 @@ class ImportDetailDosen extends Page implements HasSchemas
                     const sintaId = livewire.get('data.sinta_id');
                     if (!sintaId) return alert('Silakan pilih dosen terlebih dahulu!');
 
-                    resetTerminal('>>> Mengekstrak detail modul SINTA untuk ID: ' + sintaId + '...\n\n');
+                    resetTerminal('>>> Mengekstrak detail modul SINTA untuk ID: ' + sintaId + '...' + NL + NL);
                     toggleLoading(btnAmbilDetail, true, 'Ekstrak Data SINTA');
 
                     let targetUrl = '{$urlAmbilDetail}'.replace(':id', sintaId);
                     openStream(targetUrl, () => {
-                        appendTerminal('\n[SUKSES] Seluruh modul & file gabungan berhasil dibuat.\n');
+                        appendTerminal(NL + '[SUKSES] Seluruh modul & file gabungan berhasil dibuat.' + NL);
                         toggleLoading(btnAmbilDetail, false, 'Ekstrak Data SINTA');
-                    }, '\n[ERROR] Ekstraksi terputus. Cek route scrap.ambilDetail atau log Laravel.');
+                    }, NL + '[ERROR] Ekstraksi terputus. Cek route scrap.ambilDetail atau log Laravel.');
                 });
 
                 document.addEventListener('click', (event) => {
@@ -180,7 +181,7 @@ class ImportDetailDosen extends Page implements HasSchemas
                        agar string ID terkirim padat (misal '21,22') untuk diexplode langsung ke tabel pivot */
                     let jurusanString = Array.isArray(jurusan) ? jurusan.join(',') : jurusan;
 
-                    resetTerminal('>>> Memulai migrasi streaming data Excel ke MySQL untuk SINTA ID: ' + sintaId + ' (ID Pivot Departemen: ' + jurusanString + ')...\n');
+                    resetTerminal('>>> Memulai migrasi streaming data Excel ke MySQL untuk SINTA ID: ' + sintaId + ' (ID Pivot Departemen: ' + jurusanString + ')...' + NL);
                     toggleLoading(btnImport, true, 'Import ke Database');
 
                     let targetUrl = '{$urlImport}'.replace(':id', sintaId);
@@ -188,7 +189,7 @@ class ImportDetailDosen extends Page implements HasSchemas
 
                     openStream(targetUrl, () => {
                         toggleLoading(btnImport, false, 'Import ke Database');
-                    }, '\n[ERROR] Gangguan pada proses stream database. Cek route scrap.importData atau log Laravel.');
+                    }, NL + '[ERROR] Gangguan pada proses stream database. Cek route scrap.importData atau log Laravel.');
                 });
             }
         }" style="background-color: #0a0a0a; border-radius: 0.75rem; border: 1px solid #262626; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; height: 450px; overflow: hidden; margin-top: 1.5rem;">
@@ -201,7 +202,7 @@ class ImportDetailDosen extends Page implements HasSchemas
                     </div>
                     <span style="color: #a3a3a3; font-family: ui-monospace, monospace; font-size: 0.75rem; letter-spacing: 0.05em;">Terminal Real-time Sync Output</span>
                 </div>
-                <button type="button" onclick="document.getElementById('output-box').innerHTML='Menunggu perintah...\n'" style="color: #a3a3a3; font-family: ui-monospace, monospace; font-size: 0.75rem; background: none; border: none; cursor: pointer;">
+                <button type="button" onclick="document.getElementById('output-box').innerHTML='Menunggu perintah...' + String.fromCharCode(10)" style="color: #a3a3a3; font-family: ui-monospace, monospace; font-size: 0.75rem; background: none; border: none; cursor: pointer;">
                     Clear Log
                 </button>
             </div>
