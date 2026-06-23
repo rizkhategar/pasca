@@ -19,7 +19,6 @@ class SintaLecturerDetail extends Model
 
     protected $fillable = [
         'sinta_id',
-        'name',
         'institution',
         'study_program',
         'profile_photo',
