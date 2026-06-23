@@ -23,11 +23,9 @@ class DetailDosenForm
                     ->required()
                     ->disabled(fn ($context) => $context === 'edit'),
 
-                // DISESUAIKAN: Mengunci nilai Nama Lengkap agar tidak bisa diedit oleh admin
-                TextInput::make('name')
+                Placeholder::make('lecturer_name')
                     ->label('Nama Lengkap')
-                    ->disabled()
-                    ->default(null),
+                    ->content(fn ($record) => $record?->lecturer?->name ?? '-'),
 
                 TextInput::make('institution')
                     ->label('Institusi')

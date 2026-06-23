@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 class SintaLecturerDetail extends Model
 {
@@ -29,10 +31,63 @@ class SintaLecturerDetail extends Model
         'department',
     ];
 
+    protected static function booted(): void
+    {
+        static::deleted(function (SintaLecturerDetail $lecturerDetail): void {
+            $sintaId = $lecturerDetail->sinta_id;
+
+            if (! $sintaId) {
+                return;
+            }
+
+            // Saat detail dosen dihapus dari list, hapus juga data lokal Pascasarjana.
+            $lecturerDetail->pascaLecturer()->delete();
+
+            // Hapus foto hasil scraping SINTA dan foto resmi Pascasarjana jika filenya ada.
+            $safeSintaId = Str::of($sintaId)
+                ->trim()
+                ->replaceMatches('/[^A-Za-z0-9_-]/', '')
+                ->toString();
+
+            if (! $safeSintaId) {
+                return;
+            }
+
+            $imageDirectory = public_path('assets/images');
+            $photoFileNames = [
+                "{$safeSintaId}.jpg",
+                "{$safeSintaId}_PL.jpg",
+            ];
+
+            foreach ($photoFileNames as $photoFileName) {
+                $photoPath = $imageDirectory . DIRECTORY_SEPARATOR . $photoFileName;
+
+                if (File::exists($photoPath)) {
+                    File::delete($photoPath);
+                }
+            }
+        });
+    }
+
+    public function getNameAttribute(): ?string
+    {
+        return $this->lecturer?->name;
+    }
+
+    public function setNameAttribute($value): void
+    {
+        // Kolom name sudah tidak ada di sinta_lecturer_details.
+        // Nama dosen disimpan dan dibaca dari relasi utama sinta_lecturers.name.
+    }
 
     public function pascaLecturer()
     {
         return $this->hasOne(PascaLecturer::class, 'sinta_id', 'sinta_id');
+    }
+
+    public function departments()
+    {
+        return $this->hasMany(Departement::class, 'sinta_id', 'sinta_id');
     }
 
     /**

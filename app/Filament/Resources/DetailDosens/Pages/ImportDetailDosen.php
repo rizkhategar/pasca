@@ -47,10 +47,10 @@ class ImportDetailDosen extends Page implements HasSchemas
 
     public function form(Schema $schema): Schema
     {
-        $excelExists = file_exists(base_path('scripts/output/dosen_universitas_ngudi_waluyo.xlsx'));
-        $statusHtml = $excelExists
-            ? '<div style="padding: 0.75rem; border-radius: 0.5rem; background-color: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: #059669; font-weight: 500;">✅ <b>File tersedia.</b> Silakan lanjut ke Langkah 2.</div>'
-            : '<div style="padding: 0.75rem; border-radius: 0.5rem; background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #dc2626; font-weight: 500;">⚠️ <b>Belum ada data.</b> Jalankan scraping.</div>';
+        $sintaLecturerExists = SintaLecturer::query()->exists();
+        $statusHtml = $sintaLecturerExists
+            ? '<div style="padding: 0.75rem; border-radius: 0.5rem; background-color: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: #059669; font-weight: 500;">✅ <b>Data daftar dosen tersedia.</b></div>'
+            : '<div style="padding: 0.75rem; border-radius: 0.5rem; background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #dc2626; font-weight: 500;">⚠️ <b>Daftar dosen kosong.</b> Silahkan lakukan scraping data dosen.</div>';
 
         $jurusans = Cache::remember('academic_programs_select_import', now()->addHours(12), function () {
             $response = Http::withoutVerifying()->get('https://panel-web.unw.ac.id/api/unw-program-studi');
@@ -98,7 +98,7 @@ class ImportDetailDosen extends Page implements HasSchemas
 
                 if (btnPerbarui) {
                     btnPerbarui.addEventListener('click', () => {
-                        outputBox.innerHTML = '>>> Memulai pembaruan data master dosen (dosen.py)....\\n';
+                        outputBox.innerHTML = '>>> Memulai pembaruan data master dosen (dosen.py)....\n';
                         toggleLoading(btnPerbarui, true, 'Mulai Scraping Dosen');
 
                         const eventSource = new EventSource('{$urlPerbarui}');
@@ -107,13 +107,13 @@ class ImportDetailDosen extends Page implements HasSchemas
                             if (data.output) appendTerminal(data.output);
                             if (data.done) {
                                 eventSource.close();
-                                appendTerminal('\\n[SUKSES] Daftar dosen berhasil diperbarui. Memuat ulang...\\n');
+                                appendTerminal('\n[SUKSES] Daftar dosen berhasil diperbarui. Memuat ulang...\n');
                                 setTimeout(() => { window.location.reload(); }, 2000);
                             }
                         };
                         eventSource.onerror = () => {
                             eventSource.close();
-                            appendTerminal('\\n[ERROR] Koneksi diputus server.\\n');
+                            appendTerminal('\n[ERROR] Koneksi diputus server.\n');
                             toggleLoading(btnPerbarui, false, 'Mulai Scraping Dosen');
                         };
                     });
@@ -124,7 +124,7 @@ class ImportDetailDosen extends Page implements HasSchemas
                         const sintaId = this.\$wire.get('data.sinta_id');
                         if (!sintaId) return alert('Silakan pilih dosen terlebih dahulu!');
 
-                        outputBox.innerHTML = '>>> Mengekstrak detail modul SINTA untuk ID: ' + sintaId + '...\\n\\n';
+                        outputBox.innerHTML = '>>> Mengekstrak detail modul SINTA untuk ID: ' + sintaId + '...\n\n';
                         toggleLoading(btnAmbilDetail, true, 'Ekstrak Data SINTA');
 
                         let targetUrl = '{$urlAmbilDetail}'.replace(':id', sintaId);
@@ -135,13 +135,13 @@ class ImportDetailDosen extends Page implements HasSchemas
                             if (data.output) appendTerminal(data.output);
                             if (data.done) {
                                 eventSource.close();
-                                appendTerminal('\\n[SUKSES] Seluruh modul & file gabungan berhasil dibuat.\\n');
+                                appendTerminal('\n[SUKSES] Seluruh modul & file gabungan berhasil dibuat.\n');
                                 toggleLoading(btnAmbilDetail, false, 'Ekstrak Data SINTA');
                             }
                         };
                         eventSource.onerror = () => {
                             eventSource.close();
-                            appendTerminal('\\n[ERROR] Ekstraksi terputus.\\n');
+                            appendTerminal('\n[ERROR] Ekstraksi terputus.\n');
                             toggleLoading(btnAmbilDetail, false, 'Ekstrak Data SINTA');
                         };
                     });
@@ -162,7 +162,7 @@ class ImportDetailDosen extends Page implements HasSchemas
                            agar string ID terkirim padat (misal '21,22') untuk diexplode langsung ke tabel pivot */
                         let jurusanString = Array.isArray(jurusan) ? jurusan.join(',') : jurusan;
 
-                        appendTerminal('\\n>>> Memulai migrasi streaming data Excel ke MySQL untuk SINTA ID: ' + sintaId + ' (ID Pivot Departemen: ' + jurusanString + ')...\\n');
+                        appendTerminal('\n>>> Memulai migrasi streaming data Excel ke MySQL untuk SINTA ID: ' + sintaId + ' (ID Pivot Departemen: ' + jurusanString + ')...\n');
                         toggleLoading(btnImport, true, 'Import ke Database');
 
                         let targetUrl = '{$urlImport}'.replace(':id', sintaId);
@@ -179,7 +179,7 @@ class ImportDetailDosen extends Page implements HasSchemas
                         };
                         eventSource.onerror = () => {
                             eventSource.close();
-                            appendTerminal('\\n[ERROR] Gangguan pada proses stream database.\\n');
+                            appendTerminal('\n[ERROR] Gangguan pada proses stream database.\n');
                             toggleLoading(btnImport, false, 'Import ke Database');
                         };
                     });
@@ -195,7 +195,7 @@ class ImportDetailDosen extends Page implements HasSchemas
                     </div>
                     <span style="color: #a3a3a3; font-family: ui-monospace, monospace; font-size: 0.75rem; letter-spacing: 0.05em;">Terminal Real-time Sync Output</span>
                 </div>
-                <button type="button" onclick="document.getElementById('output-box').innerHTML='Menunggu perintah...\\n'" style="color: #a3a3a3; font-family: ui-monospace, monospace; font-size: 0.75rem; background: none; border: none; cursor: pointer;">
+                <button type="button" onclick="document.getElementById('output-box').innerHTML='Menunggu perintah...\n'" style="color: #a3a3a3; font-family: ui-monospace, monospace; font-size: 0.75rem; background: none; border: none; cursor: pointer;">
                     Clear Log
                 </button>
             </div>
@@ -213,7 +213,7 @@ class ImportDetailDosen extends Page implements HasSchemas
                             ->icon('heroicon-o-arrow-path')
                             ->schema([
                                 Placeholder::make('status_excel')
-                                    ->label('')
+                                    ->label('Status Data Dosen')
                                     ->content(new HtmlString($statusHtml)),
                                 Actions::make([
                                     Action::make('perbaruiDosen')
@@ -232,7 +232,35 @@ class ImportDetailDosen extends Page implements HasSchemas
                             ->schema([
                                 Select::make('sinta_id')
                                     ->label('Pilih Dosen SINTA')
-                                    ->options(SintaLecturer::orderBy('name', 'asc')->pluck('name', 'sinta_id'))
+                                    ->options(
+                                        SintaLecturer::query()
+                                            ->orderBy('name', 'asc')
+                                            ->limit(50)
+                                            ->get()
+                                            ->mapWithKeys(fn(SintaLecturer $lecturer) => [
+                                                $lecturer->sinta_id => trim(($lecturer->name ?? '-') . ' (' . $lecturer->sinta_id . ')')
+                                            ])
+                                            ->toArray()
+                                    )
+                                    ->getSearchResultsUsing(function (string $search): array {
+                                        return SintaLecturer::query()
+                                            ->where('name', 'like', "%{$search}%")
+                                            ->orWhere('sinta_id', 'like', "%{$search}%")
+                                            ->orderBy('name', 'asc')
+                                            ->limit(50)
+                                            ->get()
+                                            ->mapWithKeys(fn(SintaLecturer $lecturer) => [
+                                                $lecturer->sinta_id => trim(($lecturer->name ?? '-') . ' (' . $lecturer->sinta_id . ')')
+                                            ])
+                                            ->toArray();
+                                    })
+                                    ->getOptionLabelUsing(function ($value): ?string {
+                                        $lecturer = SintaLecturer::where('sinta_id', $value)->first();
+
+                                        return $lecturer
+                                            ? trim(($lecturer->name ?? '-') . ' (' . $lecturer->sinta_id . ')')
+                                            : null;
+                                    })
                                     ->searchable()
                                     ->placeholder('-- Silakan Pilih Dosen --')
                                     ->required()

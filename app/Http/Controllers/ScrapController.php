@@ -28,6 +28,23 @@ class ScrapController extends Controller
 {
     private $pythonExe = 'python';
 
+    private function deleteImportedExcelFile(string $filePath): string
+    {
+        $fileName = basename($filePath);
+
+        if (!file_exists($filePath)) {
+            return "<span class='text-gray-400'>[CLEANUP]</span> File {$fileName} sudah tidak ada di scripts/output.\n";
+        }
+
+        if (@unlink($filePath)) {
+            return "<span class='text-success-400'>[CLEANUP]</span> File {$fileName} berhasil dihapus dari scripts/output.\n";
+        }
+
+        Log::warning("Gagal menghapus file import Excel: {$filePath}");
+
+        return "<span class='text-warning-500'>[CLEANUP - WARN]</span> File {$fileName} sudah berhasil diimport, tetapi gagal dihapus. Cek permission file/folder scripts/output.\n";
+    }
+
     /**
      * Menampilkan halaman utama panel dan membaca data untuk dropdown
      */
@@ -146,9 +163,13 @@ class ScrapController extends Controller
                             $insertedCount++;
                         }
                         DB::commit();
-                        echo "data: " . json_encode(['output' => "<span class='text-success-400 font-bold'>[SUKSES] Auto-Import Selesai!</span> Berhasil memperbarui {$insertedCount} dosen ke tabel database sinta_lecturers.\n----------------------------------------\n"]) . "\n\n";
+
+                        echo "data: " . json_encode(['output' => "<span class='text-success-400 font-bold'>[SUKSES] Auto-Import Selesai!</span> Berhasil memperbarui {$insertedCount} dosen ke tabel database sinta_lecturers.\n"]) . "\n\n";
+                        echo "data: " . json_encode(['output' => $this->deleteImportedExcelFile($excelPath) . "----------------------------------------\n"]) . "\n\n";
                     } catch (\Throwable $importError) {
-                        DB::rollBack();
+                        if (DB::transactionLevel() > 0) {
+                            DB::rollBack();
+                        }
                         $errMsg = addslashes($importError->getMessage());
                         echo "data: " . json_encode(['output' => "\n<span class='text-danger-500 font-bold'>[DATABASE ERROR]</span> Gagal menyimpan data: {$errMsg}\n----------------------------------------\n"]) . "\n\n";
                     }
@@ -575,11 +596,14 @@ class ScrapController extends Controller
                 }
 
                 echo "data: " . json_encode(['output' => "----------------------------------------\n<span class='text-success-400 font-bold'>[SUKSES IMPORT]</span> Seluruh sheet selesai diimpor!\n"]) . "\n\n";
+                echo "data: " . json_encode(['output' => $this->deleteImportedExcelFile($filePath)]) . "\n\n";
                 echo "data: " . json_encode(['done' => true]) . "\n\n";
                 ob_flush();
                 flush();
             } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\DB::rollBack();
+                if (\Illuminate\Support\Facades\DB::transactionLevel() > 0) {
+                    \Illuminate\Support\Facades\DB::rollBack();
+                }
                 $errMsg = addslashes($e->getMessage());
                 echo "data: " . json_encode(['output' => "\n<span class='text-danger-500 font-bold'>[ERROR FATAL]</span> {$errMsg} (Baris: {$e->getLine()})\n"]) . "\n\n";
                 echo "data: " . json_encode(['done' => true]) . "\n\n";
