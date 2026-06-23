@@ -9,7 +9,7 @@ class SintaResearchYearly extends Model
 {
     use HasFactory;
 
-    protected $table = 'sinta_research_yearlies';
+    protected $table = 'sinta_research_yearly';
 
     protected $fillable = [
         'sinta_id',
