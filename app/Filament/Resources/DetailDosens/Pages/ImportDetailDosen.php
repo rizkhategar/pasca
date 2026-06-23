@@ -78,9 +78,6 @@ class ImportDetailDosen extends Page implements HasSchemas
                 const livewire = this.\$wire;
                 const outputBox = document.getElementById('output-box');
                 const terminalContainer = document.getElementById('terminal-container');
-                const btnPerbarui = document.getElementById('btn-perbarui');
-                const btnAmbilDetail = document.getElementById('btn-ambil-detail');
-                const btnImport = document.getElementById('btn-import');
 
                 const appendTerminal = (text) => {
                     if (!outputBox || !terminalContainer) return;
@@ -133,63 +130,66 @@ class ImportDetailDosen extends Page implements HasSchemas
                     return eventSource;
                 };
 
-                if (btnPerbarui) {
-                    btnPerbarui.addEventListener('click', (event) => {
-                        event.preventDefault();
-                        resetTerminal('>>> Memulai pembaruan data master dosen (dosen.py)....\n');
-                        toggleLoading(btnPerbarui, true, 'Mulai Scraping Dosen');
+                document.addEventListener('click', (event) => {
+                    const btnPerbarui = event.target.closest('#btn-perbarui');
+                    if (!btnPerbarui) return;
 
-                        openStream('{$urlPerbarui}', () => {
-                            appendTerminal('\n[SUKSES] Daftar dosen berhasil diperbarui. Memuat ulang...\n');
-                            setTimeout(() => { window.location.reload(); }, 2000);
-                        }, '\n[ERROR] Koneksi scraping dosen diputus server. Cek route scrap.perbaruiDosen atau log Laravel.');
-                    });
-                }
+                    event.preventDefault();
+                    resetTerminal('>>> Memulai pembaruan data master dosen (dosen.py)....\n');
+                    toggleLoading(btnPerbarui, true, 'Mulai Scraping Dosen');
 
-                if (btnAmbilDetail) {
-                    btnAmbilDetail.addEventListener('click', (event) => {
-                        event.preventDefault();
-                        const sintaId = livewire.get('data.sinta_id');
-                        if (!sintaId) return alert('Silakan pilih dosen terlebih dahulu!');
+                    openStream('{$urlPerbarui}', () => {
+                        appendTerminal('\n[SUKSES] Daftar dosen berhasil diperbarui. Memuat ulang...\n');
+                        setTimeout(() => { window.location.reload(); }, 2000);
+                    }, '\n[ERROR] Koneksi scraping dosen diputus server. Cek route scrap.perbaruiDosen atau log Laravel.');
+                });
 
-                        resetTerminal('>>> Mengekstrak detail modul SINTA untuk ID: ' + sintaId + '...\n\n');
-                        toggleLoading(btnAmbilDetail, true, 'Ekstrak Data SINTA');
+                document.addEventListener('click', (event) => {
+                    const btnAmbilDetail = event.target.closest('#btn-ambil-detail');
+                    if (!btnAmbilDetail) return;
 
-                        let targetUrl = '{$urlAmbilDetail}'.replace(':id', sintaId);
-                        openStream(targetUrl, () => {
-                            appendTerminal('\n[SUKSES] Seluruh modul & file gabungan berhasil dibuat.\n');
-                            toggleLoading(btnAmbilDetail, false, 'Ekstrak Data SINTA');
-                        }, '\n[ERROR] Ekstraksi terputus. Cek route scrap.ambilDetail atau log Laravel.');
-                    });
-                }
+                    event.preventDefault();
+                    const sintaId = livewire.get('data.sinta_id');
+                    if (!sintaId) return alert('Silakan pilih dosen terlebih dahulu!');
 
-                if (btnImport) {
-                    btnImport.addEventListener('click', (event) => {
-                        event.preventDefault();
-                        const sintaId = livewire.get('data.sinta_id');
-                        const jurusan = livewire.get('data.jurusan');
+                    resetTerminal('>>> Mengekstrak detail modul SINTA untuk ID: ' + sintaId + '...\n\n');
+                    toggleLoading(btnAmbilDetail, true, 'Ekstrak Data SINTA');
 
-                        if (!sintaId) return alert('SINTA ID tidak ditemukan. Pilih dosen dulu pada langkah 2.');
+                    let targetUrl = '{$urlAmbilDetail}'.replace(':id', sintaId);
+                    openStream(targetUrl, () => {
+                        appendTerminal('\n[SUKSES] Seluruh modul & file gabungan berhasil dibuat.\n');
+                        toggleLoading(btnAmbilDetail, false, 'Ekstrak Data SINTA');
+                    }, '\n[ERROR] Ekstraksi terputus. Cek route scrap.ambilDetail atau log Laravel.');
+                });
 
-                        if (!jurusan || (Array.isArray(jurusan) && jurusan.length === 0)) {
-                            return alert('Silakan pilih sekurang-kurangnya satu Jurusan!');
-                        }
+                document.addEventListener('click', (event) => {
+                    const btnImport = event.target.closest('#btn-import');
+                    if (!btnImport) return;
 
-                        /* PERBAIKAN PIVOT: Mengubah join(', ') menjadi join(',') murni tanpa spasi
-                           agar string ID terkirim padat (misal '21,22') untuk diexplode langsung ke tabel pivot */
-                        let jurusanString = Array.isArray(jurusan) ? jurusan.join(',') : jurusan;
+                    event.preventDefault();
+                    const sintaId = livewire.get('data.sinta_id');
+                    const jurusan = livewire.get('data.jurusan');
 
-                        resetTerminal('>>> Memulai migrasi streaming data Excel ke MySQL untuk SINTA ID: ' + sintaId + ' (ID Pivot Departemen: ' + jurusanString + ')...\n');
-                        toggleLoading(btnImport, true, 'Import ke Database');
+                    if (!sintaId) return alert('SINTA ID tidak ditemukan. Pilih dosen dulu pada langkah 2.');
 
-                        let targetUrl = '{$urlImport}'.replace(':id', sintaId);
-                        targetUrl += '?jurusan=' + encodeURIComponent(jurusanString);
+                    if (!jurusan || (Array.isArray(jurusan) && jurusan.length === 0)) {
+                        return alert('Silakan pilih sekurang-kurangnya satu Jurusan!');
+                    }
 
-                        openStream(targetUrl, () => {
-                            toggleLoading(btnImport, false, 'Import ke Database');
-                        }, '\n[ERROR] Gangguan pada proses stream database. Cek route scrap.importData atau log Laravel.');
-                    });
-                }
+                    /* PERBAIKAN PIVOT: Mengubah join(', ') menjadi join(',') murni tanpa spasi
+                       agar string ID terkirim padat (misal '21,22') untuk diexplode langsung ke tabel pivot */
+                    let jurusanString = Array.isArray(jurusan) ? jurusan.join(',') : jurusan;
+
+                    resetTerminal('>>> Memulai migrasi streaming data Excel ke MySQL untuk SINTA ID: ' + sintaId + ' (ID Pivot Departemen: ' + jurusanString + ')...\n');
+                    toggleLoading(btnImport, true, 'Import ke Database');
+
+                    let targetUrl = '{$urlImport}'.replace(':id', sintaId);
+                    targetUrl += '?jurusan=' + encodeURIComponent(jurusanString);
+
+                    openStream(targetUrl, () => {
+                        toggleLoading(btnImport, false, 'Import ke Database');
+                    }, '\n[ERROR] Gangguan pada proses stream database. Cek route scrap.importData atau log Laravel.');
+                });
             }
         }" style="background-color: #0a0a0a; border-radius: 0.75rem; border: 1px solid #262626; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; height: 450px; overflow: hidden; margin-top: 1.5rem;">
             <div style="background-color: #171717; padding: 0.75rem 1rem; border-bottom: 1px solid #262626; display: flex; justify-content: space-between; align-items: center;">
