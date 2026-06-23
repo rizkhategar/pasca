@@ -3,6 +3,7 @@
 use App\Http\Controllers\AboutController;
 use App\Http\Controllers\AcademicController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\OrganizationStructureController;
 use App\Http\Controllers\RisetController;
@@ -15,10 +16,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-Route::get('/', function () {
-    $sliders = Slider::query()->where('is_active', true)->orderBy('sort_order')->oldest('id')->get();
-    return view('home', compact('sliders'));
-})->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/storage/{path}', function (string $path) {
     $path = ltrim($path, '/');
