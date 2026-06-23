@@ -74,6 +74,11 @@ class SintaLecturerDetail extends Model
         return $this->hasOne(PascaLecturer::class, 'sinta_id', 'sinta_id');
     }
 
+    public function departments()
+    {
+        return $this->hasMany(Departement::class, 'sinta_id', 'sinta_id');
+    }
+
     /**
      * Relasi balik ke Master Dosen (SintaLecturer)
      */
