@@ -195,7 +195,7 @@ function setupHomeLatestNews() {
             return;
         }
 
-        list.innerHTML = items.map((item) => {
+        list.innerHTML = items.slice(0, 3).map((item) => {
             const title = escapeHtml(item.title);
             const category = escapeHtml(item.category);
             const excerpt = escapeHtml(item.excerpt).slice(0, 170);
@@ -222,7 +222,7 @@ function setupHomeLatestNews() {
     };
 
     const buildNewsUrl = () => {
-        const params = new URLSearchParams({ paginate: '4', page: '1', sort: 'desc' });
+        const params = new URLSearchParams({ paginate: '3', page: '1', sort: 'desc' });
         if (activeCategory !== 'all') params.set('category_id', activeCategory);
         return `${newsApiUrl}?${params.toString()}`;
     };
