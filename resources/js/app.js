@@ -133,13 +133,15 @@ function setupHeroContactButton() {
 }
 
 function setupHomeLatestNews() {
-    const list = document.querySelector('.info-section .news-list');
+    const list = document.querySelector('.home-page .info-section .news-list');
     if (!list) return;
 
-    const pagination = document.querySelector('.info-section .pagination');
-    const pills = Array.from(document.querySelectorAll('.info-section .cat-pill'));
-    const apiUrl = '/berita/search?paginate=4&page=1&sort=desc';
+    const pagination = document.querySelector('.home-page .info-section .pagination');
+    const filters = document.querySelector('.home-page .category-filters');
     const apiOrigin = 'https://panel-web.unw.ac.id';
+    const newsApiUrl = '/berita/search';
+    const categoryApiUrl = `${apiOrigin}/api/category`;
+    let activeCategory = 'all';
 
     const normalizeImage = (url) => {
         url = String(url || '').trim();
@@ -152,10 +154,17 @@ function setupHomeLatestNews() {
         if (Array.isArray(payload)) return payload;
         if (Array.isArray(payload?.data)) return payload.data;
         if (Array.isArray(payload?.data?.data)) return payload.data.data;
+        if (Array.isArray(payload?.items)) return payload.items;
+        if (Array.isArray(payload?.categories)) return payload.categories;
         return [];
     };
 
-    const normalize = (item) => {
+    const normalizeCategory = (item) => ({
+        id: String(item?.id ?? item?.category_id ?? item?.value ?? item?.slug ?? '').trim(),
+        label: String(item?.name ?? item?.title ?? item?.label ?? item?.category_name ?? '').trim(),
+    });
+
+    const normalizeNews = (item) => {
         const category = item?.category || {};
 
         return {
@@ -168,8 +177,23 @@ function setupHomeLatestNews() {
         };
     };
 
-    const render = (items) => {
-        if (!items.length) return;
+    const renderNews = (items) => {
+        if (!items.length) {
+            list.innerHTML = `
+                <article class="news-item">
+                    <a class="news-item-link" href="/berita">
+                        <div class="news-thumb no-image"><i class="fas fa-newspaper"></i></div>
+                        <div class="news-content">
+                            <div class="news-category"><i class="fas fa-tag"></i>Informasi</div>
+                            <h3 class="news-title">Berita belum tersedia</h3>
+                            <p class="news-excerpt">Silakan buka halaman Berita untuk melihat informasi terbaru.</p>
+                            <div class="news-date"><i class="fas fa-calendar-alt"></i>${escapeHtml(formatDateId(new Date()))}</div>
+                        </div>
+                    </a>
+                </article>
+            `;
+            return;
+        }
 
         list.innerHTML = items.map((item) => {
             const title = escapeHtml(item.title);
@@ -197,24 +221,70 @@ function setupHomeLatestNews() {
         }).join('');
     };
 
-    fetch(apiUrl, { headers: { Accept: 'application/json' } })
+    const buildNewsUrl = () => {
+        const params = new URLSearchParams({ paginate: '4', page: '1', sort: 'desc' });
+        if (activeCategory !== 'all') params.set('category_id', activeCategory);
+        return `${newsApiUrl}?${params.toString()}`;
+    };
+
+    const loadNews = () => {
+        fetch(buildNewsUrl(), { headers: { Accept: 'application/json' } })
+            .then((response) => response.ok ? response.json() : Promise.reject())
+            .then((payload) => renderNews(toArray(payload).map(normalizeNews)))
+            .catch(() => {
+                // Keep the static fallback cards from Blade when the API is temporarily unavailable.
+            });
+    };
+
+    const setActiveFilter = (value) => {
+        activeCategory = value;
+        filters?.querySelectorAll('.cat-pill').forEach((pill) => {
+            pill.classList.toggle('active', pill.dataset.categoryId === value);
+        });
+        loadNews();
+    };
+
+    const attachFilterEvents = () => {
+        filters?.querySelectorAll('.cat-pill').forEach((pill) => {
+            pill.addEventListener('click', () => setActiveFilter(pill.dataset.categoryId || 'all'));
+        });
+    };
+
+    const renderCategories = (categories) => {
+        if (!filters || !categories.length) {
+            filters?.querySelectorAll('.cat-pill').forEach((pill, index) => {
+                pill.dataset.categoryId = index === 0 ? 'all' : (pill.dataset.categoryId || pill.textContent.trim());
+                if (!pill.querySelector('i')) pill.insertAdjacentHTML('afterbegin', '<i class="fas fa-tag"></i> ');
+            });
+            attachFilterEvents();
+            return;
+        }
+
+        const options = [
+            { id: 'all', label: 'Semua' },
+            ...categories
+                .map(normalizeCategory)
+                .filter((category) => category.id && category.label)
+                .filter((category, index, source) => source.findIndex((item) => item.id === category.id) === index),
+        ];
+
+        filters.innerHTML = options.map((category, index) => `
+            <button class="cat-pill ${index === 0 ? 'active' : ''}" type="button" data-category-id="${escapeHtml(category.id)}">
+                <i class="fas fa-tag"></i>
+                <span>${escapeHtml(category.label)}</span>
+            </button>
+        `).join('');
+
+        attachFilterEvents();
+    };
+
+    fetch(categoryApiUrl, { headers: { Accept: 'application/json' } })
         .then((response) => response.ok ? response.json() : Promise.reject())
-        .then((payload) => render(toArray(payload).map(normalize)))
-        .catch(() => {
-            // Keep the static fallback cards from Blade when the API is temporarily unavailable.
-        });
+        .then((payload) => renderCategories(toArray(payload)))
+        .catch(() => renderCategories([]));
 
-    if (pagination) {
-        pagination.style.display = 'none';
-    }
-
-    pills.forEach((pill, index) => {
-        pill.addEventListener('click', () => {
-            pills.forEach((item) => item.classList.remove('active'));
-            pill.classList.add('active');
-            if (index !== 0) window.location.href = '/berita';
-        });
-    });
+    if (pagination) pagination.style.display = 'none';
+    loadNews();
 }
 
 function setupStudentServiceCards() {
@@ -258,7 +328,6 @@ function setupStudentServiceCards() {
 
         card.addEventListener('keydown', (event) => {
             if (event.key !== 'Enter' && event.key !== ' ') return;
-
             event.preventDefault();
             openExternal(url);
         });
