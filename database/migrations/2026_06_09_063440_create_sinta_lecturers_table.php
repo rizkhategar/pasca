@@ -12,16 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('sinta_lecturers', function (Blueprint $table) {
-            // SINTA ID tetap menjadi Primary Key utama aplikasi.
-            $table->string('sinta_id')->primary();
+            // ID numerik utama Laravel/Filament.
+            $table->id();
 
-            // ID numerik tambahan untuk kebutuhan tampilan/urutan, bukan primary key.
-            $table->unsignedBigInteger('id', true)->unique();
-            
+            // SINTA ID tetap unik dan dipakai sebagai identifier relasi aplikasi.
+            $table->string('sinta_id')->unique();
+
             // Kolom yang ditranslasi ke Bahasa Inggris
             $table->string('name');
             $table->string('department')->nullable();
-            
+
             // Kolom yang sudah berbahasa Inggris
             $table->string('scopus_h_index')->nullable();
             $table->string('google_scholar_h_index')->nullable();
@@ -30,7 +30,7 @@ return new class extends Migration
             $table->string('affiliation_score_3yr')->nullable();
             $table->string('affiliation_score')->nullable();
             $table->text('profile_url')->nullable();
-            
+
             $table->timestamps();
         });
     }

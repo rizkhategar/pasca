@@ -11,15 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('sinta_service_yearly', function (Blueprint $table) {
+        Schema::create('sinta_researches', function (Blueprint $table) {
             $table->id();
             // Menghubungkan ke tabel sinta_lecturers yang baru
             $table->string('sinta_id');
-            
+
             // Kolom yang ditranslasi ke bahasa Inggris
-            $table->string('year'); // menggantikan tahun
-            $table->integer('count')->default(0); // menggantikan jumlah
-            
+            $table->text('title'); // menggantikan judul
+            $table->string('scheme')->nullable(); // menggantikan skema
+            $table->text('personnel')->nullable(); // menggantikan personils
+            $table->string('year')->nullable(); // menggantikan tahun
+            $table->string('funding')->nullable(); // menggantikan dana
+
+            // Kolom yang sudah berbahasa Inggris
+            $table->string('leader')->nullable();
+            $table->string('status')->nullable();
+            $table->string('source')->nullable();
             $table->timestamps();
 
             // Foreign key constraint ke sinta_lecturers
@@ -35,6 +42,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('sinta_service_yearly');
+        Schema::dropIfExists('sinta_researches');
     }
 };

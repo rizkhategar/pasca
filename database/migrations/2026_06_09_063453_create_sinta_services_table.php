@@ -15,14 +15,14 @@ return new class extends Migration
             $table->id();
             // Menghubungkan ke tabel sinta_lecturers yang baru
             $table->string('sinta_id');
-            
+
             // Kolom yang ditranslasi ke bahasa Inggris
             $table->text('title'); // menggantikan judul
             $table->string('scheme')->nullable(); // menggantikan skema
             $table->text('personnel')->nullable(); // menggantikan personils
             $table->string('year')->nullable(); // menggantikan tahun
             $table->string('funding')->nullable(); // menggantikan dana
-            
+
             // Kolom yang sudah berbahasa Inggris
             $table->string('leader')->nullable();
             $table->string('status')->nullable();
