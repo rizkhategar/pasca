@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::create('sinta_scopus_yearly_stats', function (Blueprint $table) {
             $table->id();
             $table->string('sinta_id');
-            
+
             // Kolom yang ditranslasi ke bahasa Inggris
             $table->string('year'); // menggantikan tahun
             $table->integer('count')->default(0); // menggantikan jumlah
-            
+
             $table->timestamps();
 
             // Foreign key constraint ke sinta_lecturers

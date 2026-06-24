@@ -6,33 +6,22 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('sinta_garuda_yearly_stats', function (Blueprint $table) {
             $table->id();
             $table->string('sinta_id');
-            
-            // Kolom yang ditranslasi ke bahasa Inggris
-            $table->string('year'); // menggantikan tahun
-            
-            // Kolom yang sudah berbahasa Inggris
+            $table->string('year');
             $table->integer('articles')->default(0);
             $table->timestamps();
 
-            // Foreign key constraint ke sinta_lecturers
             $table->foreign('sinta_id')
-                  ->references('sinta_id')
-                  ->on('sinta_lecturers')
-                  ->onDelete('cascade');
+                ->references('sinta_id')
+                ->on('sinta_lecturers')
+                ->cascadeOnDelete();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('sinta_garuda_yearly_stats');

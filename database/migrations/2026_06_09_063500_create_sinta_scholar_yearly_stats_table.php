@@ -11,24 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('sinta_scholar_publications', function (Blueprint $table) {
+        Schema::create('sinta_scholar_yearly_stats', function (Blueprint $table) {
             $table->id();
-            // Menghubungkan ke tabel sinta_lecturers yang baru
             $table->string('sinta_id');
-            
+
             // Kolom yang ditranslasi ke bahasa Inggris
-            $table->string('title'); // menggantikan judul
-            $table->text('scholar_url')->nullable(); // menggantikan url_scholar
-            $table->string('year')->nullable(); // menggantikan tahun
-            
+            $table->string('year'); // menggantikan tahun
+
             // Kolom yang sudah berbahasa Inggris
-            $table->text('authors')->nullable();
-            $table->string('source')->nullable();
-            $table->integer('citation')->nullable();
-            
+            $table->integer('publications')->default(0);
+            $table->integer('citations')->default(0);
             $table->timestamps();
 
-            // Menambahkan foreign key constraint ke tabel sinta_lecturers
+            // Foreign key constraint ke sinta_lecturers
             $table->foreign('sinta_id')
                   ->references('sinta_id')
                   ->on('sinta_lecturers')
@@ -41,6 +36,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('sinta_scholar_publications');
+        Schema::dropIfExists('sinta_scholar_yearly_stats');
     }
 };
