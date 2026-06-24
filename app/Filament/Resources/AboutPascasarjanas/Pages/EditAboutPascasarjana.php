@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\AboutPascasarjanas\Pages;
 
 use App\Filament\Resources\AboutPascasarjanas\AboutPascasarjanaResource;
+use App\Support\FilamentImageUpload;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Storage;
@@ -17,7 +18,14 @@ class EditAboutPascasarjana extends EditRecord
             DeleteAction::make()
                 ->label('Delete')
                 ->icon('heroicon-o-trash')
-                ->color('danger'),
+                ->color('danger')
+                ->before(function (): void {
+                    FilamentImageUpload::deleteFromPublicDisk($this->record->direktur_image);
+
+                    foreach (($this->record->points ?? []) as $point) {
+                        FilamentImageUpload::deleteFromPublicDisk($point['icon'] ?? null);
+                    }
+                }),
         ];
     }
 
