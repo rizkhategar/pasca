@@ -71,6 +71,9 @@ class SliderForm
                                     ->saveUploadedFileUsing(
                                         fn (TemporaryUploadedFile $file): string => FilamentImageUpload::saveToPublicDisk($file, 'sliders')
                                     )
+                                    ->deleteUploadedFileUsing(
+                                        fn (string|array|null $file): null => tap(null, fn () => FilamentImageUpload::deleteFromPublicDisk($file))
+                                    )
                                     ->helperText('Gunakan gambar JPG, PNG, atau WEBP. Maksimal 8MB.'),
                             ]),
 
