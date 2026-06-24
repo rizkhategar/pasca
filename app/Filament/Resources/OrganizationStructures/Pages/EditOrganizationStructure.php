@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\OrganizationStructures\Pages;
 
 use App\Filament\Resources\OrganizationStructures\OrganizationStructureResource;
+use App\Support\FilamentImageUpload;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Storage;
@@ -14,7 +15,8 @@ class EditOrganizationStructure extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
+            DeleteAction::make()
+                ->before(fn () => FilamentImageUpload::deleteFromPublicDisk($this->record->image_path)),
         ];
     }
 
