@@ -69,6 +69,9 @@ class OrganizationStructureForm
                                     ->saveUploadedFileUsing(
                                         fn (TemporaryUploadedFile $file): string => FilamentImageUpload::saveToPublicDisk($file, 'organization-structures')
                                     )
+                                    ->deleteUploadedFileUsing(
+                                        fn (string|array|null $file): null => tap(null, fn () => FilamentImageUpload::deleteFromPublicDisk($file))
+                                    )
                                     ->helperText('Gunakan JPG, PNG, atau WEBP. Maksimal 8MB.'),
                             ]),
 

@@ -26,9 +26,10 @@ class FilamentImageUpload
         $baseName = self::resolveBaseName($preferredName);
         $filename = $baseName . '.' . $extension;
         $targetPath = $targetDirectory . DIRECTORY_SEPARATOR . $filename;
-        $temporaryPath = $file->getRealPath();
+        $temporaryPath = $file->getRealPath() ?: $file->getPathname();
 
         self::copyTemporaryFile($temporaryPath, $targetPath);
+        self::pruneLivewireTemporaryUploads();
 
         return $directory . '/' . $filename;
     }
@@ -48,11 +49,75 @@ class FilamentImageUpload
 
         $filename = basename($filename);
         $targetPath = $targetDirectory . DIRECTORY_SEPARATOR . $filename;
-        $temporaryPath = $file->getRealPath();
+        $temporaryPath = $file->getRealPath() ?: $file->getPathname();
 
         self::copyTemporaryFile($temporaryPath, $targetPath);
+        self::pruneLivewireTemporaryUploads();
 
         return $filename;
+    }
+
+    public static function deleteFromPublicDisk(mixed $path): void
+    {
+        $path = self::normalizePublicPath($path);
+
+        if (! $path) {
+            self::pruneLivewireTemporaryUploads();
+            return;
+        }
+
+        if (Storage::disk('public')->exists($path)) {
+            Storage::disk('public')->delete($path);
+        }
+
+        self::pruneLivewireTemporaryUploads();
+    }
+
+    public static function pruneLivewireTemporaryUploads(int $olderThanMinutes = 30): void
+    {
+        $disk = config('livewire.temporary_file_upload.disk') ?: config('filesystems.default', 'local');
+        $directory = trim((string) config('livewire.temporary_file_upload.directory', 'livewire-tmp'), '/');
+
+        try {
+            if (! Storage::disk($disk)->exists($directory)) {
+                return;
+            }
+
+            $expiration = now()->subMinutes($olderThanMinutes)->timestamp;
+
+            foreach (Storage::disk($disk)->allFiles($directory) as $file) {
+                if (Storage::disk($disk)->lastModified($file) < $expiration) {
+                    Storage::disk($disk)->delete($file);
+                }
+            }
+        } catch (\Throwable) {
+            // Cleanup temporary upload tidak boleh menggagalkan proses simpan form.
+        }
+    }
+
+    private static function normalizePublicPath(mixed $value): ?string
+    {
+        if (is_array($value)) {
+            foreach (array_reverse($value) as $item) {
+                $path = self::normalizePublicPath($item);
+
+                if ($path) {
+                    return $path;
+                }
+            }
+
+            return null;
+        }
+
+        if (! is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        $path = trim(str_replace('\\', '/', $value));
+        $path = preg_replace('#^/?storage/#', '', $path) ?: $path;
+        $path = preg_replace('#^/?public/#', '', $path) ?: $path;
+
+        return ltrim($path, '/');
     }
 
     private static function copyTemporaryFile(?string $temporaryPath, string $targetPath): void

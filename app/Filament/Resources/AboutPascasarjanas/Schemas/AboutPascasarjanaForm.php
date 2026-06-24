@@ -103,6 +103,9 @@ class AboutPascasarjanaForm
                                             ->saveUploadedFileUsing(
                                                 fn (TemporaryUploadedFile $file): string => FilamentImageUpload::saveToPublicDisk($file, 'tentang-icons')
                                             )
+                                            ->deleteUploadedFileUsing(
+                                                fn (string|array|null $file): null => tap(null, fn () => FilamentImageUpload::deleteFromPublicDisk($file))
+                                            )
                                             ->columnSpan([
                                                 'default' => 4,
                                                 'md' => 1,
@@ -204,6 +207,9 @@ class AboutPascasarjanaForm
                                     ->uploadProgressIndicatorPosition('right')
                                     ->saveUploadedFileUsing(
                                         fn (TemporaryUploadedFile $file): string => FilamentImageUpload::saveToPublicDisk($file, 'direktur-images')
+                                    )
+                                    ->deleteUploadedFileUsing(
+                                        fn (string|array|null $file): null => tap(null, fn () => FilamentImageUpload::deleteFromPublicDisk($file))
                                     )
                                     ->columnSpan([
                                         'default' => 4,
