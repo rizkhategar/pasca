@@ -9,11 +9,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('pasca_lecturers', function (Blueprint $table) {
-            // SINTA ID sebagai Primary Key sekaligus Foreign Key ke sinta_lecturers
-            $table->string('sinta_id')->primary();
+            // ID numerik utama Laravel/Filament.
+            $table->id();
 
-            // ID numerik tambahan untuk kebutuhan tampilan/urutan, bukan primary key.
-            $table->unsignedBigInteger('id', true)->unique();
+            // SINTA ID tetap unik dan menjadi foreign key ke sinta_lecturers.
+            $table->string('sinta_id')->unique();
 
             $table->string('name')->nullable();
             $table->string('institution')->nullable();
