@@ -160,7 +160,7 @@
                     </div>
 
                     <div class="news-list">
-                        @for ($i = 0; $i < 4; $i++)
+                        @for ($i = 0; $i < 3; $i++)
                             <article class="news-item">
                                 <a class="news-item-link" href="{{ route('news.index') }}">
                                     <div class="news-thumb no-image"><i class="fas fa-newspaper"></i></div>
@@ -173,6 +173,12 @@
                                 </a>
                             </article>
                         @endfor
+                    </div>
+
+                    <div class="news-more-wrap">
+                        <a href="{{ route('news.index') }}" class="news-more-link">
+                            Selengkapnya <i class="fas fa-arrow-right"></i>
+                        </a>
                     </div>
                 </div>
 
