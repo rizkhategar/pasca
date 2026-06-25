@@ -24,9 +24,20 @@
                     <h1 class="profile-hero-title">{{ $dosen->nama }}</h1>
 
                     <div class="profile-meta">
-                        <span><i class="fas fa-id-badge"></i>SINTA ID: <strong>{{ $dosen->sinta_id }}</strong></span>
-                        <span><i class="fas fa-graduation-cap"></i>{{ $dosen->program_studi }}</span>
-                        <span><i class="fas fa-university"></i>{{ $dosen->institusi ?? 'Universitas Ngudi Waluyo' }}</span>
+                        <span>
+                            <i class="fas fa-id-badge"></i>
+                            SINTA ID: <strong>{{ $dosen->sinta_id }}</strong>
+                        </span>
+
+                        <span>
+                            <i class="fas fa-graduation-cap"></i>
+                            {{ $dosen->program_studi }}
+                        </span>
+
+                        <span>
+                            <i class="fas fa-university"></i>
+                            {{ $dosen->institusi ?? 'Universitas Ngudi Waluyo' }}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -50,15 +61,25 @@
                     </div>
 
                     <div class="profile-photo-caption">
-                        <span><i class="fas fa-user-check"></i>Data Profil Dosen</span>
-                        <span><i class="fas fa-chart-line"></i>Rekap Kinerja SINTA</span>
+                        <span>
+                            <i class="fas fa-user-check"></i>
+                            Data Profil Dosen
+                        </span>
+
+                        <span>
+                            <i class="fas fa-chart-line"></i>
+                            Rekap Kinerja SINTA
+                        </span>
                     </div>
                 </div>
 
                 <div class="profile-identity-content">
                     <div class="profile-content-heading">
                         <div class="profile-heading-title">
-                            <div class="profile-heading-icon"><i class="fas fa-address-card"></i></div>
+                            <div class="profile-heading-icon">
+                                <i class="fas fa-address-card"></i>
+                            </div>
+
                             <div>
                                 <h2>Identitas Akademik</h2>
                                 <p>Informasi dosen, program studi, dan ringkasan skor SINTA.</p>
@@ -67,22 +88,316 @@
                     </div>
 
                     <div class="stats-grid">
-                        <div class="stat-box"><div class="stat-number">{{ number_format($dosen->sinta_score_overall ?? 0) }}</div><div class="stat-desc">Overall Score</div></div>
-                        <div class="stat-box"><div class="stat-number">{{ number_format($dosen->sinta_score_3yr ?? 0) }}</div><div class="stat-desc">3 Year Score</div></div>
-                        <div class="stat-box"><div class="stat-number">{{ number_format($dosen->affil_score ?? 0) }}</div><div class="stat-desc">Affil Score</div></div>
-                        <div class="stat-box"><div class="stat-number">{{ number_format($dosen->affil_score_3yr ?? 0) }}</div><div class="stat-desc">Affil 3Yr</div></div>
+                        <div class="stat-box">
+                            <div class="stat-number">{{ number_format($dosen->sinta_score_overall ?? 0) }}</div>
+                            <div class="stat-desc">Overall Score</div>
+                        </div>
+
+                        <div class="stat-box">
+                            <div class="stat-number">{{ number_format($dosen->sinta_score_3yr ?? 0) }}</div>
+                            <div class="stat-desc">3 Year Score</div>
+                        </div>
+
+                        <div class="stat-box">
+                            <div class="stat-number">{{ number_format($dosen->affil_score ?? 0) }}</div>
+                            <div class="stat-desc">Affil Score</div>
+                        </div>
+
+                        <div class="stat-box">
+                            <div class="stat-number">{{ number_format($dosen->affil_score_3yr ?? 0) }}</div>
+                            <div class="stat-desc">Affil 3Yr</div>
+                        </div>
                     </div>
 
                     <h3 class="block-title">Biodata Akademik</h3>
+
                     <table class="table-profile">
-                        <tr><td class="label">Nama Lengkap</td><td class="value highlight">{{ $dosen->nama }}</td></tr>
-                        <tr><td class="label">Program Studi</td><td class="value">{{ $dosen->program_studi }}</td></tr>
+                        <tr>
+                            <td class="label">Nama Lengkap</td>
+                            <td class="value highlight">{{ $dosen->nama }}</td>
+                        </tr>
+
+                        <tr>
+                            <td class="label">Program Studi</td>
+                            <td class="value">{{ $dosen->program_studi }}</td>
+                        </tr>
+
                         @if($dosen->bidang_minat)
-                            <tr><td class="label">Bidang Minat</td><td class="value">{{ $dosen->bidang_minat }}</td></tr>
+                            <tr>
+                                <td class="label">Bidang Minat</td>
+                                <td class="value">{{ $dosen->bidang_minat }}</td>
+                            </tr>
                         @endif
                     </table>
                 </div>
             </article>
+
+            <div class="tabs-container-wrap">
+                <div class="tabs-container">
+                    <button class="tab-btn active" type="button" onclick="switchTab(event, 'scopus')">
+                        <i class="fas fa-globe"></i>
+                        Scopus
+                    </button>
+
+                    <button class="tab-btn" type="button" onclick="switchTab(event, 'scholar')">
+                        <i class="fas fa-graduation-cap"></i>
+                        Scholar
+                    </button>
+
+                    <button class="tab-btn" type="button" onclick="switchTab(event, 'garuda')">
+                        <i class="fas fa-book-open"></i>
+                        Garuda
+                    </button>
+
+                    <button class="tab-btn" type="button" onclick="switchTab(event, 'research')">
+                        <i class="fas fa-search"></i>
+                        Penelitian
+                    </button>
+
+                    <button class="tab-btn" type="button" onclick="switchTab(event, 'service')">
+                        <i class="fas fa-hands-helping"></i>
+                        Pengabdian
+                    </button>
+
+                    <button class="tab-btn" type="button" onclick="switchTab(event, 'books')">
+                        <i class="fas fa-book"></i>
+                        Buku
+                    </button>
+                </div>
+            </div>
+
+            <section class="research-layout">
+                <div id="scopus" class="tab-content active content-block research-card">
+                    <div class="tab-header">
+                        <div>
+                            <h2 class="block-title">Publikasi Internasional Scopus</h2>
+                            <p>Daftar publikasi internasional terindeks Scopus beserta jurnal, tahun, quartile, dan jumlah sitasi.</p>
+                        </div>
+
+                        <div class="tab-badge">
+                            <i class="fas fa-database"></i>
+                            {{ $dosen->scopusPublications->count() ?? 0 }} Data
+                        </div>
+                    </div>
+
+                    <div class="card-chart-wrapper">
+                        <div class="chart-title">
+                            <i class="fas fa-chart-line"></i>
+                            Perkembangan Publikasi Tahunan Scopus
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="scopusChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table-data">
+                            <thead>
+                                <tr>
+                                    <th style="width: 52px; text-align: center;">No</th>
+                                    <th>Artikel & Info Jurnal</th>
+                                    <th style="width: 130px; text-align: center;">Tahun / Q</th>
+                                    <th style="width: 90px; text-align: center;">Sitasi</th>
+                                    <th style="width: 100px; text-align: center;">Aksi</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @forelse($dosen->scopusPublications as $index => $scopus)
+                                    <tr>
+                                        <td class="table-number">{{ $index + 1 }}</td>
+
+                                        <td>
+                                            <div class="pub-title">{{ $scopus->judul }}</div>
+                                            <div class="pub-muted">Jurnal: {{ $scopus->journal }}</div>
+                                            <div class="pub-muted">Penulis ke-{{ $scopus->author_order }} atau {{ $scopus->creator ?? '-' }}</div>
+                                        </td>
+
+                                        <td style="text-align: center;">
+                                            <strong>{{ $scopus->tahun }}</strong>
+                                            @if($scopus->quartile)
+                                                <br>
+                                                <span class="badge-quartile" style="margin-top: 6px;">{{ $scopus->quartile }}</span>
+                                            @endif
+                                        </td>
+
+                                        <td style="text-align: center; font-weight: 900; color: var(--primary);">
+                                            {{ $scopus->citation }}
+                                        </td>
+
+                                        <td style="text-align: center;">
+                                            @if($scopus->url_artikel)
+                                                <a href="{{ $scopus->url_artikel }}" target="_blank" class="pub-link">
+                                                    <i class="fas fa-external-link-alt"></i>
+                                                    Link
+                                                </a>
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="empty-text">Tidak ada data publikasi Scopus.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="scholar" class="tab-content content-block research-card">
+                    <div class="tab-header">
+                        <div>
+                            <h2 class="block-title">Publikasi Google Scholar</h2>
+                            <p>Daftar publikasi yang terindeks Google Scholar beserta penulis, sumber, tahun, dan sitasi.</p>
+                        </div>
+
+                        <div class="tab-badge">
+                            <i class="fas fa-database"></i>
+                            {{ $dosen->scholarPublications->count() ?? 0 }} Data
+                        </div>
+                    </div>
+
+                    <div class="card-chart-wrapper">
+                        <div class="chart-title">
+                            <i class="fas fa-chart-line"></i>
+                            Perkembangan Publikasi Tahunan Google Scholar
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="scholarChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table-data">
+                            <thead>
+                                <tr>
+                                    <th style="width: 52px; text-align: center;">No</th>
+                                    <th>Judul Dokumen & Sumber</th>
+                                    <th style="width: 90px; text-align: center;">Tahun</th>
+                                    <th style="width: 90px; text-align: center;">Sitasi</th>
+                                    <th style="width: 100px; text-align: center;">Aksi</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @forelse($dosen->scholarPublications as $index => $scholar)
+                                    <tr>
+                                        <td class="table-number">{{ $index + 1 }}</td>
+
+                                        <td>
+                                            <div class="pub-title">{{ $scholar->judul }}</div>
+                                            <div class="pub-muted">Penulis: {{ $scholar->authors }}</div>
+                                            @if($scholar->source)
+                                                <div class="pub-muted">Sumber: {{ $scholar->source }}</div>
+                                            @endif
+                                        </td>
+
+                                        <td style="text-align: center; font-weight: 900;">{{ $scholar->tahun }}</td>
+
+                                        <td style="text-align: center; font-weight: 900; color: var(--primary);">
+                                            {{ $scholar->citation }}
+                                        </td>
+
+                                        <td style="text-align: center;">
+                                            @if($scholar->url_scholar)
+                                                <a href="{{ $scholar->url_scholar }}" target="_blank" class="pub-link">
+                                                    <i class="fas fa-external-link-alt"></i>
+                                                    Link
+                                                </a>
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="empty-text">Tidak ada data publikasi Google Scholar.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="garuda" class="tab-content content-block research-card">
+                    <div class="tab-header">
+                        <div>
+                            <h2 class="block-title">Publikasi Nasional Garuda</h2>
+                            <p>Daftar publikasi nasional terindeks Garuda beserta jurnal, penerbit, tahun, dan akreditasi.</p>
+                        </div>
+
+                        <div class="tab-badge">
+                            <i class="fas fa-database"></i>
+                            {{ $dosen->garudaPublications->count() ?? 0 }} Data
+                        </div>
+                    </div>
+
+                    <div class="card-chart-wrapper">
+                        <div class="chart-title">
+                            <i class="fas fa-chart-line"></i>
+                            Perkembangan Publikasi Tahunan Garuda
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="garudaChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table-data">
+                            <thead>
+                                <tr>
+                                    <th style="width: 52px; text-align: center;">No</th>
+                                    <th>Judul Jurnal & Penerbit</th>
+                                    <th style="width: 90px; text-align: center;">Tahun</th>
+                                    <th style="width: 120px; text-align: center;">Akreditasi</th>
+                                    <th style="width: 100px; text-align: center;">Aksi</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @forelse($dosen->garudaPublications as $index => $garuda)
+                                    <tr>
+                                        <td class="table-number">{{ $index + 1 }}</td>
+
+                                        <td>
+                                            <div class="pub-title">{{ $garuda->judul }}</div>
+                                            <div class="pub-muted">Jurnal: {{ $garuda->journal }}</div>
+                                            <div class="pub-muted">Penerbit: {{ $garuda->publisher ?? '-' }}</div>
+                                        </td>
+
+                                        <td style="text-align: center; font-weight: 900;">{{ $garuda->tahun }}</td>
+
+                                        <td style="text-align: center;">
+                                            <span class="badge-soft">{{ $garuda->accreditation ?? '-' }}</span>
+                                        </td>
+
+                                        <td style="text-align: center;">
+                                            @if($garuda->url_artikel)
+                                                <a href="{{ $garuda->url_artikel }}" target="_blank" class="pub-link">
+                                                    <i class="fas fa-external-link-alt"></i>
+                                                    Link
+                                                </a>
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="empty-text">Tidak ada data publikasi Garuda.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
         </section>
     </div>
 @endsection
+
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+@endpush
