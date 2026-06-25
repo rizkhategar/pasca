@@ -5,6 +5,9 @@
 
 @section('content')
     <section class="news-hero">
+        <div class="hero-dots"></div>
+        <div class="hero-line"></div>
+
         <div class="container">
             <div class="hero-inner">
                 <a href="{{ route('news.index') }}" class="back-link">
@@ -20,6 +23,12 @@
                 <h1 class="news-title-page" id="newsTitle">Detail Berita</h1>
                 <div class="news-meta" id="newsMeta"></div>
             </div>
+        </div>
+
+        <div class="hero-wave">
+            <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
+                <path d="M0,74 C180,122 384,36 650,62 C930,90 1120,128 1440,44 L1440,120 L0,120 Z" fill="#ffffff"></path>
+            </svg>
         </div>
     </section>
 
