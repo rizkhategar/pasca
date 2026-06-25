@@ -102,15 +102,22 @@
 
                     <section class="rd-grid" id="dosenGrid">
                         @forelse($dosens as $dosen)
+                            @php
+                                $safeSintaId = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $dosen->sinta_id);
+                                $customPhotoPath = "sinta-lecturers/{$safeSintaId}_PL.jpg";
+                                $scrapedPhotoPath = "sinta-lecturers/{$safeSintaId}.jpg";
+                                $photoUrl = asset('assets/images/default-user.png');
+
+                                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($customPhotoPath)) {
+                                    $photoUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($customPhotoPath);
+                                } elseif (\Illuminate\Support\Facades\Storage::disk('public')->exists($scrapedPhotoPath)) {
+                                    $photoUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($scrapedPhotoPath);
+                                }
+                            @endphp
+
                             <a href="{{ route('riset.detail', $dosen->sinta_id) }}" class="rd-list-item">
                                 <div class="rd-list-photo">
-                                    @if (file_exists(public_path('assets/images/' . $dosen->sinta_id . '_PL.jpg')))
-                                        <img src="{{ asset('assets/images/' . $dosen->sinta_id . '_PL.jpg') }}" alt="{{ $dosen->nama }}" class="rd-photo">
-                                    @elseif (file_exists(public_path('assets/images/' . $dosen->sinta_id . '.jpg')))
-                                        <img src="{{ asset('assets/images/' . $dosen->sinta_id . '.jpg') }}" alt="{{ $dosen->nama }}" class="rd-photo">
-                                    @else
-                                        <img src="{{ asset('assets/images/default-user.png') }}" alt="{{ $dosen->nama }}" class="rd-photo">
-                                    @endif
+                                    <img src="{{ $photoUrl }}" alt="{{ $dosen->nama }}" class="rd-photo">
                                 </div>
 
                                 <div class="rd-list-content">

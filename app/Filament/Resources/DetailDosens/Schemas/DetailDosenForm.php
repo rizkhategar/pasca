@@ -8,6 +8,7 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -103,13 +104,15 @@ class DetailDosenForm
 
                         $safeSintaId = Str::of($sintaId)->trim()->replaceMatches('/[^A-Za-z0-9_-]/', '')->toString();
 
-                        $customPath = public_path("assets/images/{$safeSintaId}_PL.jpg");
-                        $scrapedPath = public_path("assets/images/{$safeSintaId}.jpg");
+                        $customPath = "sinta-lecturers/{$safeSintaId}_PL.jpg";
+                        $scrapedPath = "sinta-lecturers/{$safeSintaId}.jpg";
 
-                        if (file_exists($customPath)) {
+                        if (Storage::disk('public')->exists($customPath)) {
+                            $customUrl = Storage::disk('public')->url($customPath) . '?v=' . time();
+
                             return new HtmlString("
                                 <div class='flex items-center gap-4 py-2'>
-                                    <img src='/assets/images/{$safeSintaId}_PL.jpg?v=" . time() . "'
+                                    <img src='{$customUrl}'
                                          class='w-32 h-32 rounded-xl object-cover shadow-sm border border-success-300 dark:border-success-700'
                                          alt='Foto Kustom Dosen' />
                                     <span class='text-xs font-semibold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800/50'>Foto Resmi Admin (_PL)</span>
@@ -117,10 +120,12 @@ class DetailDosenForm
                             ");
                         }
 
-                        if (file_exists($scrapedPath)) {
+                        if (Storage::disk('public')->exists($scrapedPath)) {
+                            $scrapedUrl = Storage::disk('public')->url($scrapedPath) . '?v=' . time();
+
                             return new HtmlString("
                                 <div class='flex items-center gap-4 py-2'>
-                                    <img src='/assets/images/{$safeSintaId}.jpg?v=" . time() . "'
+                                    <img src='{$scrapedUrl}'
                                          class='w-32 h-32 rounded-xl object-cover shadow-sm border border-gray-300 dark:border-gray-700'
                                          alt='Foto Bawaan SINTA' />
                                     <span class='text-xs font-semibold px-2.5 py-1 rounded-md bg-gray-50 text-gray-600 border border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700'>Foto Bawaan Scraping SINTA</span>
@@ -128,7 +133,7 @@ class DetailDosenForm
                             ");
                         }
 
-                        return new HtmlString('<span class="text-gray-400 text-sm">Foto tidak ditemukan di public/assets/images/</span>');
+                        return new HtmlString('<span class="text-gray-400 text-sm">Foto tidak ditemukan di storage/app/public/sinta-lecturers/</span>');
                     })
                     ->columnSpanFull(),
 
@@ -155,26 +160,21 @@ class DetailDosenForm
                             return null;
                         }
 
-                        $destinationFolder = public_path('assets/images');
                         $customFileName = "{$safeSintaId}_PL.jpg";
-                        $customFilePath = $destinationFolder . '/' . $customFileName;
+                        $customFilePath = "sinta-lecturers/{$customFileName}";
 
-                        if (file_exists($customFilePath)) {
-                            @unlink($customFilePath);
+                        if (Storage::disk('public')->exists($customFilePath)) {
+                            Storage::disk('public')->delete($customFilePath);
                         }
 
-                        return FilamentImageUpload::saveToPublicPath($file, 'assets/images', $customFileName);
+                        return FilamentImageUpload::saveToPublicDisk($file, 'sinta-lecturers', $customFileName);
                     })
                     ->deleteUploadedFileUsing(function (string|array|null $file): void {
                         $path = is_array($file) ? collect($file)->filter()->last() : $file;
 
                         if (is_string($path) && trim($path) !== '') {
                             $filename = basename(str_replace('\\', '/', $path));
-                            $target = public_path('assets/images/' . $filename);
-
-                            if (is_file($target)) {
-                                @unlink($target);
-                            }
+                            FilamentImageUpload::deleteFromPublicDisk('sinta-lecturers/' . $filename);
                         }
 
                         FilamentImageUpload::pruneLivewireTemporaryUploads();
