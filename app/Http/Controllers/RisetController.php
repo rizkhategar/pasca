@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class RisetController extends Controller
 {
@@ -78,7 +79,8 @@ class RisetController extends Controller
 
         // 1. MEKANISME FALLBACK PROFIL: Jika ada data PascaLecturer, pakai data tersebut. Jika tidak, pakai data SINTA.
         $dosen->nama = $dosen->pascaLecturer->name ?? $dosen->name;
-        
+        $dosen->profile_photo = $this->resolveLecturerPhotoPath($dosen);
+
         // 2. TRANSLASI ID PIVOT JURUSAN KE TEKS DISPLAY
         $jurusans = Cache::remember('academic_programs_select_import', now()->addHours(12), function () {
             $response = Http::withoutVerifying()->get('https://panel-web.unw.ac.id/api/unw-program-studi');
@@ -139,5 +141,43 @@ class RisetController extends Controller
         }
 
         return $dosen;
+    }
+
+    private function resolveLecturerPhotoPath($dosen): ?string
+    {
+        $safeSintaId = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $dosen->sinta_id);
+
+        if ($safeSintaId === '') {
+            return null;
+        }
+
+        $customPath = "sinta-lecturers/{$safeSintaId}_PL.jpg";
+        $scrapedPath = "sinta-lecturers/{$safeSintaId}.jpg";
+
+        if (Storage::disk('public')->exists($customPath)) {
+            return $customPath;
+        }
+
+        if (Storage::disk('public')->exists($scrapedPath)) {
+            return $scrapedPath;
+        }
+
+        $storedPath = $dosen->pascaLecturer->profile_photo ?? $dosen->profile_photo ?? null;
+
+        if (! $storedPath) {
+            return null;
+        }
+
+        $storedPath = trim(str_replace('\\', '/', $storedPath), '/');
+
+        if ($storedPath === '') {
+            return null;
+        }
+
+        if (! str_contains($storedPath, '/')) {
+            $storedPath = 'sinta-lecturers/' . $storedPath;
+        }
+
+        return Storage::disk('public')->exists($storedPath) ? $storedPath : null;
     }
 }
