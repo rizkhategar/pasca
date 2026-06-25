@@ -155,11 +155,11 @@ class RisetController extends Controller
         $scrapedPath = "sinta-lecturers/{$safeSintaId}.jpg";
 
         if (Storage::disk('public')->exists($customPath)) {
-            return $customPath;
+            return '../../storage/' . $customPath;
         }
 
         if (Storage::disk('public')->exists($scrapedPath)) {
-            return $scrapedPath;
+            return '../../storage/' . $scrapedPath;
         }
 
         $storedPath = $dosen->pascaLecturer->profile_photo ?? $dosen->profile_photo ?? null;
@@ -178,6 +178,6 @@ class RisetController extends Controller
             $storedPath = 'sinta-lecturers/' . $storedPath;
         }
 
-        return Storage::disk('public')->exists($storedPath) ? $storedPath : null;
+        return Storage::disk('public')->exists($storedPath) ? '../../storage/' . $storedPath : null;
     }
 }
