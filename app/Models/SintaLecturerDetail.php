@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class SintaLecturerDetail extends Model
@@ -52,17 +52,14 @@ class SintaLecturerDetail extends Model
                 return;
             }
 
-            $imageDirectory = public_path('assets/images');
-            $photoFileNames = [
-                "{$safeSintaId}.jpg",
-                "{$safeSintaId}_PL.jpg",
+            $photoFilePaths = [
+                "sinta-lecturers/{$safeSintaId}.jpg",
+                "sinta-lecturers/{$safeSintaId}_PL.jpg",
             ];
 
-            foreach ($photoFileNames as $photoFileName) {
-                $photoPath = $imageDirectory . DIRECTORY_SEPARATOR . $photoFileName;
-
-                if (File::exists($photoPath)) {
-                    File::delete($photoPath);
+            foreach ($photoFilePaths as $photoFilePath) {
+                if (Storage::disk('public')->exists($photoFilePath)) {
+                    Storage::disk('public')->delete($photoFilePath);
                 }
             }
         });
