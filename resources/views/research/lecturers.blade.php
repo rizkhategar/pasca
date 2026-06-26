@@ -108,12 +108,12 @@
                             $safeSintaId = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $dosen->sinta_id);
                             $customPhotoPath = "sinta-lecturers/{$safeSintaId}_PL.jpg";
                             $scrapedPhotoPath = "sinta-lecturers/{$safeSintaId}.jpg";
-                            $photoUrl = asset('assets/images/default-user.png');
+                            $photoUrl = $dosen->profile_photo ?: asset('assets/images/default-user.png');
 
                             if (\Illuminate\Support\Facades\Storage::disk('public')->exists($customPhotoPath)) {
-                                $photoUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($customPhotoPath);
+                                $photoUrl = url('storage/' . $customPhotoPath);
                             } elseif (\Illuminate\Support\Facades\Storage::disk('public')->exists($scrapedPhotoPath)) {
-                                $photoUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($scrapedPhotoPath);
+                                $photoUrl = url('storage/' . $scrapedPhotoPath);
                             }
                         @endphp
 
