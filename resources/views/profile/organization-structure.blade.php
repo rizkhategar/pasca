@@ -24,7 +24,7 @@
 @section('content')
     <section class="page-hero">
         <div class="hero-dots"></div>
-        <div class="hero-line"></div>
+        @include('components.hero-spotlight')
 
         <div class="so-container">
             <div class="hero-inner">
