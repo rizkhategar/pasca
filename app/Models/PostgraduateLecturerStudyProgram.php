@@ -9,16 +9,16 @@ class PostgraduateLecturerStudyProgram extends Model
 {
     use HasFactory;
 
-    protected $table = 'postgraduate_lecturer_study_program';
+    protected $table = 'postgraduate_lecturer_study_programs';
 
     protected $fillable = [
         'postgraduate_lecturer_id',
-        'id_study_program',
+        'study_program_id',
     ];
 
     protected $casts = [
         'postgraduate_lecturer_id' => 'integer',
-        'id_study_program' => 'integer',
+        'study_program_id' => 'integer',
     ];
 
     public function lecturer()
@@ -28,6 +28,6 @@ class PostgraduateLecturerStudyProgram extends Model
 
     public function studyProgram()
     {
-        return $this->belongsTo(StudyProgram::class, 'id_study_program', 'id_unw_program_studi');
+        return $this->belongsTo(StudyProgram::class, 'study_program_id', 'id');
     }
 }
