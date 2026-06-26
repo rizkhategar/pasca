@@ -32,7 +32,7 @@ class NewsController extends Controller
 
         $viewData = compact('initialNewsPayload');
         $page = view('news.index', $viewData)->render();
-        $bootstrap = view('component.news-fast-first-render', $viewData)->render();
+        $bootstrap = view('components.news-fast-first-render', $viewData)->render();
 
         // News toolbar uses the generic .dropdown-trigger class. Keep its rounded filter styles
         // inside the news panel only so it cannot affect Profile / Academic header navigation.
