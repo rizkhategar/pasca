@@ -1,3 +1,11 @@
+@php
+    $primaryWhatsapp = $whatsappAdmins[0] ?? [
+        'name' => 'Admin WhatsApp',
+        'number' => '+62 857-3033-9469',
+        'url' => 'https://wa.me/6285730339469',
+    ];
+@endphp
+
 @extends('layouts.app')
 
 @section('title', 'Kontak PMB - Pascasarjana UNW')
@@ -59,7 +67,7 @@
                     </div>
                 </div>
 
-                <a class="news-more-link" href="https://wa.me/6285730339469" target="_blank" rel="noopener">
+                <a class="news-more-link" href="{{ $primaryWhatsapp['url'] }}" target="_blank" rel="noopener">
                     <i class="fab fa-whatsapp"></i>
                     Chat Admin
                 </a>
@@ -102,9 +110,9 @@
                             <i class="fab fa-whatsapp"></i>
                         </div>
                         <div class="contact-info">
-                            <h2>Admin WhatsApp</h2>
-                            <a href="https://wa.me/6285730339469" target="_blank" rel="noopener">
-                                +62 857-3033-9469
+                            <h2>{{ $primaryWhatsapp['name'] ?? 'Admin WhatsApp' }}</h2>
+                            <a href="{{ $primaryWhatsapp['url'] }}" target="_blank" rel="noopener">
+                                {{ $primaryWhatsapp['number'] ?? '+62 857-3033-9469' }}
                             </a>
                         </div>
                     </article>
@@ -134,7 +142,9 @@
         </div>
     </section>
 
-    <a class="wa-floating" href="https://wa.me/6285730339469" target="_blank" rel="noopener" aria-label="Chat WhatsApp Admin PMB">
+    <a class="wa-floating" href="{{ $primaryWhatsapp['url'] }}" target="_blank" rel="noopener" aria-label="Chat WhatsApp Admin PMB">
         <i class="fab fa-whatsapp"></i>
     </a>
+
+    @include('components.contact-whatsapp-modal')
 @endsection
