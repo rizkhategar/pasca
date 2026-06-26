@@ -12,11 +12,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="{{ asset('css/home-slider.css') }}">
     <meta name="pasca-contact-url" content="{{ route('contact.index') }}">
     <meta name="pasca-about-url" content="{{ route('tentang') }}">
     <meta name="pasca-vision-mission-url" content="{{ route('visi-misi') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="stylesheet" href="{{ asset('css/home-slider.css') }}">
     @stack('styles')
 </head>
 <body class="@yield('body_class')">
