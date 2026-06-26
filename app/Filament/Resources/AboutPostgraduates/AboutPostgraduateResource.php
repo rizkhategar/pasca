@@ -21,28 +21,8 @@ class AboutPostgraduateResource extends Resource
     protected static ?string $modelLabel = 'About Postgraduate';
     protected static ?string $pluralModelLabel = 'About Postgraduate';
     protected static string|UnitEnum|null $navigationGroup = 'Profil';
-
-    public static function form(Schema $schema): Schema
-    {
-        return AboutPostgraduateForm::configure($schema);
-    }
-
-    public static function table(Table $table): Table
-    {
-        return AboutPostgraduatesTable::configure($table);
-    }
-
-    public static function getPages(): array
-    {
-        return [
-            'index' => Pages\ListAboutPostgraduates::route('/'),
-            'create' => Pages\CreateAboutPostgraduate::route('/create'),
-            'edit' => Pages\EditAboutPostgraduate::route('/{record}/edit'),
-        ];
-    }
-
-    public static function canCreate(): bool
-    {
-        return AboutPostgraduate::count() === 0;
-    }
+    public static function form(Schema $schema): Schema { return AboutPostgraduateForm::configure($schema); }
+    public static function table(Table $table): Table { return AboutPostgraduatesTable::configure($table); }
+    public static function getPages(): array { return ['index' => Pages\ListAboutPostgraduates::route('/'), 'create' => Pages\CreatePostgraduateAbout::route('/create'), 'edit' => Pages\EditPostgraduateAbout::route('/{record}/edit')]; }
+    public static function canCreate(): bool { return AboutPostgraduate::count() === 0; }
 }
