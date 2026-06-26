@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('sinta_research_yearly')) {
+            return;
+        }
+
         Schema::create('sinta_research_yearly', function (Blueprint $table) {
             $table->id();
             // Menghubungkan ke tabel sinta_lecturers yang baru
