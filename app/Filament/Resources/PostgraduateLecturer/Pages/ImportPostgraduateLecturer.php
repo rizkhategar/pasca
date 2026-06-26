@@ -25,7 +25,7 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
 
     protected static string $resource = PostgraduateLecturerResource::class;
 
-    protected string $view = 'filament.resources.detail-dosens.pages.import-detail-dosen';
+    protected string $view = 'filament.resources.postgraduate-lecturer.pages.import-postgraduate-lecturer';
 
     protected static ?string $title = 'Import & Scraping SINTA';
 
