@@ -10,19 +10,20 @@
 @push('styles')
     <style>
         .research-list-page #dosenGrid.lecturer-list {
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 1.25rem !important;
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 1rem !important;
+            align-items: stretch !important;
         }
 
         .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card {
             display: grid !important;
-            grid-template-columns: 240px minmax(0, 1fr) !important;
+            grid-template-columns: 150px minmax(0, 1fr) !important;
             grid-template-areas: "photo info" !important;
             align-items: stretch !important;
             gap: 0 !important;
             width: 100% !important;
-            min-height: 220px !important;
+            min-height: 175px !important;
             overflow: hidden !important;
             text-decoration: none !important;
             flex-direction: unset !important;
@@ -31,19 +32,19 @@
         .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card > .lecturer-card-photo {
             grid-area: photo !important;
             position: relative !important;
-            width: 240px !important;
-            max-width: 240px !important;
+            width: 150px !important;
+            max-width: 150px !important;
             height: 100% !important;
-            min-height: 220px !important;
+            min-height: 175px !important;
             margin: 0 !important;
             border-radius: 0 !important;
-            flex: 0 0 240px !important;
+            flex: 0 0 150px !important;
         }
 
         .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card > .lecturer-card-photo img {
             width: 100% !important;
             height: 100% !important;
-            min-height: 220px !important;
+            min-height: 175px !important;
             object-fit: cover !important;
             object-position: center top !important;
             display: block !important;
@@ -56,7 +57,7 @@
             justify-content: space-between !important;
             width: auto !important;
             min-width: 0 !important;
-            padding: 1.35rem 1.5rem !important;
+            padding: .95rem 1rem !important;
         }
 
         .research-list-page .lecturer-card-main-info {
@@ -67,44 +68,76 @@
             display: flex;
             align-items: flex-start;
             justify-content: space-between;
-            gap: 1rem;
-            margin-bottom: .65rem;
+            gap: .65rem;
+            margin-bottom: .5rem;
         }
 
         .research-list-page .lecturer-card-title-row .news-page-title {
             margin: 0;
+            font-size: 1rem;
+            line-height: 1.25;
         }
 
         .research-list-page .lecturer-sinta-chip {
             display: inline-flex;
             align-items: center;
-            gap: .4rem;
+            gap: .35rem;
             flex: 0 0 auto;
             border-radius: 999px;
-            padding: .4rem .7rem;
+            padding: .3rem .55rem;
             background: rgba(37, 99, 235, .08);
             color: #1d4ed8;
-            font-size: .82rem;
+            font-size: .72rem;
             font-weight: 800;
             white-space: nowrap;
         }
 
         .research-list-page .lecturer-card-info .news-page-excerpt {
-            margin-bottom: 1rem;
+            margin-bottom: .7rem;
+            font-size: .86rem;
+            line-height: 1.45;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
         .research-list-page .lecturer-card-info .lecturer-stats {
-            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-            margin-top: .75rem;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: .55rem !important;
+            margin-top: .55rem;
+        }
+
+        .research-list-page .lecturer-card-info .lecturer-stats .stat-box {
+            padding: .55rem .45rem !important;
+            min-height: auto !important;
+        }
+
+        .research-list-page .lecturer-card-info .lecturer-stats .stat-number {
+            font-size: .95rem !important;
+            line-height: 1.2 !important;
+        }
+
+        .research-list-page .lecturer-card-info .lecturer-stats .stat-desc {
+            font-size: .7rem !important;
         }
 
         .research-list-page .lecturer-card-info .news-page-footer {
-            margin-top: 1rem;
-            padding-top: 1rem;
+            margin-top: .7rem;
+            padding-top: .7rem;
             border-top: 1px solid rgba(15, 23, 42, .08);
         }
 
-        @media (max-width: 900px) {
+        .research-list-page .lecturer-card-info .news-page-date,
+        .research-list-page .lecturer-card-info .read-more {
+            font-size: .78rem;
+        }
+
+        @media (max-width: 1100px) {
+            .research-list-page #dosenGrid.lecturer-list {
+                grid-template-columns: 1fr !important;
+            }
+
             .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card {
                 grid-template-columns: 190px minmax(0, 1fr) !important;
                 min-height: 200px !important;
@@ -126,11 +159,15 @@
             }
 
             .research-list-page .lecturer-card-info .lecturer-stats {
-                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
             }
         }
 
         @media (max-width: 640px) {
+            .research-list-page #dosenGrid.lecturer-list {
+                grid-template-columns: 1fr !important;
+            }
+
             .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card {
                 grid-template-columns: 1fr !important;
                 grid-template-areas:
@@ -141,13 +178,13 @@
             .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card > .lecturer-card-photo {
                 width: 100% !important;
                 max-width: 100% !important;
-                height: 260px !important;
-                min-height: 260px !important;
+                height: 240px !important;
+                min-height: 240px !important;
                 flex-basis: auto !important;
             }
 
             .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card > .lecturer-card-photo img {
-                min-height: 260px !important;
+                min-height: 240px !important;
             }
 
             .research-list-page .lecturer-card-title-row {
@@ -157,6 +194,10 @@
 
             .research-list-page .lecturer-sinta-chip {
                 white-space: normal;
+            }
+
+            .research-list-page .lecturer-card-info .lecturer-stats {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
             }
         }
     </style>
