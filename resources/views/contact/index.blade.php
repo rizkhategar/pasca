@@ -12,9 +12,14 @@
 @section('body_class', 'contact-page')
 
 @section('content')
-    <section class="page-hero">
+    <section class="page-hero contact-hero !bg-gradient-to-br !from-[#031f42] !via-[#064276] !to-[#0b5f9f]">
         <div class="hero-dots"></div>
         <div class="hero-line"></div>
+        <div class="absolute inset-0 z-[1] bg-[radial-gradient(circle_at_18%_20%,rgba(45,156,219,.42),transparent_30%)]"></div>
+        <div class="absolute inset-0 z-[1] bg-[radial-gradient(circle_at_85%_18%,rgba(247,181,0,.16),transparent_24%)]"></div>
+        <div class="absolute -right-28 top-8 z-[2] h-80 w-80 rounded-full bg-white/10 blur-3xl"></div>
+        <div class="absolute left-[58%] top-0 z-[2] hidden h-[420px] w-56 -skew-x-[28deg] bg-white/10 lg:block"></div>
+        <div class="absolute bottom-16 left-0 z-[2] h-px w-full bg-gradient-to-r from-transparent via-white/24 to-transparent"></div>
 
         <div class="container">
             <div class="hero-inner">
