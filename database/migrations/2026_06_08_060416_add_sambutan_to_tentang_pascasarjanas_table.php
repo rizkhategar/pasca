@@ -6,9 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-   public function up(): void
+    public function up(): void
     {
-        Schema::table('about_postgraduate_programs', function (Blueprint $table) {
+        Schema::table('about_postgraduate', function (Blueprint $table) {
             $table->string('direktur_image')->nullable();
             $table->string('direktur_name')->nullable();
             $table->string('direktur_title')->default('Direktur Pascasarjana Universitas Ngudi Waluyo')->nullable();
@@ -18,7 +18,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('about_postgraduate_programs', function (Blueprint $table) {
+        Schema::table('about_postgraduate', function (Blueprint $table) {
             $table->dropColumn(['direktur_image', 'direktur_name', 'direktur_title', 'direktur_message']);
         });
     }
