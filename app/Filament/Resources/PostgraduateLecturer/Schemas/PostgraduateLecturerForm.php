@@ -50,7 +50,7 @@ class PostgraduateLecturerForm
                                 ->orderBy('nama')
                                 ->get()
                                 ->mapWithKeys(fn (StudyProgram $program) => [
-                                    $program->id_unw_program_studi => $program->display_name,
+                                    $program->id => $program->display_name,
                                 ])
                                 ->toArray();
                         });
@@ -69,9 +69,9 @@ class PostgraduateLecturerForm
                             return;
                         }
 
-                        $associatedPrograms = DB::table('postgraduate_lecturer_study_program')
+                        $associatedPrograms = DB::table('postgraduate_lecturer_study_programs')
                             ->where('postgraduate_lecturer_id', $postgraduateLecturer->id)
-                            ->pluck('id_study_program')
+                            ->pluck('study_program_id')
                             ->toArray();
 
                         $component->state($associatedPrograms);
@@ -91,18 +91,18 @@ class PostgraduateLecturerForm
                             ]
                         );
 
-                        DB::table('postgraduate_lecturer_study_program')
+                        DB::table('postgraduate_lecturer_study_programs')
                             ->where('postgraduate_lecturer_id', $postgraduateLecturer->id)
                             ->delete();
 
                         if (! empty($state)) {
                             $pivotData = collect($state)
-                                ->filter(fn ($idStudyProgram) => filled($idStudyProgram))
+                                ->filter(fn ($studyProgramId) => filled($studyProgramId))
                                 ->unique()
-                                ->map(function ($idStudyProgram) use ($postgraduateLecturer) {
+                                ->map(function ($studyProgramId) use ($postgraduateLecturer) {
                                     return [
                                         'postgraduate_lecturer_id' => $postgraduateLecturer->id,
-                                        'id_study_program' => $idStudyProgram,
+                                        'study_program_id' => $studyProgramId,
                                         'created_at' => now(),
                                         'updated_at' => now(),
                                     ];
@@ -111,7 +111,7 @@ class PostgraduateLecturerForm
                                 ->toArray();
 
                             if (! empty($pivotData)) {
-                                DB::table('postgraduate_lecturer_study_program')->insert($pivotData);
+                                DB::table('postgraduate_lecturer_study_programs')->insert($pivotData);
                             }
                         }
                     })
