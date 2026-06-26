@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Departement;
-use App\Models\PascaLecturer;
+use App\Models\PostgraduateLecturer;
+use App\Models\PostgraduateLecturerStudyProgram;
 use App\Models\SintaBookPublication;
 use App\Models\SintaGarudaPublication;
 use App\Models\SintaGarudaYearlyStat;
@@ -17,7 +17,9 @@ use App\Models\SintaScopusPublication;
 use App\Models\SintaScopusYearlyStat;
 use App\Models\SintaService;
 use App\Models\SintaServiceYearly;
+use App\Models\StudyProgram;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -91,9 +93,6 @@ class ScrapController extends Controller
         return $photoPath;
     }
 
-    /**
-     * Menampilkan halaman utama panel dan membaca data untuk dropdown.
-     */
     public function index()
     {
         try {
@@ -107,9 +106,6 @@ class ScrapController extends Controller
         return view('filament.resources.detail-dosens.pages.import-detail-dosen', compact('dosenList'));
     }
 
-    /**
-     * SSE Stream: Menjalankan dosen.py (Langkah 1).
-     */
     public function perbaruiDosen(): StreamedResponse
     {
         return new StreamedResponse(function () {
@@ -252,9 +248,81 @@ class ScrapController extends Controller
         ]);
     }
 
-    /**
-     * SSE Stream: Menjalankan 6 script detail publikasi + merge (Langkah 2).
-     */
+    public function syncStudyPrograms(): StreamedResponse
+    {
+        return new StreamedResponse(function () {
+            set_time_limit(0);
+            ignore_user_abort(true);
+
+            $this->stream(['output' => "Menghubungi API UNW program studi...\n"]);
+
+            try {
+                $response = Http::withoutVerifying()
+                    ->timeout(30)
+                    ->get('https://panel-web.unw.ac.id/api/unw-program-studi');
+
+                if (! $response->successful()) {
+                    $this->stream(['output' => "<span class='text-danger-500'>[ERROR]</span> API program studi gagal diakses. Status HTTP: " . $response->status() . "\n"]);
+                    $this->stream(['done' => true]);
+                    return;
+                }
+
+                $items = $response->json('data', []);
+                $syncedCount = 0;
+
+                DB::beginTransaction();
+
+                foreach ($items as $item) {
+                    $apiId = data_get($item, 'id');
+
+                    if (! $apiId) {
+                        continue;
+                    }
+
+                    StudyProgram::updateOrCreate(
+                        ['id_unw_program_studi' => (int) $apiId],
+                        [
+                            'nama' => data_get($item, 'nama'),
+                            'slug' => data_get($item, 'slug'),
+                            'page_slug' => data_get($item, 'page_slug'),
+                            'jenjang' => data_get($item, 'jenjang'),
+                            'jenjang_nama_singkat' => data_get($item, 'jenjang_nama_singkat'),
+                            'unw_fakultas_id' => data_get($item, 'unwFakultas.id'),
+                            'unw_fakultas_nama' => trim((string) data_get($item, 'unwFakultas.nama')),
+                            'unw_fakultas_page_slug' => data_get($item, 'unwFakultas.page_slug'),
+                            'api_created_at' => data_get($item, 'createdAt'),
+                            'api_updated_at' => data_get($item, 'updatedAt'),
+                            'created' => data_get($item, 'created'),
+                            'updated' => data_get($item, 'updated'),
+                        ]
+                    );
+
+                    $syncedCount++;
+                }
+
+                DB::commit();
+
+                Cache::forget('study_programs_select_import');
+                Cache::forget('academic_programs_nav');
+
+                $this->stream(['output' => "<span class='text-success-400'>[OK]</span> Berhasil menyinkronkan {$syncedCount} program studi ke tabel study_program.\n"]);
+            } catch (\Throwable $e) {
+                if (DB::transactionLevel() > 0) {
+                    DB::rollBack();
+                }
+
+                Log::error('Gagal sinkronisasi program studi: ' . $e->getMessage());
+                $this->stream(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> " . addslashes($e->getMessage()) . "\n"]);
+            }
+
+            $this->stream(['done' => true]);
+        }, 200, [
+            'Cache-Control' => 'no-cache',
+            'Content-Type' => 'text/event-stream',
+            'X-Accel-Buffering' => 'no',
+        ]);
+    }
+
     public function ambilDetail($sinta_id): StreamedResponse
     {
         $sintaId = $this->cleanSintaId($sinta_id);
@@ -334,12 +402,9 @@ class ScrapController extends Controller
         $this->stream(['output' => "<span class='text-success-400 font-bold'>[LARAVEL SUCCESS]</span> Seluruh data kualifikasi SINTA Dosen sukses bermigrasi ke MySQL.\n----------------------------------------\n"]);
     }
 
-    /**
-     * Import Excel ke Database dengan SSE (Real-time Stream per Sheet).
-     */
     public function importData(Request $request, $sinta_id): StreamedResponse
     {
-        $jurusan = $request->query('jurusan');
+        $jurusan = $request->query('jurusan', $request->query('program_studi'));
         $sintaId = $this->cleanSintaId($sinta_id);
 
         return new StreamedResponse(function () use ($sintaId, $jurusan) {
@@ -576,28 +641,35 @@ class ScrapController extends Controller
             'affil_score_3yr' => isset($r['affil score 3yr']) ? (int) str_replace('.', '', $r['affil score 3yr']) : 0,
         ]);
 
-        PascaLecturer::firstOrCreate(
+        $postgraduateLecturer = PostgraduateLecturer::firstOrCreate(
             ['sinta_id' => $sintaId],
             [
                 'name' => $r['nama'] ?? $r['name'] ?? null,
                 'institution' => $r['institusi'] ?? $r['institution'] ?? $r['afiliasi'] ?? null,
-                'study_program' => $r['program studi'] ?? $r['program_studi'] ?? $r['study_program'] ?? null,
                 'profile_photo' => $photoValue,
             ]
         );
 
         if (! empty($jurusan)) {
-            $idDepartements = explode(',', $jurusan);
+            $idStudyPrograms = collect(explode(',', $jurusan))
+                ->map(fn ($idProgram) => trim((string) $idProgram))
+                ->filter()
+                ->unique()
+                ->values();
 
-            Departement::where('sinta_id', $sintaId)->delete();
+            $validStudyProgramIds = StudyProgram::query()
+                ->whereIn('id_unw_program_studi', $idStudyPrograms)
+                ->pluck('id_unw_program_studi')
+                ->map(fn ($idProgram) => (string) $idProgram)
+                ->toArray();
 
-            foreach ($idDepartements as $idDept) {
-                if (trim($idDept) !== '') {
-                    Departement::create([
-                        'sinta_id' => $sintaId,
-                        'id_departement' => trim($idDept),
-                    ]);
-                }
+            PostgraduateLecturerStudyProgram::where('postgraduate_lecturer_id', $postgraduateLecturer->id)->delete();
+
+            foreach ($validStudyProgramIds as $idProgram) {
+                PostgraduateLecturerStudyProgram::create([
+                    'postgraduate_lecturer_id' => $postgraduateLecturer->id,
+                    'id_study_program' => $idProgram,
+                ]);
             }
         }
 
