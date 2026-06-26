@@ -10,7 +10,7 @@
 @section('content')
     <section class="rd-hero">
         <div class="rd-hero-dots"></div>
-        <div class="rd-hero-line"></div>
+        @include('components.hero-spotlight')
 
         <div class="rd-container">
             <div class="rd-hero-inner">
@@ -105,7 +105,9 @@
                 <section class="news-page-grid" id="dosenGrid">
                     @forelse($dosens as $dosen)
                         @php
-                            $safeSintaId = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $dosen->sinta_id);
+                            $safeSintaId = collect(str_split((string) $dosen->sinta_id))
+                                ->filter(fn ($char) => ctype_alnum($char) || in_array($char, ['_', '-'], true))
+                                ->implode('');
                             $customPhotoPath = "sinta-lecturers/{$safeSintaId}_PL.jpg";
                             $scrapedPhotoPath = "sinta-lecturers/{$safeSintaId}.jpg";
                             $photoUrl = asset('assets/images/default-user.png');
@@ -131,37 +133,15 @@
                                 <p class="news-page-excerpt">{{ $dosen->program_studi }}</p>
 
                                 <div class="stats-grid lecturer-stats">
-                                    <div class="stat-box">
-                                        <div class="stat-number">{{ number_format($dosen->sinta_score_overall ?? 0) }}</div>
-                                        <div class="stat-desc">Overall</div>
-                                    </div>
-
-                                    <div class="stat-box">
-                                        <div class="stat-number">{{ number_format($dosen->sinta_score_3yr ?? 0) }}</div>
-                                        <div class="stat-desc">3 Year</div>
-                                    </div>
-
-                                    <div class="stat-box">
-                                        <div class="stat-number">{{ number_format($dosen->affil_score ?? 0) }}</div>
-                                        <div class="stat-desc">Affil</div>
-                                    </div>
-
-                                    <div class="stat-box">
-                                        <div class="stat-number">{{ number_format($dosen->affil_score_3yr ?? 0) }}</div>
-                                        <div class="stat-desc">Affil 3Yr</div>
-                                    </div>
+                                    <div class="stat-box"><div class="stat-number">{{ number_format($dosen->sinta_score_overall ?? 0) }}</div><div class="stat-desc">Overall</div></div>
+                                    <div class="stat-box"><div class="stat-number">{{ number_format($dosen->sinta_score_3yr ?? 0) }}</div><div class="stat-desc">3 Year</div></div>
+                                    <div class="stat-box"><div class="stat-number">{{ number_format($dosen->affil_score ?? 0) }}</div><div class="stat-desc">Affil</div></div>
+                                    <div class="stat-box"><div class="stat-number">{{ number_format($dosen->affil_score_3yr ?? 0) }}</div><div class="stat-desc">Affil 3Yr</div></div>
                                 </div>
 
                                 <div class="news-page-footer">
-                                    <span class="news-page-date">
-                                        <i class="fas fa-chart-line"></i>
-                                        Data Riset SINTA
-                                    </span>
-
-                                    <span class="read-more">
-                                        Detail
-                                        <i class="fas fa-arrow-right"></i>
-                                    </span>
+                                    <span class="news-page-date"><i class="fas fa-chart-line"></i>Data Riset SINTA</span>
+                                    <span class="read-more">Detail<i class="fas fa-arrow-right"></i></span>
                                 </div>
                             </div>
                         </a>

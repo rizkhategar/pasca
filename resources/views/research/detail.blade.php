@@ -7,7 +7,7 @@
     <div class="profile-page">
         <section class="profile-hero">
             <div class="hero-dots"></div>
-            <div class="hero-line"></div>
+            @include('components.hero-spotlight')
 
             <div class="profile-container">
                 <div class="hero-inner">

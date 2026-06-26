@@ -6,11 +6,7 @@
 @section('content')
     <section class="news-hero">
         <div class="hero-dots"></div>
-        <div class="hero-line !right-[-120px] !top-[-78px] !h-[360px] !w-[360px] ![transform:none] !overflow-visible !rounded-full !border !border-white/15 !bg-[radial-gradient(circle_at_36%_36%,rgba(255,255,255,.24),rgba(45,156,219,.18)_34%,rgba(7,43,87,.08)_58%,transparent_72%)] !shadow-[0_0_90px_rgba(45,156,219,.24)]" aria-hidden="true">
-            <span class="absolute left-20 top-24 h-16 w-16 rounded-3xl bg-[#f7b500]/20 shadow-[0_20px_52px_rgba(247,181,0,.18)]"></span>
-            <span class="absolute bottom-16 right-28 h-28 w-28 rounded-full border border-white/14 bg-white/5 backdrop-blur-md"></span>
-            <span class="absolute bottom-28 left-8 h-[3px] w-44 rotate-[-22deg] rounded-full bg-gradient-to-r from-transparent via-white/35 to-transparent"></span>
-        </div>
+        @include('components.hero-spotlight')
 
         <div class="container">
             <div class="hero-inner">

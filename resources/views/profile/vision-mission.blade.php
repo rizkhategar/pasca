@@ -6,7 +6,7 @@
 @section('content')
     <section class="page-hero">
         <div class="hero-dots"></div>
-        <div class="hero-line"></div>
+        @include('components.hero-spotlight')
 
         <div class="vm-container">
             <div class="hero-inner">

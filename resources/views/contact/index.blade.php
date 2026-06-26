@@ -14,7 +14,7 @@
 @section('content')
     <section class="page-hero">
         <div class="hero-dots"></div>
-        <div class="hero-line"></div>
+        @include('components.hero-spotlight')
 
         <div class="container relative z-10">
             <div class="hero-inner !block !ml-0 !mr-auto !max-w-[820px] !text-left">
