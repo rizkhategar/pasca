@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 
-class OrganizationStructure extends Model
+class OrganizationalStructure extends Model
 {
     protected $table = 'organizational_structure';
 
@@ -18,7 +18,7 @@ class OrganizationStructure extends Model
 
     protected static function booted(): void
     {
-        static::deleting(function (OrganizationStructure $record): void {
+        static::deleting(function (OrganizationalStructure $record): void {
             if ($record->image_path && Storage::disk('public')->exists($record->image_path)) {
                 Storage::disk('public')->delete($record->image_path);
             }

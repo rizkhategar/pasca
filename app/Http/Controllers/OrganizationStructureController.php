@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\OrganizationStructure;
+use App\Models\OrganizationalStructure;
 use Illuminate\Http\Response;
 
 class OrganizationStructureController extends Controller
 {
     public function index(): Response
     {
-        $organizationStructure = OrganizationStructure::query()
+        $organizationStructure = OrganizationalStructure::query()
             ->where('is_active', true)
             ->whereNotNull('image_path')
             ->where('image_path', '!=', '')
@@ -18,7 +18,7 @@ class OrganizationStructureController extends Controller
             ->first();
 
         if (! $organizationStructure) {
-            $organizationStructure = OrganizationStructure::query()
+            $organizationStructure = OrganizationalStructure::query()
                 ->whereNotNull('image_path')
                 ->where('image_path', '!=', '')
                 ->latest('updated_at')

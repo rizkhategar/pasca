@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\StrukturOrganisasi;
+use App\Models\OrganizationalStructure;
 use Illuminate\Http\Response;
 
-class StrukturOrganisasiController extends Controller
+class OrganizationalStructureController extends Controller
 {
     public function index(): Response
     {
-        $strukturOrganisasi = StrukturOrganisasi::query()
+        $organizationStructure = OrganizationalStructure::query()
             ->where('is_active', true)
             ->whereNotNull('image_path')
             ->where('image_path', '!=', '')
@@ -17,8 +17,8 @@ class StrukturOrganisasiController extends Controller
             ->latest('id')
             ->first();
 
-        if (! $strukturOrganisasi) {
-            $strukturOrganisasi = StrukturOrganisasi::query()
+        if (! $organizationStructure) {
+            $organizationStructure = OrganizationalStructure::query()
                 ->whereNotNull('image_path')
                 ->where('image_path', '!=', '')
                 ->latest('updated_at')
@@ -26,8 +26,10 @@ class StrukturOrganisasiController extends Controller
                 ->first();
         }
 
+        $strukturOrganisasi = $organizationStructure;
+
         return response()
-            ->view('profil.struktur-organisasi', compact('strukturOrganisasi'))
+            ->view('profil.struktur-organisasi', compact('strukturOrganisasi', 'organizationStructure'))
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             ->header('Pragma', 'no-cache')
             ->header('Expires', '0');

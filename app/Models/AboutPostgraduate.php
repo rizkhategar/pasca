@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-class AboutPascasarjana extends Model
+class AboutPostgraduate extends Model
 {
     protected $table = 'about_postgraduate';
 

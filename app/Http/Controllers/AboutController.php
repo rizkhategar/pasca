@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AboutPascasarjana;
+use App\Models\AboutPostgraduate;
 
 class AboutController extends Controller
 {
     public function index()
     {
-        $tentang = AboutPascasarjana::query()
+        $tentang = AboutPostgraduate::query()
             ->latest('updated_at')
             ->latest('id')
             ->first();
