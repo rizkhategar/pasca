@@ -3,26 +3,20 @@
 namespace App\Filament\Resources\DetailDosens\Pages;
 
 use App\Filament\Resources\DetailDosens\DetailDosenResource;
+use App\Models\SintaLecturer;
+use App\Models\StudyProgram;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
-
-// --- STRUKTUR INTI COMPONENT & SCHEMA FILAMENT V5 ---
-use Filament\Schemas\Contracts\HasSchemas;
-use Filament\Schemas\Concerns\InteractsWithSchemas;
-use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
-use Filament\Actions\Action;
-
-// --- INPUT FIELD FORM ---
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\TextInput;
-
-// --- UTILITY LARAVEL & NOTIFIKASI ---
-use Filament\Notifications\Notification;
-use Illuminate\Support\Facades\Http;
+use Filament\Schemas\Concerns\InteractsWithSchemas;
+use Filament\Schemas\Contracts\HasSchemas;
+use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Cache;
-use App\Models\SintaLecturer;
 use Illuminate\Support\HtmlString;
 
 class ImportDetailDosen extends Page implements HasSchemas
@@ -31,7 +25,6 @@ class ImportDetailDosen extends Page implements HasSchemas
 
     protected static string $resource = DetailDosenResource::class;
 
-    // Mengaktifkan kembali kompas View ke file Blade formalitas kita
     protected string $view = 'filament.resources.detail-dosens.pages.import-detail-dosen';
 
     protected static ?string $title = 'Import & Scraping SINTA';
@@ -50,26 +43,27 @@ class ImportDetailDosen extends Page implements HasSchemas
             ? '<div style="padding: 0.75rem; border-radius: 0.5rem; background-color: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: #059669; font-weight: 500;">✅ <b>Data daftar dosen tersedia.</b></div>'
             : '<div style="padding: 0.75rem; border-radius: 0.5rem; background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #dc2626; font-weight: 500;">⚠️ <b>Daftar dosen kosong.</b> Silahkan lakukan scraping data dosen.</div>';
 
-        $jurusans = Cache::remember('academic_programs_select_import', now()->addHours(12), function () {
-            $response = Http::withoutVerifying()->get('https://panel-web.unw.ac.id/api/unw-program-studi');
-            if (!$response->successful()) return [];
-
-            return collect($response->json('data', []))
-                ->filter(fn($item) => isset($item['id'], $item['nama'], $item['unwFakultas']['nama']) && trim($item['unwFakultas']['nama']) === 'Pascasarjana')
-                ->mapWithKeys(fn($item) => [
-                    $item['id'] => trim(($item['jenjang'] ?? '') . ' ' . ($item['nama'] ?? ''))
+        $programStudis = Cache::remember('study_programs_select_import', now()->addHours(12), function () {
+            return StudyProgram::query()
+                ->where('unw_fakultas_nama', 'Pascasarjana')
+                ->orderBy('jenjang')
+                ->orderBy('nama')
+                ->get()
+                ->mapWithKeys(fn (StudyProgram $program) => [
+                    $program->id_unw_program_studi => $program->display_name,
                 ])
-                ->sortBy(fn($value) => $value)
                 ->toArray();
         });
 
         $urlPerbarui = route('scrap.perbaruiDosen');
         $urlAmbilDetail = route('scrap.ambilDetail', ':id');
         $urlImport = route('scrap.importData', ':id');
+        $urlSyncProgramStudi = route('scrap.syncStudyPrograms');
 
         $buttonBaseStyle = 'width: 100%; display: inline-flex; align-items: center; justify-content: center; border-radius: 0.5rem; padding: 0.625rem 0.875rem; font-weight: 600; color: #ffffff; border: none; cursor: pointer;';
         $scrapeButtonHtml = '<button type="button" id="btn-perbarui" style="' . $buttonBaseStyle . ' background-color: #525252;">Mulai Scraping Dosen</button>';
         $extractButtonHtml = '<button type="button" id="btn-ambil-detail" style="' . $buttonBaseStyle . ' background-color: #2563eb;">Ekstrak Data SINTA</button>';
+        $syncStudyProgramButtonHtml = '<button type="button" id="btn-sync-program-studi" style="' . $buttonBaseStyle . ' background-color: #7c3aed;">Sinkronisasi Program Studi</button>';
         $importButtonHtml = '<button type="button" id="btn-import" style="' . $buttonBaseStyle . ' background-color: #16a34a;">Import ke Database</button>';
 
         $terminalHtml = <<<HTML
@@ -164,28 +158,40 @@ class ImportDetailDosen extends Page implements HasSchemas
                 });
 
                 document.addEventListener('click', (event) => {
+                    const btnSyncProgramStudi = event.target.closest('#btn-sync-program-studi');
+                    if (!btnSyncProgramStudi) return;
+
+                    event.preventDefault();
+                    resetTerminal('>>> Memulai sinkronisasi program studi dari API UNW...' + NL + NL);
+                    toggleLoading(btnSyncProgramStudi, true, 'Sinkronisasi Program Studi');
+
+                    openStream('{$urlSyncProgramStudi}', () => {
+                        appendTerminal(NL + '[SUKSES] Program studi berhasil disinkronkan. Memuat ulang dropdown...' + NL);
+                        setTimeout(() => { window.location.reload(); }, 1500);
+                    }, NL + '[ERROR] Sinkronisasi program studi terputus. Cek route scrap.syncStudyPrograms atau log Laravel.');
+                });
+
+                document.addEventListener('click', (event) => {
                     const btnImport = event.target.closest('#btn-import');
                     if (!btnImport) return;
 
                     event.preventDefault();
                     const sintaId = livewire.get('data.sinta_id');
-                    const jurusan = livewire.get('data.jurusan');
+                    const programStudi = livewire.get('data.program_studi');
 
                     if (!sintaId) return alert('SINTA ID tidak ditemukan. Pilih dosen dulu pada langkah 2.');
 
-                    if (!jurusan || (Array.isArray(jurusan) && jurusan.length === 0)) {
-                        return alert('Silakan pilih sekurang-kurangnya satu Jurusan!');
+                    if (!programStudi || (Array.isArray(programStudi) && programStudi.length === 0)) {
+                        return alert('Silakan pilih sekurang-kurangnya satu Program Studi!');
                     }
 
-                    /* PERBAIKAN PIVOT: Mengubah join(', ') menjadi join(',') murni tanpa spasi
-                       agar string ID terkirim padat (misal '21,22') untuk diexplode langsung ke tabel pivot */
-                    let jurusanString = Array.isArray(jurusan) ? jurusan.join(',') : jurusan;
+                    let programStudiString = Array.isArray(programStudi) ? programStudi.join(',') : programStudi;
 
-                    resetTerminal('>>> Memulai migrasi streaming data Excel ke MySQL untuk SINTA ID: ' + sintaId + ' (ID Pivot Departemen: ' + jurusanString + ')...' + NL);
+                    resetTerminal('>>> Memulai migrasi streaming data Excel ke MySQL untuk SINTA ID: ' + sintaId + ' (ID Program Studi: ' + programStudiString + ')...' + NL);
                     toggleLoading(btnImport, true, 'Import ke Database');
 
                     let targetUrl = '{$urlImport}'.replace(':id', sintaId);
-                    targetUrl += '?jurusan=' + encodeURIComponent(jurusanString);
+                    targetUrl += '?jurusan=' + encodeURIComponent(programStudiString);
 
                     openStream(targetUrl, () => {
                         toggleLoading(btnImport, false, 'Import ke Database');
@@ -315,12 +321,15 @@ class ImportDetailDosen extends Page implements HasSchemas
                             ->icon('heroicon-o-server')
                             ->description('Migrasikan seluruh data kualifikasi dan publikasi dosen dari dokumen Excel ke dalam MySQL.')
                             ->schema([
-                                Select::make('jurusan')
-                                    ->label('Pilih Jurusan')
-                                    ->options($jurusans)
+                                Placeholder::make('button_sync_program_studi')
+                                    ->hiddenLabel()
+                                    ->content(new HtmlString($syncStudyProgramButtonHtml)),
+                                Select::make('program_studi')
+                                    ->label('Pilih Program Studi')
+                                    ->options($programStudis)
                                     ->searchable()
                                     ->multiple()
-                                    ->placeholder('-- Silakan Pilih Jurusan --')
+                                    ->placeholder('-- Silakan Pilih Program Studi --')
                                     ->required()
                                     ->native(false),
                                 Placeholder::make('button_import_database')
