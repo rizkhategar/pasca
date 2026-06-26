@@ -58,8 +58,8 @@ Route::get('/sliders/{slider}/image', function (Slider $slider) {
 })->name('sliders.image');
 
 Route::get('/organization-structures/{organizationStructure}/image', function (OrganizationalStructure $organizationStructure) {
-    abort_unless($organizationStructure->image_path && Storage::disk('public')->exists($organizationStructure->image_path), 404);
-    return response()->file(Storage::disk('public')->path($organizationStructure->image_path), ['Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0', 'Pragma' => 'no-cache', 'Expires' => '0']);
+    abort_unless($organizationStructure->image_path && Storage::disk('public')->exists($imagePath = $organizationStructure->image_path), 404);
+    return response()->file(Storage::disk('public')->path($imagePath), ['Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0', 'Pragma' => 'no-cache', 'Expires' => '0']);
 })->name('organization-structures.image');
 
 Route::get('/about-pascasarjanas/{aboutPascasarjana}/director-image', function (AboutPostgraduate $aboutPascasarjana) {
@@ -85,6 +85,7 @@ Route::get('/profil/struktur-organisasi', [OrganizationStructureController::clas
 Route::get('/tentang-pascasarjana', [AboutController::class, 'index'])->name('tentang');
 Route::get('/scrap/ambildatadosen', [ScrapController::class, 'index'])->name('scrap.index');
 Route::get('/scrap/perbarui-dosen', [ScrapController::class, 'perbaruiDosen'])->name('scrap.perbaruiDosen');
+Route::get('/scrap/sinkronisasi-program-studi', [ScrapController::class, 'syncStudyPrograms'])->name('scrap.syncStudyPrograms');
 Route::get('/scrap/ambil-detail/{sinta_id}', [ScrapController::class, 'ambilDetail'])->name('scrap.ambilDetail');
 Route::get('/scrap/import/{sinta_id}', [ScrapController::class, 'importData'])->name('scrap.importData');
 Route::get('/riset-dosen', [RisetController::class, 'listDosen'])->name('riset.dosen');
