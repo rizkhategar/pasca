@@ -7,26 +7,34 @@
     <section class="contact-hero">
         <div class="hero-pattern-dots"></div>
         <div class="hero-line"></div>
-        <div class="hero-orb"></div>
 
         <div class="container">
             <div class="hero-inner">
                 <div class="hero-content">
                     <div class="hero-badge">
-                        <i class="fas fa-graduation-cap"></i>
-                        Informasi Resmi PMB Pascasarjana
+                        <i class="fas fa-headset"></i>
+                        <span>Layanan Informasi Pascasarjana</span>
                     </div>
 
                     <h1 class="contact-title">Kontak Pendaftaran Mahasiswa Baru</h1>
-                    <p class="contact-subtitle">PMB Universitas Ngudi Waluyo</p>
+                    <p class="contact-subtitle">
+                        Hubungi layanan resmi Pascasarjana Universitas Ngudi Waluyo untuk informasi pendaftaran,
+                        konsultasi program, dan bantuan administrasi calon mahasiswa.
+                    </p>
+
+                    <div class="hero-meta">
+                        <span><i class="fas fa-user-graduate"></i>PMB Pascasarjana</span>
+                        <span><i class="fas fa-clock"></i>Respon Cepat</span>
+                        <span><i class="fas fa-shield-check"></i>Kontak Resmi</span>
+                    </div>
                 </div>
 
                 <div class="hero-info-card">
                     <div class="hero-info-icon">
-                        <i class="fas fa-headset"></i>
+                        <i class="fas fa-comments"></i>
                     </div>
-                    <h3>Layanan Informasi</h3>
-                    <p>Hubungi admin PMB untuk informasi pendaftaran, jadwal, dan layanan akademik.</p>
+                    <h3>Butuh Bantuan?</h3>
+                    <p>Pilih kanal kontak yang tersedia atau buka WhatsApp untuk terhubung langsung dengan admin PMB.</p>
                 </div>
             </div>
         </div>
@@ -40,13 +48,21 @@
 
     <section class="contact-section">
         <div class="container">
-            <div class="section-heading">
-                <div class="section-kicker">Hubungi Kami</div>
-                <h2>Informasi Kontak PMB</h2>
-                <p>
-                    Silakan gunakan kontak resmi berikut untuk mendapatkan informasi pendaftaran mahasiswa baru
-                    Universitas Ngudi Waluyo.
-                </p>
+            <div class="profile-content-heading">
+                <div class="profile-heading-title">
+                    <div class="profile-heading-icon">
+                        <i class="fas fa-address-book"></i>
+                    </div>
+                    <div>
+                        <h2>Informasi Kontak PMB</h2>
+                        <p>Gunakan kontak resmi berikut untuk mendapatkan informasi pendaftaran mahasiswa baru.</p>
+                    </div>
+                </div>
+
+                <a class="news-more-link" href="https://wa.me/6285730339469" target="_blank" rel="noopener">
+                    <i class="fab fa-whatsapp"></i>
+                    Chat Admin
+                </a>
             </div>
 
             <div class="contact-grid">
@@ -56,8 +72,8 @@
                             <i class="fas fa-map-location-dot"></i>
                         </div>
                         <div class="contact-info">
-                            <h2>Sekretariat</h2>
-                            <p>Jl. Diponegoro No. 186 Ungaran</p>
+                            <h2>Sekretariat PMB</h2>
+                            <p>Jl. Diponegoro No. 186 Ungaran, Kabupaten Semarang</p>
                         </div>
                     </article>
 
@@ -66,7 +82,7 @@
                             <i class="fas fa-envelope-open-text"></i>
                         </div>
                         <div class="contact-info">
-                            <h2>Email</h2>
+                            <h2>Email Resmi</h2>
                             <a href="mailto:pmb@unw.ac.id">pmb@unw.ac.id</a>
                         </div>
                     </article>
@@ -76,7 +92,7 @@
                             <i class="fas fa-phone-volume"></i>
                         </div>
                         <div class="contact-info">
-                            <h2>Fax</h2>
+                            <h2>Telepon / Fax</h2>
                             <p>(024)-6925408</p>
                         </div>
                     </article>
@@ -86,7 +102,7 @@
                             <i class="fab fa-whatsapp"></i>
                         </div>
                         <div class="contact-info">
-                            <h2>Whatsapp Admin</h2>
+                            <h2>Admin WhatsApp</h2>
                             <a href="https://wa.me/6285730339469" target="_blank" rel="noopener">
                                 +62 857-3033-9469
                             </a>
@@ -101,8 +117,8 @@
                                 <i class="fas fa-location-dot"></i>
                             </div>
                             <div>
-                                <h2>PMB Universitas Ngudi Waluyo</h2>
-                                <p>Lokasi sekretariat pendaftaran mahasiswa baru.</p>
+                                <h2>Lokasi PMB Universitas Ngudi Waluyo</h2>
+                                <p>Temukan lokasi sekretariat pendaftaran melalui peta interaktif.</p>
                             </div>
                         </div>
 
