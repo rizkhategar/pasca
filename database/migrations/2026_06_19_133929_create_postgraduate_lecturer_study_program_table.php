@@ -10,22 +10,25 @@ return new class extends Migration
     {
         Schema::create('postgraduate_lecturer_study_program', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('postgraduate_lecturer_id')
-                ->constrained('postgraduate_lecturer')
-                ->cascadeOnDelete();
+            $table->unsignedBigInteger('postgraduate_lecturer_id');
             $table->unsignedBigInteger('id_study_program');
             $table->timestamps();
 
-            $table->foreign('id_study_program')
+            $table->foreign('postgraduate_lecturer_id', 'plsp_lecturer_fk')
+                ->references('id')
+                ->on('postgraduate_lecturer')
+                ->cascadeOnDelete();
+
+            $table->foreign('id_study_program', 'plsp_study_program_fk')
                 ->references('id_unw_program_studi')
                 ->on('study_program')
                 ->cascadeOnDelete();
 
             $table->unique(
                 ['postgraduate_lecturer_id', 'id_study_program'],
-                'postgraduate_lecturer_program_unique'
+                'plsp_lecturer_program_unique'
             );
-            $table->index('id_study_program');
+            $table->index('id_study_program', 'plsp_study_program_idx');
         });
     }
 
