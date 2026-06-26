@@ -2,12 +2,16 @@
 
 namespace App\Filament\Resources\DetailDosens\Schemas;
 
+use App\Models\PostgraduateLecturer;
+use App\Models\StudyProgram;
 use App\Support\FilamentImageUpload;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
@@ -33,40 +37,44 @@ class DetailDosenForm
                     ->default(null),
 
                 TextInput::make('study_program')
-                    ->label('Program Studi')
+                    ->label('Program Studi SINTA')
                     ->default(null),
 
                 Select::make('department')
-                    ->label('Jurusan')
+                    ->label('Program Studi Pascasarjana')
                     ->options(function () {
-                        return \Illuminate\Support\Facades\Cache::remember('academic_programs_select_import', now()->addHours(12), function () {
-                            $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get('https://panel-web.unw.ac.id/api/unw-program-studi');
-                            if (! $response->successful()) {
-                                return [];
-                            }
-
-                            return collect($response->json('data', []))
-                                ->filter(fn ($item) => isset($item['id'], $item['nama'], $item['unwFakultas']['nama']) && trim($item['unwFakultas']['nama']) === 'Pascasarjana')
-                                ->mapWithKeys(fn ($item) => [
-                                    $item['id'] => trim(($item['jenjang'] ?? '') . ' ' . ($item['nama'] ?? '')),
+                        return Cache::remember('study_programs_select_import', now()->addHours(12), function () {
+                            return StudyProgram::query()
+                                ->where('unw_fakultas_nama', 'Pascasarjana')
+                                ->orderBy('jenjang')
+                                ->orderBy('nama')
+                                ->get()
+                                ->mapWithKeys(fn (StudyProgram $program) => [
+                                    $program->id_unw_program_studi => $program->display_name,
                                 ])
-                                ->sortBy(fn ($value) => $value)
                                 ->toArray();
                         });
                     })
                     ->searchable()
                     ->multiple()
                     ->afterStateHydrated(function (Select $component, $record) {
-                        if (! $record) {
+                        if (! $record?->sinta_id) {
                             return;
                         }
 
-                        $associatedDepartments = \Illuminate\Support\Facades\DB::table('departement')
-                            ->where('sinta_id', $record->sinta_id)
-                            ->pluck('id_departement')
+                        $postgraduateLecturer = PostgraduateLecturer::where('sinta_id', $record->sinta_id)->first();
+
+                        if (! $postgraduateLecturer) {
+                            $component->state([]);
+                            return;
+                        }
+
+                        $associatedPrograms = DB::table('postgraduate_lecturer_study_program')
+                            ->where('postgraduate_lecturer_id', $postgraduateLecturer->id)
+                            ->pluck('id_study_program')
                             ->toArray();
 
-                        $component->state($associatedDepartments);
+                        $component->state($associatedPrograms);
                     })
                     ->saveRelationshipsUsing(function ($record, $state) {
                         $sintaId = $record->sinta_id;
@@ -74,21 +82,37 @@ class DetailDosenForm
                             return;
                         }
 
-                        \Illuminate\Support\Facades\DB::table('departement')
-                            ->where('sinta_id', $sintaId)
+                        $postgraduateLecturer = PostgraduateLecturer::firstOrCreate(
+                            ['sinta_id' => $sintaId],
+                            [
+                                'name' => $record->lecturer?->name,
+                                'institution' => $record->institution,
+                                'profile_photo' => $record->profile_photo,
+                            ]
+                        );
+
+                        DB::table('postgraduate_lecturer_study_program')
+                            ->where('postgraduate_lecturer_id', $postgraduateLecturer->id)
                             ->delete();
 
                         if (! empty($state)) {
-                            $pivotData = collect($state)->map(function ($idDepartement) use ($sintaId) {
-                                return [
-                                    'sinta_id' => $sintaId,
-                                    'id_departement' => $idDepartement,
-                                    'created_at' => now(),
-                                    'updated_at' => now(),
-                                ];
-                            })->toArray();
+                            $pivotData = collect($state)
+                                ->filter(fn ($idStudyProgram) => filled($idStudyProgram))
+                                ->unique()
+                                ->map(function ($idStudyProgram) use ($postgraduateLecturer) {
+                                    return [
+                                        'postgraduate_lecturer_id' => $postgraduateLecturer->id,
+                                        'id_study_program' => $idStudyProgram,
+                                        'created_at' => now(),
+                                        'updated_at' => now(),
+                                    ];
+                                })
+                                ->values()
+                                ->toArray();
 
-                            \Illuminate\Support\Facades\DB::table('departement')->insert($pivotData);
+                            if (! empty($pivotData)) {
+                                DB::table('postgraduate_lecturer_study_program')->insert($pivotData);
+                            }
                         }
                     })
                     ->dehydrated(false)
