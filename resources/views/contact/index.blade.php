@@ -45,7 +45,7 @@
         </div>
     </section>
 
-    <section class="contact-section">
+    <section class="info-section">
         <div class="container">
             <div class="profile-content-heading">
                 <div class="profile-heading-title">
@@ -57,11 +57,6 @@
                         <p>Gunakan kontak resmi berikut untuk mendapatkan informasi pendaftaran mahasiswa baru.</p>
                     </div>
                 </div>
-
-                <a class="news-more-link" href="{{ $primaryWhatsapp['url'] }}" target="_blank" rel="noopener">
-                    <i class="fab fa-whatsapp"></i>
-                    Chat Admin
-                </a>
             </div>
 
             <div class="contact-grid">
