@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('sinta_lecturers')) {
+            return;
+        }
+
         Schema::create('sinta_lecturers', function (Blueprint $table) {
             // ID numerik utama Laravel/Filament.
             $table->id();
