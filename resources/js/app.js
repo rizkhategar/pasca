@@ -29,15 +29,9 @@ function stripHtml(value) {
 
 function formatDateId(value) {
     if (!value) return '';
-
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return String(value);
-
-    return date.toLocaleDateString('id-ID', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric',
-    });
+    return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
 ready(() => {
@@ -63,13 +57,24 @@ function setupSiteHeaderNavigation() {
 
     const isCompactMode = () => window.innerWidth <= 992;
     const clearClickActive = () => navLinks.forEach((item) => item.classList.remove('nav-click-active'));
+    const isMenuOpen = () => navMenu?.classList.contains('active') || navMenu?.classList.contains('show');
 
-    const closeNavMenu = () => {
+    const setMenuState = (open) => {
         if (!navMenu || !hamburger) return;
-        navMenu.classList.remove('show');
-        hamburger.setAttribute('aria-expanded', 'false');
-        document.querySelectorAll('#siteHeader .nav-item.has-dropdown').forEach((item) => item.classList.remove('open'));
+
+        navMenu.classList.toggle('active', open);
+        navMenu.classList.toggle('show', open);
+        hamburger.classList.toggle('active', open);
+        hamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
+        document.body.classList.toggle('mobile-nav-open', open);
+
+        if (!open) {
+            document.querySelectorAll('#siteHeader .nav-item.has-dropdown')
+                .forEach((item) => item.classList.remove('open'));
+        }
     };
+
+    const closeNavMenu = () => setMenuState(false);
 
     navLinks.forEach((link) => {
         link.addEventListener('click', () => {
@@ -92,23 +97,36 @@ function setupSiteHeaderNavigation() {
     if (hamburger && navMenu) {
         hamburger.addEventListener('click', (event) => {
             event.preventDefault();
-            event.stopImmediatePropagation();
-            navMenu.classList.toggle('show');
-            hamburger.setAttribute('aria-expanded', navMenu.classList.contains('show') ? 'true' : 'false');
-        }, true);
+            event.stopPropagation();
+            setMenuState(!isMenuOpen());
+        });
+
+        hamburger.addEventListener('touchend', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setMenuState(!isMenuOpen());
+        }, { passive: false });
     }
 
     dropdownTriggers.forEach((trigger) => {
         trigger.addEventListener('click', (event) => {
             if (!isCompactMode()) return;
+
             event.preventDefault();
-            event.stopImmediatePropagation();
+            event.stopPropagation();
+
             const currentItem = trigger.closest('.nav-item');
             document.querySelectorAll('#siteHeader .nav-item.has-dropdown').forEach((item) => {
                 if (item !== currentItem) item.classList.remove('open');
             });
             currentItem?.classList.toggle('open');
-        }, true);
+        });
+    });
+
+    navMenu?.querySelectorAll('a:not(.dropdown-trigger)').forEach((link) => {
+        link.addEventListener('click', () => {
+            if (isCompactMode()) closeNavMenu();
+        });
     });
 
     document.addEventListener('click', (event) => {
@@ -117,19 +135,15 @@ function setupSiteHeaderNavigation() {
     });
 
     window.addEventListener('scroll', () => siteHeader.classList.remove('nav-collapsed'));
-
     window.addEventListener('resize', () => {
         siteHeader.classList.remove('nav-collapsed');
-        closeNavMenu();
+        if (!isCompactMode()) closeNavMenu();
     });
 }
 
 function setupHeroContactButton() {
     const contactUrl = document.querySelector('meta[name="pasca-contact-url"]')?.getAttribute('content') || '/kontak';
-
-    document.querySelectorAll('.hero .btn-primary').forEach((button) => {
-        button.setAttribute('href', contactUrl);
-    });
+    document.querySelectorAll('.hero .btn-primary').forEach((button) => button.setAttribute('href', contactUrl));
 }
 
 function setupHomeLatestNews() {
@@ -166,7 +180,6 @@ function setupHomeLatestNews() {
 
     const normalizeNews = (item) => {
         const category = item?.category || {};
-
         return {
             title: String(item?.title || 'Tanpa Judul'),
             slug: String(item?.slug || '#'),
@@ -231,9 +244,7 @@ function setupHomeLatestNews() {
         fetch(buildNewsUrl(), { headers: { Accept: 'application/json' } })
             .then((response) => response.ok ? response.json() : Promise.reject())
             .then((payload) => renderNews(toArray(payload).map(normalizeNews)))
-            .catch(() => {
-                // Keep the static fallback cards from Blade when the API is temporarily unavailable.
-            });
+            .catch(() => {});
     };
 
     const setActiveFilter = (value) => {
@@ -299,7 +310,6 @@ function setupStudentServiceCards() {
 
         if (rawLabel.includes('e-learning') || rawLabel.includes('siakad') || rawLabel.includes('sipolin')) {
             learningIndex += 1;
-
             if (rawLabel.includes('siakad') || learningIndex === 1) {
                 label = 'SIAKAD';
                 url = 'https://siakad.unw.ac.id';
@@ -320,12 +330,10 @@ function setupStudentServiceCards() {
         card.setAttribute('role', 'link');
         card.setAttribute('tabindex', '0');
         card.setAttribute('aria-label', `Buka ${labelElement?.innerText || label || rawLabel}`);
-
         card.addEventListener('click', (event) => {
             event.preventDefault();
             openExternal(url);
         });
-
         card.addEventListener('keydown', (event) => {
             if (event.key !== 'Enter' && event.key !== ' ') return;
             event.preventDefault();
@@ -377,9 +385,7 @@ function setupWhatsAppAdminModal() {
         document.body.classList.remove('wa-modal-open');
     };
 
-    document.querySelectorAll('[data-wa-modal-close]').forEach((button) => {
-        button.addEventListener('click', closeModal);
-    });
+    document.querySelectorAll('[data-wa-modal-close]').forEach((button) => button.addEventListener('click', closeModal));
 
     document.querySelectorAll('.contact-card').forEach((card) => {
         if (!card.querySelector('.fa-whatsapp')) return;
@@ -402,7 +408,6 @@ function setupWhatsAppAdminModal() {
             event.preventDefault();
             openModal();
         });
-
         card.addEventListener('keydown', (event) => {
             if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
@@ -421,9 +426,7 @@ function setupWhatsAppAdminModal() {
     }
 
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && modal.classList.contains('is-open')) {
-            closeModal();
-        }
+        if (event.key === 'Escape' && modal.classList.contains('is-open')) closeModal();
     });
 }
 
@@ -432,7 +435,6 @@ function setupHeroSlider() {
     if (!sliderDataElement) return;
 
     let items = [];
-
     try {
         items = JSON.parse(sliderDataElement.dataset.sliders || '[]');
     } catch (error) {
@@ -490,17 +492,12 @@ function setupHeroSlider() {
     const applyTransform = () => {
         track.style.transform = `translateX(-${trackIndex * 100}%)`;
     };
-
-    const setDots = (index) => {
-        dots.forEach((dot, dotIndex) => dot.classList.toggle('active', dotIndex === index));
-    };
-
+    const setDots = (index) => dots.forEach((dot, dotIndex) => dot.classList.toggle('active', dotIndex === index));
     const setText = (index) => {
         const data = items[index] || items[0];
         if (titleEl) titleEl.innerHTML = String(data.title || '').replace(/\n/g, '<br>');
         if (subtitleEl) subtitleEl.textContent = data.subtitle || '';
     };
-
     const safeDuration = (index) => Math.min(30000, Math.max(1400, Number(items[index]?.duration || 3000)));
 
     const normalizePositionAfterClone = () => {
@@ -531,24 +528,19 @@ function setupHeroSlider() {
         if (isMoving || items.length <= 1) return;
         isMoving = true;
         clearTimeout(timer);
-
-        pendingIndex = targetIndex === null
-            ? (realIndex + direction + items.length) % items.length
-            : targetIndex;
+        pendingIndex = targetIndex === null ? (realIndex + direction + items.length) % items.length : targetIndex;
         trackIndex = targetIndex === null ? trackIndex + direction : targetIndex + 1;
         applyTransform();
     }
 
     track.addEventListener('transitionend', (event) => {
         if (event.propertyName !== 'transform') return;
-
         if (pendingIndex !== null) {
             realIndex = pendingIndex;
             pendingIndex = null;
             setText(realIndex);
             setDots(realIndex);
         }
-
         normalizePositionAfterClone();
         isMoving = false;
         scheduleNext();
@@ -558,12 +550,10 @@ function setupHeroSlider() {
         event.preventDefault();
         move(-1);
     });
-
     next.addEventListener('click', (event) => {
         event.preventDefault();
         move(1);
     });
-
     dots.forEach((dot, index) => dot.addEventListener('click', () => {
         if (isMoving || index === realIndex) return;
         const direction = index > realIndex ? 1 : -1;
