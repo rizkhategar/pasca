@@ -14,12 +14,14 @@
 @section('content')
     <section class="page-hero contact-hero !bg-gradient-to-br !from-[#031f42] !via-[#064276] !to-[#0b5f9f]">
         <div class="hero-dots"></div>
-        <div class="hero-line"></div>
+        <div class="hero-line !right-[-120px] !top-[-78px] !h-[360px] !w-[360px] ![transform:none] !overflow-visible !rounded-full !border !border-white/15 !bg-[radial-gradient(circle_at_36%_36%,rgba(255,255,255,.24),rgba(45,156,219,.18)_34%,rgba(7,43,87,.08)_58%,transparent_72%)] !shadow-[0_0_90px_rgba(45,156,219,.24)]" aria-hidden="true">
+            <span class="absolute left-20 top-24 h-16 w-16 rounded-3xl bg-[#f7b500]/20 shadow-[0_20px_52px_rgba(247,181,0,.18)]"></span>
+            <span class="absolute bottom-16 right-28 h-28 w-28 rounded-full border border-white/14 bg-white/5 backdrop-blur-md"></span>
+            <span class="absolute bottom-28 left-8 h-[3px] w-44 rotate-[-22deg] rounded-full bg-gradient-to-r from-transparent via-white/35 to-transparent"></span>
+        </div>
         <div class="absolute inset-0 z-[1] bg-[radial-gradient(circle_at_18%_20%,rgba(45,156,219,.42),transparent_30%)]"></div>
-        <div class="absolute inset-0 z-[1] bg-[radial-gradient(circle_at_85%_18%,rgba(247,181,0,.16),transparent_24%)]"></div>
-        <div class="absolute -right-28 top-8 z-[2] h-80 w-80 rounded-full bg-white/10 blur-3xl"></div>
-        <div class="absolute left-[58%] top-0 z-[2] hidden h-[420px] w-56 -skew-x-[28deg] bg-white/10 lg:block"></div>
-        <div class="absolute bottom-16 left-0 z-[2] h-px w-full bg-gradient-to-r from-transparent via-white/24 to-transparent"></div>
+        <div class="absolute inset-0 z-[1] bg-[radial-gradient(circle_at_85%_18%,rgba(247,181,0,.12),transparent_24%)]"></div>
+        <div class="absolute bottom-16 left-0 z-[2] h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
 
         <div class="container">
             <div class="hero-inner">
