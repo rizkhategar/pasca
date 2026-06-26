@@ -5,7 +5,7 @@ namespace App\Filament\Resources\AboutPascasarjanas;
 use App\Filament\Resources\AboutPascasarjanas\Pages;
 use App\Filament\Resources\AboutPascasarjanas\Schemas\AboutPascasarjanaForm;
 use App\Filament\Resources\AboutPascasarjanas\Tables\AboutPascasarjanasTable;
-use App\Models\AboutPascasarjana;
+use App\Models\AboutPostgraduate;
 use BackedEnum; 
 use UnitEnum;   
 use Filament\Resources\Resource;
@@ -14,15 +14,13 @@ use Filament\Tables\Table;
 
 class AboutPascasarjanaResource extends Resource
 {
-    protected static ?string $model = AboutPascasarjana::class;
+    protected static ?string $model = AboutPostgraduate::class;
     
-    // Perbaikan tipe data untuk PHP 8 strict typing
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-information-circle';
     
     protected static ?string $navigationLabel = 'About Pascasarjana';
     protected static ?string $pluralModelLabel = 'About Pascasarjana';
     
-    // Perbaikan tipe data untuk PHP 8 strict typing
     protected static string|UnitEnum|null $navigationGroup = 'Profil';
 
     public static function form(Schema $schema): Schema
@@ -44,9 +42,8 @@ class AboutPascasarjanaResource extends Resource
         ];
     }
 
-    // Membatasi hanya boleh ada 1 data Tentang Kami
     public static function canCreate(): bool
     {
-        return AboutPascasarjana::count() === 0;
+        return AboutPostgraduate::count() === 0;
     }
 }
