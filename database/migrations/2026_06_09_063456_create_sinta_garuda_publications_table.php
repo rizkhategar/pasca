@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('sinta_garuda_publications')) {
+            return;
+        }
+
         Schema::create('sinta_garuda_publications', function (Blueprint $table) {
             $table->id();
             $table->string('sinta_id');

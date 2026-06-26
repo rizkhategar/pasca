@@ -11,23 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('sinta_book_publications')) {
+            return;
+        }
+
         Schema::create('sinta_book_publications', function (Blueprint $table) {
             $table->id();
-            // Menghubungkan ke tabel sinta_lecturers yang baru
             $table->string('sinta_id');
-
-            // Kolom yang ditranslasi ke bahasa Inggris
-            $table->text('title'); // menggantikan judul
-            $table->string('year')->nullable(); // menggantikan tahun
-            $table->string('publisher')->nullable(); // menggantikan penerbit
-
-            // Kolom standar untuk data buku SINTA
+            $table->text('title');
+            $table->string('year')->nullable();
+            $table->string('publisher')->nullable();
             $table->string('isbn')->nullable();
             $table->text('authors')->nullable();
-
             $table->timestamps();
 
-            // Menambahkan foreign key constraint ke tabel sinta_lecturers
             $table->foreign('sinta_id')
                   ->references('sinta_id')
                   ->on('sinta_lecturers')

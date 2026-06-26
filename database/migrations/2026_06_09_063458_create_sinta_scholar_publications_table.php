@@ -11,24 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('sinta_scholar_publications')) {
+            return;
+        }
+
         Schema::create('sinta_scholar_publications', function (Blueprint $table) {
             $table->id();
-            // Menghubungkan ke tabel sinta_lecturers yang baru
             $table->string('sinta_id');
-
-            // Kolom yang ditranslasi ke bahasa Inggris
-            $table->string('title'); // menggantikan judul
-            $table->text('scholar_url')->nullable(); // menggantikan url_scholar
-            $table->string('year')->nullable(); // menggantikan tahun
-
-            // Kolom yang sudah berbahasa Inggris
+            $table->string('title');
+            $table->text('scholar_url')->nullable();
+            $table->string('year')->nullable();
             $table->text('authors')->nullable();
             $table->string('source')->nullable();
             $table->integer('citation')->nullable();
-
             $table->timestamps();
 
-            // Menambahkan foreign key constraint ke tabel sinta_lecturers
             $table->foreign('sinta_id')
                   ->references('sinta_id')
                   ->on('sinta_lecturers')
