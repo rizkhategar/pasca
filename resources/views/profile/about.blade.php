@@ -6,7 +6,7 @@
 @section('content')
     <section class="about-hero">
         <div class="hero-dots"></div>
-        <div class="hero-line"></div>
+        @include('components.hero-spotlight')
 
         <div class="about-container">
             <div class="hero-inner">
@@ -113,7 +113,7 @@
                                 </div>
 
                                 <div class="sambutan-text">
-                                    {!! $tentang->direktur_message ?? '<p>Pesan sambutan pimpinan belum ditambahkan.</p>' !!}
+                                    {!! $tentang->direktur_message ?? '' !!}
                                 </div>
 
                                 <div class="direktur-info">
