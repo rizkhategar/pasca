@@ -1,5 +1,6 @@
 <?php
 
+use App\Filament\Resources\PostgraduateLecturer\PostgraduateLecturerResource;
 use App\Http\Controllers\AboutController;
 use App\Http\Controllers\AcademicController;
 use App\Http\Controllers\ContactController;
@@ -83,7 +84,7 @@ Route::get('/akademik/{slug}', [AcademicController::class, 'show'])->name('akade
 Route::get('/visi-misi', [VisionMissionController::class, 'index'])->name('visi-misi');
 Route::get('/profil/struktur-organisasi', [OrganizationStructureController::class, 'index'])->name('profil.struktur-organisasi');
 Route::get('/tentang-pascasarjana', [AboutController::class, 'index'])->name('tentang');
-Route::get('/scrap/ambildatadosen', [ScrapController::class, 'index'])->name('scrap.index');
+Route::get('/scrap/ambildatadosen', fn () => redirect(PostgraduateLecturerResource::getUrl('import')))->name('scrap.index');
 Route::get('/scrap/perbarui-dosen', [ScrapController::class, 'perbaruiDosen'])->name('scrap.perbaruiDosen');
 Route::get('/scrap/sinkronisasi-program-studi', [ScrapController::class, 'syncStudyPrograms'])->name('scrap.syncStudyPrograms');
 Route::get('/scrap/ambil-detail/{sinta_id}', [ScrapController::class, 'ambilDetail'])->name('scrap.ambilDetail');
