@@ -29,7 +29,7 @@ class ContactController extends Controller
 
         $viewData = compact('whatsappAdmins');
         $page = view('contact.index', $viewData)->render();
-        $modal = view('component.contact-whatsapp-modal', $viewData)->render();
+        $modal = view('components.contact-whatsapp-modal', $viewData)->render();
         $primaryNumber = htmlspecialchars((string) data_get($whatsappAdmins, '0.number', '+62 857-3033-9469'), ENT_QUOTES, 'UTF-8');
         $primaryUrl = (string) data_get($whatsappAdmins, '0.url', 'https://wa.me/6285730339469');
 
