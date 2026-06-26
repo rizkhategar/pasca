@@ -7,7 +7,7 @@ use App\Filament\Resources\OrganizationStructures\Pages\EditOrganizationStructur
 use App\Filament\Resources\OrganizationStructures\Pages\ListOrganizationStructures;
 use App\Filament\Resources\OrganizationStructures\Schemas\OrganizationStructureForm;
 use App\Filament\Resources\OrganizationStructures\Tables\OrganizationStructuresTable;
-use App\Models\OrganizationStructure;
+use App\Models\OrganizationalStructure;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -16,20 +16,13 @@ use UnitEnum;
 
 class OrganizationStructureResource extends Resource
 {
-    protected static ?string $model = OrganizationStructure::class;
-
+    protected static ?string $model = OrganizationalStructure::class;
     protected static ?string $slug = 'organization-structures';
-
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-building-office-2';
-
     protected static ?string $navigationLabel = 'Organization Structure';
-
     protected static ?string $modelLabel = 'Organization Structure';
-
     protected static ?string $pluralModelLabel = 'Organization Structures';
-
     protected static string|UnitEnum|null $navigationGroup = 'Profil';
-
     protected static ?int $navigationSort = 3;
 
     public static function form(Schema $schema): Schema
