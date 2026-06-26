@@ -1,0 +1,111 @@
+<?php
+
+namespace App\Filament\Resources\PostgraduateLecturer\Tables;
+
+use App\Filament\Resources\PostgraduateLecturer\PostgraduateLecturerResource;
+use App\Models\StudyProgram;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Illuminate\Support\Facades\Cache;
+
+class PostgraduateLecturerTable
+{
+    public static function configure(Table $table): Table
+    {
+        return $table
+            ->columns([
+                TextColumn::make('sinta_id')
+                    ->label('SINTA ID')
+                    ->searchable()
+                    ->sortable(),
+
+                TextColumn::make('lecturer.name')
+                    ->label('Nama')
+                    ->searchable(),
+
+                TextColumn::make('institution')
+                    ->label('Institusi')
+                    ->searchable(),
+
+                TextColumn::make('study_program')
+                    ->label('Program Studi SINTA')
+                    ->searchable(),
+
+                TextColumn::make('study_program_names')
+                    ->label('Program Studi Pascasarjana')
+                    ->getStateUsing(fn ($record): string => self::resolveStudyProgramNames($record))
+                    ->wrap(),
+
+                TextColumn::make('research_interests')
+                    ->label('Bidang Minat')
+                    ->searchable(),
+
+                TextColumn::make('sinta_score_overall')
+                    ->label('SINTA Score Overall')
+                    ->numeric()
+                    ->sortable(),
+
+                TextColumn::make('sinta_score_3yr')
+                    ->label('SINTA Score 3Yr')
+                    ->numeric()
+                    ->sortable(),
+            ])
+            ->filters([
+                //
+            ])
+            ->actions([
+                ViewAction::make()
+                    ->url(fn ($record) => PostgraduateLecturerResource::getUrl('view', ['record' => $record])),
+
+                EditAction::make()
+                    ->url(fn ($record) => PostgraduateLecturerResource::getUrl('edit', ['record' => $record])),
+
+                DeleteAction::make(),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+
+    private static function resolveStudyProgramNames($record): string
+    {
+        $studyProgramIds = $record->studyProgramPivots()
+            ->pluck('id_study_program')
+            ->filter()
+            ->map(fn ($id) => (string) $id)
+            ->unique()
+            ->values();
+
+        if ($studyProgramIds->isEmpty()) {
+            return '-';
+        }
+
+        $studyProgramMap = self::getPascasarjanaStudyProgramMap();
+
+        return $studyProgramIds
+            ->map(fn (string $id): string => $studyProgramMap[$id] ?? $id)
+            ->implode(', ');
+    }
+
+    private static function getPascasarjanaStudyProgramMap(): array
+    {
+        return Cache::remember('study_programs_select_import', now()->addHours(12), function () {
+            return StudyProgram::query()
+                ->where('unw_fakultas_nama', 'Pascasarjana')
+                ->orderBy('jenjang')
+                ->orderBy('nama')
+                ->get()
+                ->mapWithKeys(fn (StudyProgram $program) => [
+                    (string) $program->id_unw_program_studi => $program->display_name,
+                ])
+                ->toArray();
+        });
+    }
+}
