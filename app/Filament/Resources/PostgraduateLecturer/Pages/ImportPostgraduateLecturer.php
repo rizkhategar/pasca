@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\DetailDosens\Pages;
+namespace App\Filament\Resources\PostgraduateLecturer\Pages;
 
-use App\Filament\Resources\DetailDosens\DetailDosenResource;
+use App\Filament\Resources\PostgraduateLecturer\PostgraduateLecturerResource;
 use App\Models\SintaLecturer;
 use App\Models\StudyProgram;
 use Filament\Actions\Action;
@@ -19,11 +19,11 @@ use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\HtmlString;
 
-class ImportDetailDosen extends Page implements HasSchemas
+class ImportPostgraduateLecturer extends Page implements HasSchemas
 {
     use InteractsWithSchemas;
 
-    protected static string $resource = DetailDosenResource::class;
+    protected static string $resource = PostgraduateLecturerResource::class;
 
     protected string $view = 'filament.resources.detail-dosens.pages.import-detail-dosen';
 

@@ -1,23 +1,23 @@
 <?php
 
-namespace App\Filament\Resources\DetailDosens\Tables;
+namespace App\Filament\Resources\PostgraduateLecturer\Tables;
 
-use App\Filament\Resources\DetailDosens\DetailDosenResource;
+use App\Filament\Resources\PostgraduateLecturer\PostgraduateLecturerResource;
 use App\Models\StudyProgram;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Cache;
 
-class DetailDosensTable
+class PostgraduateLecturerTable
 {
     public static function configure(Table $table): Table
     {
-         return $table
+        return $table
             ->columns([
                 TextColumn::make('sinta_id')
                     ->label('SINTA ID')
@@ -60,10 +60,10 @@ class DetailDosensTable
             ])
             ->actions([
                 ViewAction::make()
-                    ->url(fn ($record) => DetailDosenResource::getUrl('view', ['record' => $record])),
+                    ->url(fn ($record) => PostgraduateLecturerResource::getUrl('view', ['record' => $record])),
 
                 EditAction::make()
-                    ->url(fn ($record) => DetailDosenResource::getUrl('edit', ['record' => $record])),
+                    ->url(fn ($record) => PostgraduateLecturerResource::getUrl('edit', ['record' => $record])),
 
                 DeleteAction::make(),
             ])

@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Filament\Resources\DetailDosens\Pages;
+namespace App\Filament\Resources\PostgraduateLecturer\Pages;
 
-use App\Filament\Resources\DetailDosens\DetailDosenResource;
+use App\Filament\Resources\PostgraduateLecturer\PostgraduateLecturerResource;
 use App\Models\PostgraduateLecturer;
-use Filament\Resources\Pages\EditRecord;
 use Filament\Actions;
+use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
 
-class EditDetailDosen extends EditRecord
+class EditPostgraduateLecturer extends EditRecord
 {
-    protected static string $resource = DetailDosenResource::class;
+    protected static string $resource = PostgraduateLecturerResource::class;
 
     protected function getHeaderActions(): array
     {

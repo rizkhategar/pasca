@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Filament\Resources\DetailDosens\RelationManagers;
+namespace App\Filament\Resources\PostgraduateLecturer\RelationManagers;
 
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
 
 class ScopusPublicationsRelationManager extends RelationManager
 {
@@ -40,13 +40,10 @@ class ScopusPublicationsRelationManager extends RelationManager
                 TextColumn::make('quartile'),
                 TextColumn::make('author_order')->label('Urutan Penulis'),
                 TextColumn::make('creator')->label('Pembuat'),
-                
-                // PERBAIKAN: Melekatkan state nilai URL agar bisa diklik menuju tab baru
                 TextColumn::make('article_url')
                     ->label('URL Artikel')
                     ->url(fn ($state) => $state)
                     ->openUrlInNewTab(),
-                    
                 TextColumn::make('journal_url')
                     ->label('URL Jurnal')
                     ->url(fn ($state) => $state)

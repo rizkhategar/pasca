@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Filament\Resources\DetailDosens\RelationManagers;
+namespace App\Filament\Resources\PostgraduateLecturer\RelationManagers;
 
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
 
 class GarudaYearlyStatsRelationManager extends RelationManager
 {
@@ -19,7 +19,6 @@ class GarudaYearlyStatsRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         return $schema->components([
-            // Mengubah 'tahun' menjadi 'year'
             TextInput::make('year')->label('Tahun')->required(),
             TextInput::make('articles')->numeric()->label('Artikel')->default(0)->required(),
         ]);
@@ -28,10 +27,8 @@ class GarudaYearlyStatsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            // Mengubah record title attribute menjadi 'year'
             ->recordTitleAttribute('year')
             ->columns([
-                // Penyesuaian nama kolom ke Bahasa Inggris dengan label tetap Bahasa Indonesia
                 TextColumn::make('year')->label('Tahun')->sortable(),
                 TextColumn::make('articles')->label('Jumlah Artikel')->sortable(),
             ])

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\DetailDosens\Schemas;
+namespace App\Filament\Resources\PostgraduateLecturer\Schemas;
 
 use App\Models\PostgraduateLecturer;
 use App\Models\StudyProgram;
@@ -17,7 +17,7 @@ use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
-class DetailDosenForm
+class PostgraduateLecturerForm
 {
     public static function configure(Schema $schema): Schema
     {
