@@ -2,45 +2,36 @@
 
 namespace App\Http\Controllers;
 
-// Menggunakan model scraping sebagai query dasar agar relasi riset tetap terikat utuh
 use App\Models\SintaLecturerDetail;
+use App\Models\StudyProgram;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class RisetController extends Controller
 {
     public function listDosen(Request $request)
     {
-        // Ambil data navigasi untuk filter jurusan
-        $academicProgramsNav = \App\Http\Controllers\AcademicController::getNavigationData();
+        $academicProgramsNav = AcademicController::getNavigationData();
 
-        // Query data dosen dengan mengikutsertakan relasi PascaLecturer (Eager Loading)
-        $query = SintaLecturerDetail::with('pascaLecturer');
+        $query = SintaLecturerDetail::with('postgraduateLecturer.studyPrograms');
 
-        // Logika Pencarian Nama / SINTA ID Lintas Tabel (SINTA & Pasca)
         if ($request->has('search') && $request->search != '') {
             $query->where(function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->search . '%')
                     ->orWhere('sinta_id', 'like', '%' . $request->search . '%')
-                    ->orWhereHas('pascaLecturer', function ($sub) use ($request) {
+                    ->orWhereHas('postgraduateLecturer', function ($sub) use ($request) {
                         $sub->where('name', 'like', '%' . $request->search . '%');
                     });
             });
         }
 
-        // Logika Filter Jurusan Berdasarkan Tabel Pivot Baru 'departement'
         if ($request->has('jurusan') && $request->jurusan != '') {
-            $query->whereIn('sinta_id', function ($subQuery) use ($request) {
-                $subQuery->select('sinta_id')
-                    ->from('departement')
-                    ->where('id_departement', $request->jurusan);
+            $query->whereHas('postgraduateLecturer.studyPrograms', function ($subQuery) use ($request) {
+                $subQuery->where('study_program.id_unw_program_studi', $request->jurusan);
             });
         }
 
-        // Pagination data dosen (Tepat 10 data per lembar halaman)
         $dosens = $query->paginate(10)->through(function ($dosen) {
             return $this->transformToIndonesianAttributes($dosen);
         });
@@ -51,7 +42,7 @@ class RisetController extends Controller
     public function detailDosen($sinta_id)
     {
         $dosen = SintaLecturerDetail::with([
-            'pascaLecturer', // Ikut sertakan data kustom admin
+            'postgraduateLecturer.studyPrograms',
             'scopusPublications',
             'scopusYearlyStats',
             'scholarPublications',
@@ -70,42 +61,36 @@ class RisetController extends Controller
         return view('research.detail', compact('dosen'));
     }
 
-    /**
-     * Helper Jembatan Kompatibilitas Data & Mekanisme Fallback (Scrap vs Pasca)
-     */
     private function transformToIndonesianAttributes($dosen)
     {
         if (!$dosen) return $dosen;
 
-        // 1. MEKANISME FALLBACK PROFIL: Jika ada data PascaLecturer, pakai data tersebut. Jika tidak, pakai data SINTA.
-        $dosen->nama = $dosen->pascaLecturer->name ?? $dosen->name;
+        $dosen->nama = $dosen->postgraduateLecturer->name ?? $dosen->name;
         $dosen->profile_photo = $this->resolveLecturerPhotoPath($dosen);
 
-        // 2. TRANSLASI ID PIVOT JURUSAN KE TEKS DISPLAY
-        $jurusans = Cache::remember('academic_programs_select_import', now()->addHours(12), function () {
-            $response = Http::withoutVerifying()->get('https://panel-web.unw.ac.id/api/unw-program-studi');
-            if (!$response->successful()) return [];
-            return collect($response->json('data', []))
-                ->filter(fn($item) => isset($item['id'], $item['nama'], $item['unwFakultas']['nama']) && trim($item['unwFakultas']['nama']) === 'Pascasarjana')
-                ->mapWithKeys(fn($item) => [
-                    $item['id'] => trim(($item['jenjang'] ?? '') . ' ' . ($item['nama'] ?? ''))
-                ])->toArray();
+        $studyProgramMap = Cache::remember('study_programs_select_import', now()->addHours(12), function () {
+            return StudyProgram::query()
+                ->where('unw_fakultas_nama', 'Pascasarjana')
+                ->orderBy('jenjang')
+                ->orderBy('nama')
+                ->get()
+                ->mapWithKeys(fn (StudyProgram $program) => [
+                    (string) $program->id_unw_program_studi => $program->display_name,
+                ])
+                ->toArray();
         });
 
-        $associatedIds = DB::table('departement')
-            ->where('sinta_id', $dosen->sinta_id)
-            ->pluck('id_departement')
-            ->toArray();
+        $associatedIds = $dosen->postgraduateLecturer?->studyPrograms
+            ? $dosen->postgraduateLecturer->studyPrograms->pluck('id_unw_program_studi')->toArray()
+            : [];
 
         if (!empty($associatedIds)) {
-            $mappedNames = array_map(fn($id) => $jurusans[$id] ?? $id, $associatedIds);
+            $mappedNames = array_map(fn($id) => $studyProgramMap[(string) $id] ?? $id, $associatedIds);
             $dosen->program_studi = implode(', ', $mappedNames);
         } else {
-            // Jika pivot kosong, fallback ke teks prodi bawaan
-            $dosen->program_studi = $dosen->pascaLecturer->study_program ?? $dosen->study_program ?? '-';
+            $dosen->program_studi = $dosen->study_program ?? '-';
         }
 
-        // --- Sinkronisasi Variabel Bahasa Indonesia Untuk Relasi Riset ---
         if ($dosen->relationLoaded('scopusPublications')) {
             foreach ($dosen->scopusPublications as $item) { $item->judul = $item->title; $item->tahun = $item->year; }
         }
@@ -162,7 +147,7 @@ class RisetController extends Controller
             return '../../storage/' . $scrapedPath;
         }
 
-        $storedPath = $dosen->pascaLecturer->profile_photo ?? $dosen->profile_photo ?? null;
+        $storedPath = $dosen->postgraduateLecturer->profile_photo ?? $dosen->profile_photo ?? null;
 
         if (! $storedPath) {
             return null;
