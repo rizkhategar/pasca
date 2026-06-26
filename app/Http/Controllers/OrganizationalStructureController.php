@@ -29,7 +29,7 @@ class OrganizationalStructureController extends Controller
         $strukturOrganisasi = $organizationStructure;
 
         return response()
-            ->view('profil.struktur-organisasi', compact('strukturOrganisasi', 'organizationStructure'))
+            ->view('profile.organization-structure', compact('strukturOrganisasi', 'organizationStructure'))
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             ->header('Pragma', 'no-cache')
             ->header('Expires', '0');
