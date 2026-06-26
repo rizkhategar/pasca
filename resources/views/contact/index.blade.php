@@ -2,7 +2,7 @@
     $primaryWhatsapp = $whatsappAdmins[0] ?? [
         'name' => 'Admin WhatsApp',
         'number' => '+62 857-3033-9469',
-        'url' => '#',
+        'url' => 'https://wa.me/6285730339469',
     ];
 @endphp
 
@@ -12,26 +12,27 @@
 @section('body_class', 'contact-page')
 
 @section('content')
-    <section class="page-hero contact-hero">
+    <section class="page-hero">
         <div class="hero-dots"></div>
+        <div class="hero-line"></div>
 
         <div class="container relative z-10">
-            <div class="hero-inner !max-w-[860px] text-left">
-                <div class="hero-kicker">
+            <div class="hero-inner !block !ml-0 !mr-auto !max-w-[820px] !text-left">
+                <div class="hero-kicker !mx-0">
                     <i class="fas fa-headset"></i>
                     <span>Layanan Informasi Pascasarjana</span>
                 </div>
 
-                <h1 class="page-title !max-w-[820px]">
+                <h1 class="page-title !mx-0 !max-w-[780px] !text-left">
                     Kontak Pendaftaran Mahasiswa Baru
                 </h1>
 
-                <p class="page-desc !max-w-[760px]">
+                <p class="page-desc !mx-0 !max-w-[720px] !text-left">
                     Hubungi layanan resmi Pascasarjana Universitas Ngudi Waluyo untuk informasi pendaftaran,
                     konsultasi program, dan bantuan administrasi calon mahasiswa.
                 </p>
 
-                <div class="hero-meta">
+                <div class="hero-meta !justify-start">
                     <span><i class="fas fa-user-graduate"></i>PMB Pascasarjana</span>
                     <span><i class="fas fa-clock"></i>Respon Cepat</span>
                     <span><i class="fas fa-shield-halved"></i>Kontak Resmi</span>
