@@ -15,11 +15,11 @@
 @section('content')
     <section class="page-hero">
         <div class="hero-dots"></div>
-        <div class="hero-line"></div>
+        @include('components.hero-spotlight')
 
         <div class="container">
             <div class="hero-inner">
-                <a href="javascript:history.back()" class="back-link">
+                <a href="{{ url()->previous() }}" class="back-link">
                     <i class="fas fa-arrow-left"></i>
                     <span>Kembali</span>
                 </a>
