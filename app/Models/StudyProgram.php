@@ -9,7 +9,7 @@ class StudyProgram extends Model
 {
     use HasFactory;
 
-    protected $table = 'study_program';
+    protected $table = 'study_programs';
 
     protected $fillable = [
         'id_unw_program_studi',
@@ -36,17 +36,17 @@ class StudyProgram extends Model
 
     public function lecturerStudyPrograms()
     {
-        return $this->hasMany(PostgraduateLecturerStudyProgram::class, 'id_study_program', 'id_unw_program_studi');
+        return $this->hasMany(PostgraduateLecturerStudyProgram::class, 'study_program_id', 'id');
     }
 
     public function postgraduateLecturers()
     {
         return $this->belongsToMany(
             PostgraduateLecturer::class,
-            'postgraduate_lecturer_study_program',
-            'id_study_program',
+            'postgraduate_lecturer_study_programs',
+            'study_program_id',
             'postgraduate_lecturer_id',
-            'id_unw_program_studi',
+            'id',
             'id'
         );
     }
