@@ -6,7 +6,6 @@ use App\Filament\Resources\OrganizationalStructures\Pages\AddStructure;
 use App\Filament\Resources\OrganizationalStructures\Pages\ListOrganizationalStructures;
 use App\Filament\Resources\OrganizationalStructures\Pages\ModifyStructure;
 use App\Filament\Resources\OrganizationalStructures\Schemas\OrganizationalStructureForm;
-use App\Filament\Resources\OrganizationalStructures\Tables\OrganizationalStructuresTable;
 use App\Models\OrganizationalStructure;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -25,6 +24,6 @@ class OrganizationalStructureResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'Profil';
     protected static ?int $navigationSort = 3;
     public static function form(Schema $schema): Schema { return OrganizationalStructureForm::configure($schema); }
-    public static function table(Table $table): Table { return OrganizationalStructuresTable::configure($table); }
+    public static function table(Table $table): Table { return Listing::configure($table); }
     public static function getPages(): array { return ['index' => ListOrganizationalStructures::route('/'), 'create' => AddStructure::route('/create'), 'edit' => ModifyStructure::route('/{record}/edit')]; }
 }
