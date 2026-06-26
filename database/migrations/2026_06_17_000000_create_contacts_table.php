@@ -11,9 +11,10 @@ return new class extends Migration
         Schema::create('contacts', function (Blueprint $table): void {
             $table->id();
             $table->string('primary_admin_name')->default('Admin 1');
-            $table->string('primary_whatsapp')->default('+62 857-3033-9469');
+            $table->string('primary_whatsapp')->nullable();
             $table->string('secondary_admin_name')->default('Admin 2');
-            $table->string('secondary_whatsapp')->default('+62 811-2758-575');
+            $table->string('secondary_whatsapp')->nullable();
+            $table->json('whatsapp_admins')->nullable();
             $table->timestamps();
         });
     }

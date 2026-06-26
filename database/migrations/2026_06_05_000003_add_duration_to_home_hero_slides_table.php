@@ -8,14 +8,30 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('sliders', function (Blueprint $table) {
+        if (! Schema::hasTable('sliders')) {
+            return;
+        }
+
+        if (Schema::hasColumn('sliders', 'duration_ms')) {
+            return;
+        }
+
+        Schema::table('sliders', function (Blueprint $table): void {
             $table->unsignedInteger('duration_ms')->default(3000)->after('sort_order');
         });
     }
 
     public function down(): void
     {
-        Schema::table('sliders', function (Blueprint $table) {
+        if (! Schema::hasTable('sliders')) {
+            return;
+        }
+
+        if (! Schema::hasColumn('sliders', 'duration_ms')) {
+            return;
+        }
+
+        Schema::table('sliders', function (Blueprint $table): void {
             $table->dropColumn('duration_ms');
         });
     }

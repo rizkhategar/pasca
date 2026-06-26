@@ -8,14 +8,30 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('about_postgraduate', function (Blueprint $table) {
+        if (! Schema::hasTable('about_postgraduate')) {
+            return;
+        }
+
+        if (Schema::hasColumn('about_postgraduate', 'hero_image')) {
+            return;
+        }
+
+        Schema::table('about_postgraduate', function (Blueprint $table): void {
             $table->string('hero_image')->nullable()->after('id');
         });
     }
 
     public function down(): void
     {
-        Schema::table('about_postgraduate', function (Blueprint $table) {
+        if (! Schema::hasTable('about_postgraduate')) {
+            return;
+        }
+
+        if (! Schema::hasColumn('about_postgraduate', 'hero_image')) {
+            return;
+        }
+
+        Schema::table('about_postgraduate', function (Blueprint $table): void {
             $table->dropColumn('hero_image');
         });
     }

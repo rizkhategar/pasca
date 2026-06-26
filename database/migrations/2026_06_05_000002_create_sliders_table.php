@@ -8,12 +8,17 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('sliders')) {
+            return;
+        }
+
         Schema::create('sliders', function (Blueprint $table) {
             $table->id();
             $table->string('title')->default('Pascasarjana Universitas Ngudi Waluyo');
             $table->string('subtitle')->default('Pascasarjana Universitas Ngudi Waluyo');
             $table->string('image_path');
             $table->unsignedInteger('sort_order')->default(0);
+            $table->unsignedInteger('duration_ms')->default(3000);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
