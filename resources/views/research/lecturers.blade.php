@@ -7,6 +7,133 @@
 @section('title', 'Daftar Dosen & Riset - Pascasarjana UNW')
 @section('body_class', 'research-list-page news-page')
 
+@push('styles')
+    <style>
+        .lecturer-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .lecturer-list-card {
+            display: grid;
+            grid-template-columns: 240px minmax(0, 1fr);
+            align-items: stretch;
+            gap: 0;
+            min-height: 220px;
+            overflow: hidden;
+            text-decoration: none;
+        }
+
+        .lecturer-card-photo {
+            position: relative;
+            height: 100%;
+            min-height: 220px;
+            border-radius: 0;
+        }
+
+        .lecturer-card-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center top;
+            display: block;
+        }
+
+        .lecturer-card-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 1.35rem 1.5rem;
+            min-width: 0;
+        }
+
+        .lecturer-card-main-info {
+            min-width: 0;
+        }
+
+        .lecturer-card-title-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: .65rem;
+        }
+
+        .lecturer-card-title-row .news-page-title {
+            margin: 0;
+        }
+
+        .lecturer-sinta-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            flex: 0 0 auto;
+            border-radius: 999px;
+            padding: .4rem .7rem;
+            background: rgba(37, 99, 235, .08);
+            color: #1d4ed8;
+            font-size: .82rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .lecturer-card-info .news-page-excerpt {
+            margin-bottom: 1rem;
+        }
+
+        .lecturer-card-info .lecturer-stats {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            margin-top: .75rem;
+        }
+
+        .lecturer-card-info .news-page-footer {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(15, 23, 42, .08);
+        }
+
+        @media (max-width: 900px) {
+            .lecturer-list-card {
+                grid-template-columns: 190px minmax(0, 1fr);
+                min-height: 200px;
+            }
+
+            .lecturer-card-photo {
+                min-height: 200px;
+            }
+
+            .lecturer-card-info {
+                padding: 1.1rem;
+            }
+
+            .lecturer-card-info .lecturer-stats {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .lecturer-list-card {
+                grid-template-columns: 1fr;
+            }
+
+            .lecturer-card-photo {
+                height: 260px;
+                min-height: 260px;
+            }
+
+            .lecturer-card-title-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .lecturer-sinta-chip {
+                white-space: normal;
+            }
+        }
+    </style>
+@endpush
+
 @section('content')
     <section class="rd-hero">
         <div class="rd-hero-dots"></div>
@@ -102,7 +229,7 @@
                     </div>
                 </div>
 
-                <section class="news-page-grid" id="dosenGrid">
+                <section class="lecturer-list" id="dosenGrid">
                     @forelse($dosens as $dosen)
                         @php
                             $safeSintaId = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $dosen->sinta_id);
@@ -117,38 +244,43 @@
                             }
                         @endphp
 
-                        <a href="{{ route('riset.detail', $dosen->sinta_id) }}" class="news-page-card lecturer-card">
-                            <div class="news-page-thumb lecturer-thumb">
+                        <a href="{{ route('riset.detail', $dosen->sinta_id) }}" class="news-page-card lecturer-card lecturer-list-card">
+                            <div class="news-page-thumb lecturer-thumb lecturer-card-photo">
                                 <img src="{{ $photoUrl }}" alt="{{ $dosen->nama }}">
-                                <span class="news-page-category">
-                                    <i class="fas fa-id-badge"></i>
-                                    SINTA {{ $dosen->sinta_id }}
-                                </span>
                             </div>
 
-                            <div class="news-page-body">
-                                <h3 class="news-page-title">{{ $dosen->nama }}</h3>
-                                <p class="news-page-excerpt">{{ $dosen->program_studi }}</p>
-
-                                <div class="stats-grid lecturer-stats">
-                                    <div class="stat-box">
-                                        <div class="stat-number">{{ number_format($dosen->sinta_score_overall ?? 0) }}</div>
-                                        <div class="stat-desc">Overall</div>
+                            <div class="news-page-body lecturer-card-info">
+                                <div class="lecturer-card-main-info">
+                                    <div class="lecturer-card-title-row">
+                                        <h3 class="news-page-title">{{ $dosen->nama }}</h3>
+                                        <span class="lecturer-sinta-chip">
+                                            <i class="fas fa-id-badge"></i>
+                                            SINTA {{ $dosen->sinta_id }}
+                                        </span>
                                     </div>
 
-                                    <div class="stat-box">
-                                        <div class="stat-number">{{ number_format($dosen->sinta_score_3yr ?? 0) }}</div>
-                                        <div class="stat-desc">3 Year</div>
-                                    </div>
+                                    <p class="news-page-excerpt">{{ $dosen->program_studi }}</p>
 
-                                    <div class="stat-box">
-                                        <div class="stat-number">{{ number_format($dosen->affil_score ?? 0) }}</div>
-                                        <div class="stat-desc">Affil</div>
-                                    </div>
+                                    <div class="stats-grid lecturer-stats">
+                                        <div class="stat-box">
+                                            <div class="stat-number">{{ number_format($dosen->sinta_score_overall ?? 0) }}</div>
+                                            <div class="stat-desc">Overall</div>
+                                        </div>
 
-                                    <div class="stat-box">
-                                        <div class="stat-number">{{ number_format($dosen->affil_score_3yr ?? 0) }}</div>
-                                        <div class="stat-desc">Affil 3Yr</div>
+                                        <div class="stat-box">
+                                            <div class="stat-number">{{ number_format($dosen->sinta_score_3yr ?? 0) }}</div>
+                                            <div class="stat-desc">3 Year</div>
+                                        </div>
+
+                                        <div class="stat-box">
+                                            <div class="stat-number">{{ number_format($dosen->affil_score ?? 0) }}</div>
+                                            <div class="stat-desc">Affil</div>
+                                        </div>
+
+                                        <div class="stat-box">
+                                            <div class="stat-number">{{ number_format($dosen->affil_score_3yr ?? 0) }}</div>
+                                            <div class="stat-desc">Affil 3Yr</div>
+                                        </div>
                                     </div>
                                 </div>
 
