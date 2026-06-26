@@ -9,7 +9,7 @@ class PostgraduateLecturer extends Model
 {
     use HasFactory;
 
-    protected $table = 'postgraduate_lecturer';
+    protected $table = 'postgraduate_lecturers';
 
     protected $fillable = [
         'sinta_id',
@@ -37,16 +37,16 @@ class PostgraduateLecturer extends Model
     {
         return $this->belongsToMany(
             StudyProgram::class,
-            'postgraduate_lecturer_study_program',
+            'postgraduate_lecturer_study_programs',
             'postgraduate_lecturer_id',
-            'id_study_program',
+            'study_program_id',
             'id',
-            'id_unw_program_studi'
+            'id'
         );
     }
 
     public function getStudyProgramIdsAttribute(): array
     {
-        return $this->studyProgramPivots()->pluck('id_study_program')->toArray();
+        return $this->studyProgramPivots()->pluck('study_program_id')->toArray();
     }
 }
