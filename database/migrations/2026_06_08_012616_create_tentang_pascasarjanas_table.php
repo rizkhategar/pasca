@@ -8,18 +8,18 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('about_postgraduate_programs', function (Blueprint $table) {
+        Schema::create('about_postgraduate', function (Blueprint $table) {
             $table->id();
             $table->string('subheading')->default('Tentang Kami');
             $table->string('heading');
             $table->text('description');
-            $table->json('points')->nullable(); // Disimpan sebagai JSON untuk repeater
+            $table->json('points')->nullable();
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('about_postgraduate_programs');
+        Schema::dropIfExists('about_postgraduate');
     }
 };
