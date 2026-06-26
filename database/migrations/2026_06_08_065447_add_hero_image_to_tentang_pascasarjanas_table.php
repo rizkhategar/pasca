@@ -1,22 +1,16 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('about_postgraduate', function (Blueprint $table) {
-            $table->string('hero_image')->nullable()->after('id');
-        });
+        // Merged into create_about_postgraduate_table migration.
     }
 
     public function down(): void
     {
-        Schema::table('about_postgraduate', function (Blueprint $table) {
-            $table->dropColumn('hero_image');
-        });
+        // Merged into create_about_postgraduate_table migration.
     }
 };
