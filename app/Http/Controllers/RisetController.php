@@ -95,37 +95,92 @@ class RisetController extends Controller
         }
 
         if ($dosen->relationLoaded('scopusPublications')) {
-            foreach ($dosen->scopusPublications as $item) { $item->judul = $item->title; $item->tahun = $item->year; }
+            foreach ($dosen->scopusPublications as $item) {
+                $item->judul = $item->title;
+                $item->tahun = $item->year;
+                $item->url_artikel = $item->article_url;
+                $item->url_journal = $item->journal_url;
+            }
         }
+
         if ($dosen->relationLoaded('scholarPublications')) {
-            foreach ($dosen->scholarPublications as $item) { $item->judul = $item->title; $item->tahun = $item->year; }
+            foreach ($dosen->scholarPublications as $item) {
+                $item->judul = $item->title;
+                $item->tahun = $item->year;
+                $item->url_scholar = $item->scholar_url;
+            }
         }
+
         if ($dosen->relationLoaded('garudaPublications')) {
-            foreach ($dosen->garudaPublications as $item) { $item->judul = $item->title; $item->tahun = $item->year; }
+            foreach ($dosen->garudaPublications as $item) {
+                $item->judul = $item->title;
+                $item->tahun = $item->year;
+                $item->url_artikel = $item->article_url;
+                $item->url_journal = $item->journal_url;
+            }
         }
+
         if ($dosen->relationLoaded('books')) {
-            foreach ($dosen->books as $item) { $item->judul = $item->title; $item->kategori = $item->category; $item->penerbit = $item->publisher; $item->tahun = $item->year; }
+            foreach ($dosen->books as $item) {
+                $item->judul = $item->title;
+                $item->kategori = $item->category;
+                $item->penerbit = $item->publisher;
+                $item->tahun = $item->year;
+            }
         }
+
         if ($dosen->relationLoaded('researches')) {
-            foreach ($dosen->researches as $item) { $item->judul = $item->title; $item->skema = $item->scheme; $item->tahun = $item->year; $item->dana = $item->funding; }
+            foreach ($dosen->researches as $item) {
+                $item->judul = $item->title;
+                $item->skema = $item->scheme;
+                $item->tahun = $item->year;
+                $item->dana = $item->funding;
+                $item->personils = $item->personnel;
+            }
         }
+
         if ($dosen->relationLoaded('services')) {
-            foreach ($dosen->services as $item) { $item->judul = $item->title; $item->skema = $item->scheme; $item->tahun = $item->year; $item->dana = $item->funding; }
+            foreach ($dosen->services as $item) {
+                $item->judul = $item->title;
+                $item->skema = $item->scheme;
+                $item->tahun = $item->year;
+                $item->dana = $item->funding;
+                $item->personils = $item->personnel;
+            }
         }
+
         if ($dosen->relationLoaded('researchYearlies')) {
-            foreach ($dosen->researchYearlies as $item) { $item->tahun = $item->year; $item->jumlah = $item->count; }
+            foreach ($dosen->researchYearlies as $item) {
+                $item->tahun = $item->year;
+                $item->jumlah = $item->count;
+            }
         }
+
         if ($dosen->relationLoaded('serviceYearlies')) {
-            foreach ($dosen->serviceYearlies as $item) { $item->tahun = $item->year; $item->jumlah = $item->count; }
+            foreach ($dosen->serviceYearlies as $item) {
+                $item->tahun = $item->year;
+                $item->jumlah = $item->count;
+            }
         }
+
         if ($dosen->relationLoaded('scopusYearlyStats')) {
-            foreach ($dosen->scopusYearlyStats as $item) { $item->tahun = $item->year; $item->jumlah = $item->count; }
+            foreach ($dosen->scopusYearlyStats as $item) {
+                $item->tahun = $item->year;
+                $item->jumlah = $item->count;
+            }
         }
+
         if ($dosen->relationLoaded('garudaYearlyStats')) {
-            foreach ($dosen->garudaYearlyStats as $item) { $item->tahun = $item->year; }
+            foreach ($dosen->garudaYearlyStats as $item) {
+                $item->tahun = $item->year;
+                $item->jumlah = $item->articles;
+            }
         }
+
         if ($dosen->relationLoaded('scholarYearlyStats')) {
-            foreach ($dosen->scholarYearlyStats as $item) { $item->tahun = $item->year; }
+            foreach ($dosen->scholarYearlyStats as $item) {
+                $item->tahun = $item->year;
+            }
         }
 
         return $dosen;
@@ -143,11 +198,11 @@ class RisetController extends Controller
         $scrapedPath = "sinta-lecturers/{$safeSintaId}.jpg";
 
         if (Storage::disk('public')->exists($customPath)) {
-            return '../../storage/' . $customPath;
+            return url('storage/' . $customPath);
         }
 
         if (Storage::disk('public')->exists($scrapedPath)) {
-            return '../../storage/' . $scrapedPath;
+            return url('storage/' . $scrapedPath);
         }
 
         $storedPath = $dosen->postgraduateLecturer->profile_photo ?? $dosen->profile_photo ?? null;
@@ -166,6 +221,6 @@ class RisetController extends Controller
             $storedPath = 'sinta-lecturers/' . $storedPath;
         }
 
-        return Storage::disk('public')->exists($storedPath) ? '../../storage/' . $storedPath : null;
+        return Storage::disk('public')->exists($storedPath) ? url('storage/' . $storedPath) : null;
     }
 }
