@@ -12,24 +12,26 @@
 @section('body_class', 'contact-page')
 
 @section('content')
-    <section class="page-hero contact-hero">
+    <section class="page-hero contact-hero !min-h-[360px] !py-20 md:!py-24">
         <div class="hero-dots"></div>
 
-        <div class="container">
-            <div class="hero-inner">
-                <div class="hero-kicker">
+        <div class="container relative z-10">
+            <div class="hero-inner mx-auto !max-w-[860px] text-center">
+                <div class="hero-kicker mx-auto">
                     <i class="fas fa-headset"></i>
                     <span>Layanan Informasi Pascasarjana</span>
                 </div>
 
-                <h1 class="page-title">Kontak Pendaftaran Mahasiswa Baru</h1>
+                <h1 class="page-title mx-auto !max-w-[820px] !text-[clamp(34px,4.8vw,58px)]">
+                    Kontak Pendaftaran Mahasiswa Baru
+                </h1>
 
-                <p class="page-desc">
+                <p class="page-desc mx-auto !max-w-[760px]">
                     Hubungi layanan resmi Pascasarjana Universitas Ngudi Waluyo untuk informasi pendaftaran,
                     konsultasi program, dan bantuan administrasi calon mahasiswa.
                 </p>
 
-                <div class="hero-meta">
+                <div class="hero-meta justify-center">
                     <span><i class="fas fa-user-graduate"></i>PMB Pascasarjana</span>
                     <span><i class="fas fa-clock"></i>Respon Cepat</span>
                     <span><i class="fas fa-shield-halved"></i>Kontak Resmi</span>
