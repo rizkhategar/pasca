@@ -77,7 +77,7 @@ class PostgraduateLecturerTable
     private static function resolveStudyProgramNames($record): string
     {
         $studyProgramIds = $record->studyProgramPivots()
-            ->pluck('id_study_program')
+            ->pluck('study_program_id')
             ->filter()
             ->map(fn ($id) => (string) $id)
             ->unique()
@@ -103,7 +103,7 @@ class PostgraduateLecturerTable
                 ->orderBy('nama')
                 ->get()
                 ->mapWithKeys(fn (StudyProgram $program) => [
-                    (string) $program->id_unw_program_studi => $program->display_name,
+                    (string) $program->id => $program->display_name,
                 ])
                 ->toArray();
         });
