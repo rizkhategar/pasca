@@ -28,7 +28,8 @@ class RisetController extends Controller
 
         if ($request->has('jurusan') && $request->jurusan != '') {
             $query->whereHas('postgraduateLecturer.studyPrograms', function ($subQuery) use ($request) {
-                $subQuery->where('study_program.id_unw_program_studi', $request->jurusan);
+                $subQuery->where('study_programs.id', $request->jurusan)
+                    ->orWhere('study_programs.id_unw_program_studi', $request->jurusan);
             });
         }
 
@@ -53,7 +54,7 @@ class RisetController extends Controller
             'researches',
             'researchYearlies',
             'services',
-            'serviceYearlies'
+            'serviceYearlies',
         ])->findOrFail($sinta_id);
 
         $dosen = $this->transformToIndonesianAttributes($dosen);
@@ -63,7 +64,9 @@ class RisetController extends Controller
 
     private function transformToIndonesianAttributes($dosen)
     {
-        if (!$dosen) return $dosen;
+        if (! $dosen) {
+            return $dosen;
+        }
 
         $dosen->nama = $dosen->postgraduateLecturer->name ?? $dosen->name;
         $dosen->profile_photo = $this->resolveLecturerPhotoPath($dosen);
@@ -75,17 +78,17 @@ class RisetController extends Controller
                 ->orderBy('nama')
                 ->get()
                 ->mapWithKeys(fn (StudyProgram $program) => [
-                    (string) $program->id_unw_program_studi => $program->display_name,
+                    (string) $program->id => $program->display_name,
                 ])
                 ->toArray();
         });
 
         $associatedIds = $dosen->postgraduateLecturer?->studyPrograms
-            ? $dosen->postgraduateLecturer->studyPrograms->pluck('id_unw_program_studi')->toArray()
+            ? $dosen->postgraduateLecturer->studyPrograms->pluck('id')->toArray()
             : [];
 
-        if (!empty($associatedIds)) {
-            $mappedNames = array_map(fn($id) => $studyProgramMap[(string) $id] ?? $id, $associatedIds);
+        if (! empty($associatedIds)) {
+            $mappedNames = array_map(fn ($id) => $studyProgramMap[(string) $id] ?? $id, $associatedIds);
             $dosen->program_studi = implode(', ', $mappedNames);
         } else {
             $dosen->program_studi = $dosen->study_program ?? '-';
