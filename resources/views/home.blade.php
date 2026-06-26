@@ -1,3 +1,55 @@
+@php
+    $academicProgramsNav = \App\Http\Controllers\AcademicController::getNavigationData();
+    $programNavBySlug = collect($academicProgramsNav)->keyBy('slug');
+    $resolveProgramSlug = function (array $slugs) use ($programNavBySlug) {
+        foreach ($slugs as $slug) {
+            if ($programNavBySlug->has($slug)) {
+                return $slug;
+            }
+        }
+        return $slugs[0];
+    };
+
+    $homePrograms = [
+        [
+            'number' => '01',
+            'title' => 'Magister Keperawatan',
+            'short_title' => 'Keperawatan',
+            'slug' => $resolveProgramSlug(['s2-keperawatan', 'magister-keperawatan']),
+            'desc' => 'Mendukung peningkatan profesionalisme keperawatan melalui kajian lanjut, praktik klinis, kepemimpinan, dan riset kesehatan.',
+            'tag' => 'Nursing Leadership',
+            'icon' => 'M12 2 6 4v5c0 3.7 2.5 7.1 6 8 3.5-.9 6-4.3 6-8V4l-6-2Zm1 3v2h2v2h-2v2h-2V9H9V7h2V5h2Zm-8 14c0-2.2 4.7-3.4 7-3.4s7 1.2 7 3.4V22H5v-3Z',
+        ],
+        [
+            'number' => '02',
+            'title' => 'Magister Kesehatan Masyarakat',
+            'short_title' => 'Kesehatan Masyarakat',
+            'slug' => $resolveProgramSlug(['s2-kesehatan-masyarakat', 'magister-kesehatan-masyarakat']),
+            'desc' => 'Berfokus pada pengembangan ilmu kesehatan masyarakat, kebijakan kesehatan, promosi kesehatan, dan peningkatan kualitas layanan.',
+            'tag' => 'Public Health',
+            'icon' => 'M12 21s-7.5-4.6-9.7-9.2C.6 8.2 2.6 4 6.5 4c2.2 0 3.7 1.2 4.5 2.6C11.8 5.2 13.3 4 15.5 4c3.9 0 5.9 4.2 4.2 7.8C17.5 16.4 12 21 12 21Zm-1.3-7.7h2.6v-2.1h2.1V8.6h-2.1V6.5h-2.6v2.1H8.6v2.6h2.1v2.1Z',
+        ],
+        [
+            'number' => '03',
+            'title' => 'Magister Hukum',
+            'short_title' => 'Hukum',
+            'slug' => $resolveProgramSlug(['s2-hukum', 'magister-hukum']),
+            'desc' => 'Program lanjutan untuk penguatan kompetensi hukum, tata kelola, advokasi, dan penyelesaian persoalan hukum modern.',
+            'tag' => 'Legal Governance',
+            'icon' => 'M12 2a1 1 0 0 1 1 1v2h5a1 1 0 1 1 0 2h-1l2.5 5a3.5 3.5 0 0 1-7 0L15 7h-2v11h4a1 1 0 1 1 0 2H7a1 1 0 1 1 0-2h4V7H9l2.5 5a3.5 3.5 0 0 1-7 0L7 7H6a1 1 0 1 1 0-2h5V3a1 1 0 0 1 1-1Zm-4 6-1.6 3h3.2L8 8Zm8 0-1.6 3h3.2L16 8Z',
+        ],
+        [
+            'number' => '04',
+            'title' => 'Magister Manajemen Pendidikan',
+            'short_title' => 'Manajemen Pendidikan',
+            'slug' => $resolveProgramSlug(['s2-manajemen-pendidikan', 'magister-manajemen-pendidikan']),
+            'desc' => 'Mengembangkan kepemimpinan, manajemen, inovasi pendidikan, dan strategi pengelolaan lembaga yang adaptif terhadap zaman.',
+            'tag' => 'Education Management',
+            'icon' => 'M12 3 1 9l11 6 9-4.91V17h2V9L12 3Zm0 14.2 7-3.8V17l-7 4-7-4v-3.6l7 3.8Z',
+        ],
+    ];
+@endphp
+
 @extends('layouts.app')
 
 @section('title', 'Pascasarjana Universitas Ngudi Waluyo')
@@ -60,85 +112,32 @@
             </div>
 
             <div class="program-grid">
-                <article class="program-card">
-                    <div>
+                @foreach ($homePrograms as $program)
+                    <article class="program-card program-card-premium">
+                        <div class="program-card-glow"></div>
+
                         <div class="program-top">
                             <div class="program-icon">
-                                <svg viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 2a1 1 0 0 1 1 1v2h5a1 1 0 1 1 0 2h-1l2.5 5a3.5 3.5 0 0 1-7 0L15 7h-2v11h4a1 1 0 1 1 0 2H7a1 1 0 1 1 0-2h4V7H9l2.5 5a3.5 3.5 0 0 1-7 0L7 7H6a1 1 0 1 1 0-2h5V3a1 1 0 0 1 1-1Zm-4 6-1.6 3h3.2L8 8Zm8 0-1.6 3h3.2L16 8Z" />
+                                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    <path d="{{ $program['icon'] }}" />
                                 </svg>
                             </div>
-                            <span class="program-number">04</span>
+
+                            <span class="program-number">{{ $program['number'] }}</span>
                         </div>
 
-                        <h3 class="program-title">MAGISTER<br>HUKUM</h3>
-                        <p class="program-desc">Program lanjutan untuk penguatan kompetensi hukum, tata kelola, dan penyelesaian persoalan hukum modern.</p>
-                    </div>
-
-                    <a href="{{ route('akademik.show', 'magister-hukum') }}" class="program-detail" aria-label="Detail Program Magister Hukum">
-                        Detail Program <i class="fas fa-arrow-right"></i>
-                    </a>
-                </article>
-
-                <article class="program-card">
-                    <div>
-                        <div class="program-top">
-                            <div class="program-icon">
-                                <svg viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 3 1 9l11 6 9-4.91V17h2V9L12 3Zm0 14.2L5 13.4V17l7 4 7-4v-3.6l-7 3.8Z" />
-                                </svg>
-                            </div>
-                            <span class="program-number">03</span>
+                        <div class="program-body">
+                            <div class="program-tag">{{ $program['tag'] }}</div>
+                            <h3 class="program-title">{{ $program['title'] }}</h3>
+                            <p class="program-desc">{{ $program['desc'] }}</p>
                         </div>
 
-                        <h3 class="program-title">MAGISTER<br>MANAJEMEN PENDIDIKAN</h3>
-                        <p class="program-desc">Mengembangkan kepemimpinan, manajemen, dan inovasi pendidikan yang adaptif terhadap kebutuhan zaman.</p>
-                    </div>
-
-                    <a href="{{ route('akademik.show', 'magister-manajemen-pendidikan') }}" class="program-detail" aria-label="Detail Program Magister Manajemen Pendidikan">
-                        Detail Program <i class="fas fa-arrow-right"></i>
-                    </a>
-                </article>
-
-                <article class="program-card">
-                    <div>
-                        <div class="program-top">
-                            <div class="program-icon">
-                                <svg viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 21s-7.5-4.6-9.7-9.2C.6 8.2 2.6 4 6.5 4c2.2 0 3.7 1.2 4.5 2.6C11.8 5.2 13.3 4 15.5 4c3.9 0 5.9 4.2 4.2 7.8C17.5 16.4 12 21 12 21Zm-1.3-7.7h2.6v-2.1h2.1V8.6h-2.1V6.5h-2.6v2.1H8.6v2.6h2.1v2.1Z" />
-                                </svg>
-                            </div>
-                            <span class="program-number">02</span>
-                        </div>
-
-                        <h3 class="program-title">MAGISTER<br>KESEHATAN MASYARAKAT</h3>
-                        <p class="program-desc">Fokus pada pengembangan ilmu kesehatan masyarakat, kebijakan kesehatan, dan peningkatan kualitas layanan.</p>
-                    </div>
-
-                    <a href="{{ route('akademik.show', 'magister-kesehatan-masyarakat') }}" class="program-detail" aria-label="Detail Program Magister Kesehatan Masyarakat">
-                        Detail Program <i class="fas fa-arrow-right"></i>
-                    </a>
-                </article>
-
-                <article class="program-card">
-                    <div>
-                        <div class="program-top">
-                            <div class="program-icon">
-                                <svg viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 2 6 4v5c0 3.7 2.5 7.1 6 8 3.5-.9 6-4.3 6-8V4l-6-2Zm1 3v2h2v2h-2v2h-2V9H9V7h2V5h2Zm-8 14c0-2.2 4.7-3.4 7-3.4s7 1.2 7 3.4V22H5v-3Z" />
-                                </svg>
-                            </div>
-                            <span class="program-number">01</span>
-                        </div>
-
-                        <h3 class="program-title">MAGISTER<br>KEPERAWATAN</h3>
-                        <p class="program-desc">Mendukung peningkatan profesionalisme keperawatan melalui kajian lanjut, praktik, dan riset kesehatan.</p>
-                    </div>
-
-                    <a href="{{ route('akademik.show', 'magister-keperawatan') }}" class="program-detail" aria-label="Detail Program Magister Keperawatan">
-                        Detail Program <i class="fas fa-arrow-right"></i>
-                    </a>
-                </article>
+                        <a href="{{ route('akademik.show', $program['slug']) }}" class="program-detail" aria-label="Detail Program {{ $program['title'] }}">
+                            <span>Detail Program</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </article>
+                @endforeach
             </div>
         </div>
     </section>
