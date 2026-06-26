@@ -50,7 +50,7 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
                 ->orderBy('nama')
                 ->get()
                 ->mapWithKeys(fn (StudyProgram $program) => [
-                    $program->id_unw_program_studi => $program->display_name,
+                    $program->id => $program->display_name,
                 ])
                 ->toArray();
         });
@@ -88,20 +88,13 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
 
                 const toggleLoading = (button, isLoading, originalText) => {
                     if (!button) return;
-                    if (isLoading) {
-                        button.disabled = true;
-                        button.innerText = '⏳ Memproses...';
-                        button.style.opacity = '0.5';
-                    } else {
-                        button.disabled = false;
-                        button.innerText = originalText;
-                        button.style.opacity = '1';
-                    }
+                    button.disabled = isLoading;
+                    button.innerText = isLoading ? '⏳ Memproses...' : originalText;
+                    button.style.opacity = isLoading ? '0.5' : '1';
                 };
 
                 const openStream = (url, onDone, onErrorText) => {
                     appendTerminal('[SSE] Membuka koneksi: ' + url + NL);
-
                     const eventSource = new EventSource(url);
 
                     eventSource.onmessage = (event) => {
@@ -121,18 +114,14 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
                         eventSource.close();
                         appendTerminal(onErrorText + NL);
                     };
-
-                    return eventSource;
                 };
 
                 document.addEventListener('click', (event) => {
                     const btnPerbarui = event.target.closest('#btn-perbarui');
                     if (!btnPerbarui) return;
-
                     event.preventDefault();
                     resetTerminal('>>> Memulai pembaruan data master dosen (dosen.py)....' + NL);
                     toggleLoading(btnPerbarui, true, 'Mulai Scraping Dosen');
-
                     openStream('{$urlPerbarui}', () => {
                         appendTerminal(NL + '[SUKSES] Daftar dosen berhasil diperbarui. Memuat ulang...' + NL);
                         setTimeout(() => { window.location.reload(); }, 2000);
@@ -142,15 +131,12 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
                 document.addEventListener('click', (event) => {
                     const btnAmbilDetail = event.target.closest('#btn-ambil-detail');
                     if (!btnAmbilDetail) return;
-
                     event.preventDefault();
                     const sintaId = livewire.get('data.sinta_id');
                     if (!sintaId) return alert('Silakan pilih dosen terlebih dahulu!');
-
                     resetTerminal('>>> Mengekstrak detail modul SINTA untuk ID: ' + sintaId + '...' + NL + NL);
                     toggleLoading(btnAmbilDetail, true, 'Ekstrak Data SINTA');
-
-                    let targetUrl = '{$urlAmbilDetail}'.replace(':id', sintaId);
+                    const targetUrl = '{$urlAmbilDetail}'.replace(':id', sintaId);
                     openStream(targetUrl, () => {
                         appendTerminal(NL + '[SUKSES] Seluruh modul & file gabungan berhasil dibuat.' + NL);
                         toggleLoading(btnAmbilDetail, false, 'Ekstrak Data SINTA');
@@ -160,11 +146,9 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
                 document.addEventListener('click', (event) => {
                     const btnSyncProgramStudi = event.target.closest('#btn-sync-program-studi');
                     if (!btnSyncProgramStudi) return;
-
                     event.preventDefault();
                     resetTerminal('>>> Memulai sinkronisasi program studi dari API UNW...' + NL + NL);
                     toggleLoading(btnSyncProgramStudi, true, 'Sinkronisasi Program Studi');
-
                     openStream('{$urlSyncProgramStudi}', () => {
                         appendTerminal(NL + '[SUKSES] Program studi berhasil disinkronkan. Memuat ulang dropdown...' + NL);
                         setTimeout(() => { window.location.reload(); }, 1500);
@@ -174,25 +158,18 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
                 document.addEventListener('click', (event) => {
                     const btnImport = event.target.closest('#btn-import');
                     if (!btnImport) return;
-
                     event.preventDefault();
                     const sintaId = livewire.get('data.sinta_id');
                     const programStudi = livewire.get('data.program_studi');
-
                     if (!sintaId) return alert('SINTA ID tidak ditemukan. Pilih dosen dulu pada langkah 2.');
-
                     if (!programStudi || (Array.isArray(programStudi) && programStudi.length === 0)) {
                         return alert('Silakan pilih sekurang-kurangnya satu Program Studi!');
                     }
-
-                    let programStudiString = Array.isArray(programStudi) ? programStudi.join(',') : programStudi;
-
-                    resetTerminal('>>> Memulai migrasi streaming data Excel ke MySQL untuk SINTA ID: ' + sintaId + ' (ID Program Studi: ' + programStudiString + ')...' + NL);
+                    const programStudiString = Array.isArray(programStudi) ? programStudi.join(',') : programStudi;
+                    resetTerminal('>>> Memulai migrasi streaming data Excel ke MySQL untuk SINTA ID: ' + sintaId + ' (study_program_id: ' + programStudiString + ')...' + NL);
                     toggleLoading(btnImport, true, 'Import ke Database');
-
                     let targetUrl = '{$urlImport}'.replace(':id', sintaId);
                     targetUrl += '?jurusan=' + encodeURIComponent(programStudiString);
-
                     openStream(targetUrl, () => {
                         toggleLoading(btnImport, false, 'Import ke Database');
                     }, NL + '[ERROR] Gangguan pada proses stream database. Cek route scrap.importData atau log Laravel.');
@@ -201,16 +178,9 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
         }" style="background-color: #0a0a0a; border-radius: 0.75rem; border: 1px solid #262626; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; height: 450px; overflow: hidden; margin-top: 1.5rem;">
             <div style="background-color: #171717; padding: 0.75rem 1rem; border-bottom: 1px solid #262626; display: flex; justify-content: space-between; align-items: center;">
                 <div style="display: flex; align-items: center; gap: 0.75rem;">
-                    <div style="display: flex; gap: 0.375rem;">
-                        <div style="width: 0.75rem; height: 0.75rem; border-radius: 9999px; background-color: #ef4444;"></div>
-                        <div style="width: 0.75rem; height: 0.75rem; border-radius: 9999px; background-color: #eab308;"></div>
-                        <div style="width: 0.75rem; height: 0.75rem; border-radius: 9999px; background-color: #22c55e;"></div>
-                    </div>
                     <span style="color: #a3a3a3; font-family: ui-monospace, monospace; font-size: 0.75rem; letter-spacing: 0.05em;">Terminal Real-time Sync Output</span>
                 </div>
-                <button type="button" onclick="document.getElementById('output-box').innerHTML='Menunggu perintah...' + String.fromCharCode(10)" style="color: #a3a3a3; font-family: ui-monospace, monospace; font-size: 0.75rem; background: none; border: none; cursor: pointer;">
-                    Clear Log
-                </button>
+                <button type="button" onclick="document.getElementById('output-box').innerHTML='Menunggu perintah...' + String.fromCharCode(10)" style="color: #a3a3a3; font-family: ui-monospace, monospace; font-size: 0.75rem; background: none; border: none; cursor: pointer;">Clear Log</button>
             </div>
             <div id="terminal-container" style="padding: 1rem; overflow-y: auto; flex-grow: 1; background-color: #0a0a0a;">
                 <pre id="output-box" style="color: #4ade80; margin: 0; white-space: pre-wrap; word-break: break-all; font-family: ui-monospace, monospace; font-size: 0.875rem; line-height: 1.5;">Menunggu perintah...</pre>
@@ -239,28 +209,8 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
                             ->schema([
                                 Select::make('sinta_id')
                                     ->label('Pilih Dosen SINTA')
-                                    ->options(
-                                        SintaLecturer::query()
-                                            ->orderBy('name', 'asc')
-                                            ->limit(50)
-                                            ->get()
-                                            ->mapWithKeys(fn(SintaLecturer $lecturer) => [
-                                                $lecturer->sinta_id => trim(($lecturer->name ?? '-') . ' (' . $lecturer->sinta_id . ')')
-                                            ])
-                                            ->toArray()
-                                    )
-                                    ->getSearchResultsUsing(function (string $search): array {
-                                        return SintaLecturer::query()
-                                            ->where('name', 'like', "%{$search}%")
-                                            ->orWhere('sinta_id', 'like', "%{$search}%")
-                                            ->orderBy('name', 'asc')
-                                            ->limit(50)
-                                            ->get()
-                                            ->mapWithKeys(fn(SintaLecturer $lecturer) => [
-                                                $lecturer->sinta_id => trim(($lecturer->name ?? '-') . ' (' . $lecturer->sinta_id . ')')
-                                            ])
-                                            ->toArray();
-                                    })
+                                    ->options($this->getSintaLecturerOptions())
+                                    ->getSearchResultsUsing(fn (string $search): array => $this->getSintaLecturerOptions($search))
                                     ->getOptionLabelUsing(function ($value): ?string {
                                         $lecturer = SintaLecturer::where('sinta_id', $value)->first();
 
@@ -289,8 +239,7 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
                                                     ->required(),
                                             ])
                                             ->action(function (array $data) {
-                                                $exists = SintaLecturer::where('sinta_id', $data['sinta_id'])->exists();
-                                                if ($exists) {
+                                                if (SintaLecturer::where('sinta_id', $data['sinta_id'])->exists()) {
                                                     Notification::make()
                                                         ->title('Gagal Menyimpan')
                                                         ->body('SINTA ID ini sudah terdaftar di database.')
@@ -301,7 +250,7 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
 
                                                 SintaLecturer::create([
                                                     'sinta_id' => $data['sinta_id'],
-                                                    'name'     => $data['nama'],
+                                                    'name' => $data['nama'],
                                                 ]);
 
                                                 Notification::make()
@@ -344,5 +293,23 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
                     ->content(new HtmlString($terminalHtml)),
             ])
             ->statePath('data');
+    }
+
+    private function getSintaLecturerOptions(?string $search = null): array
+    {
+        return SintaLecturer::query()
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($subQuery) use ($search) {
+                    $subQuery->where('name', 'like', "%{$search}%")
+                        ->orWhere('sinta_id', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('name', 'asc')
+            ->limit(50)
+            ->get()
+            ->mapWithKeys(fn (SintaLecturer $lecturer) => [
+                $lecturer->sinta_id => trim(($lecturer->name ?? '-') . ' (' . $lecturer->sinta_id . ')'),
+            ])
+            ->toArray();
     }
 }
