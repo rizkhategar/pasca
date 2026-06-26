@@ -101,5 +101,5 @@
     </div>
 </footer>
 
-@include('component.frontend-enhancements')
-@include('component.typography')
+@include('components.frontend-enhancements')
+@include('components.typography')

@@ -45,7 +45,7 @@ class RisetController extends Controller
             return $this->transformToIndonesianAttributes($dosen);
         });
 
-        return view('riset&pdm.listrisetdosen', compact('dosens', 'academicProgramsNav'));
+        return view('research.lecturers', compact('dosens', 'academicProgramsNav'));
     }
 
     public function detailDosen($sinta_id)
@@ -67,7 +67,7 @@ class RisetController extends Controller
 
         $dosen = $this->transformToIndonesianAttributes($dosen);
 
-        return view('riset&pdm.detailriset', compact('dosen'));
+        return view('research.detail', compact('dosen'));
     }
 
     /**

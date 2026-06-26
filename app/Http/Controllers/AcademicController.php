@@ -34,7 +34,6 @@ class AcademicController extends Controller
                 })
                 ->map(function ($item) {
                     return [
-                        // MENAMBAHKAN: Mengambil properti ID dari API untuk kebutuhan filter frontend
                         'id' => $item['id'],
                         'slug' => $item['slug'],
                         'display_name' => trim(($item['jenjang'] ?? '') . ' ' . ($item['nama'] ?? '')),
@@ -58,7 +57,7 @@ class AcademicController extends Controller
         if ($response->successful() && $response->json('data')) {
             $program = $response->json('data');
 
-            return view('profile.academic', compact('program', 'academicProgramsNav'));
+            return view('academic.show', compact('program', 'academicProgramsNav'));
         }
 
         abort(404, 'Program Studi tidak ditemukan.');

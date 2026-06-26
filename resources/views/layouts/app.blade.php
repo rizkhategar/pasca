@@ -19,11 +19,11 @@
     @stack('styles')
 </head>
 <body class="@yield('body_class')">
-    @include('component.header')
+    @include('components.header')
     <main class="app-main">
         @yield('content')
     </main>
-    @include('component.footer')
+    @include('components.footer')
     @stack('scripts')
 </body>
 </html>
