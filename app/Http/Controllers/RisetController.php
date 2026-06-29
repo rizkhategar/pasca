@@ -14,12 +14,15 @@ class RisetController extends Controller
     {
         $academicProgramsNav = AcademicController::getNavigationData();
 
-        $query = SintaLecturerDetail::with('postgraduateLecturer.studyPrograms');
+        $query = SintaLecturerDetail::with('postgraduateLecturer.studyPrograms')
+            ->whereHas('postgraduateLecturer');
 
         if ($request->has('search') && $request->search != '') {
             $query->where(function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->search . '%')
-                    ->orWhere('sinta_id', 'like', '%' . $request->search . '%')
+                $q->where('sinta_id', 'like', '%' . $request->search . '%')
+                    ->orWhereHas('lecturer', function ($sub) use ($request) {
+                        $sub->where('name', 'like', '%' . $request->search . '%');
+                    })
                     ->orWhereHas('postgraduateLecturer', function ($sub) use ($request) {
                         $sub->where('name', 'like', '%' . $request->search . '%');
                     });
@@ -55,7 +58,10 @@ class RisetController extends Controller
             'researchYearlies',
             'services',
             'serviceYearlies',
-        ])->findOrFail($sinta_id);
+        ])
+            ->whereHas('postgraduateLecturer')
+            ->where('sinta_id', $sinta_id)
+            ->firstOrFail();
 
         $dosen = $this->transformToIndonesianAttributes($dosen);
 
