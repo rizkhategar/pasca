@@ -16,7 +16,6 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Concerns\InteractsWithSchemas;
 use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\HtmlString;
 
 class ImportUndergraduateLecturer extends Page implements HasSchemas
@@ -43,24 +42,7 @@ class ImportUndergraduateLecturer extends Page implements HasSchemas
             ? '<div style="padding: 0.75rem; border-radius: 0.5rem; background-color: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: #059669; font-weight: 500;">✅ <b>Data daftar dosen tersedia.</b></div>'
             : '<div style="padding: 0.75rem; border-radius: 0.5rem; background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #dc2626; font-weight: 500;">⚠️ <b>Daftar dosen kosong.</b> Silahkan lakukan scraping data dosen.</div>';
 
-        $programStudis = Cache::remember('study_programs_undergraduate_select_import', now()->addHours(12), function () {
-            return StudyProgram::query()
-                ->where(function ($query) {
-                    $query->whereNull('jenjang')
-                        ->orWhere('jenjang', 'not like', '%Magister%');
-                })
-                ->where(function ($query) {
-                    $query->whereNull('jenjang_nama_singkat')
-                        ->orWhere('jenjang_nama_singkat', '!=', 'S2');
-                })
-                ->orderBy('jenjang')
-                ->orderBy('nama')
-                ->get()
-                ->mapWithKeys(fn (StudyProgram $program) => [
-                    $program->id => $program->display_name,
-                ])
-                ->toArray();
-        });
+        $programStudis = $this->getUndergraduateStudyProgramOptions();
 
         $urlPerbarui = route('scrap.perbaruiDosen');
         $urlAmbilDetail = route('scrap.ambilDetail', ':id');
@@ -300,6 +282,26 @@ class ImportUndergraduateLecturer extends Page implements HasSchemas
                     ->content(new HtmlString($terminalHtml)),
             ])
             ->statePath('data');
+    }
+
+    private function getUndergraduateStudyProgramOptions(): array
+    {
+        return StudyProgram::query()
+            ->where(function ($query) {
+                $query->whereNull('jenjang')
+                    ->orWhereRaw('LOWER(TRIM(jenjang)) NOT LIKE ?', ['%magister%']);
+            })
+            ->where(function ($query) {
+                $query->whereNull('jenjang_nama_singkat')
+                    ->orWhereRaw('UPPER(TRIM(jenjang_nama_singkat)) != ?', ['S2']);
+            })
+            ->orderBy('jenjang')
+            ->orderBy('nama')
+            ->get()
+            ->mapWithKeys(fn (StudyProgram $program) => [
+                $program->id => $program->display_name,
+            ])
+            ->toArray();
     }
 
     private function getSintaLecturerOptions(?string $search = null): array
