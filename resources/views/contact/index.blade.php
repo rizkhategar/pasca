@@ -87,11 +87,18 @@
                         </div>
                     </article>
 
-                    <article class="contact-card">
+                    <article
+                        class="contact-card"
+                        data-wa-contact-card
+                        data-wa-admin-name="{{ $primaryWhatsapp['name'] ?? 'Admin WhatsApp' }}"
+                        data-wa-admin-number="{{ $primaryWhatsapp['number'] ?? '' }}"
+                        data-wa-admin-url="{{ $primaryWhatsapp['url'] ?? '#' }}">
                         <div class="contact-icon"><i class="fab fa-whatsapp"></i></div>
                         <div class="contact-info">
                             <h2>{{ $primaryWhatsapp['name'] ?? 'Admin WhatsApp' }}</h2>
-                            <a href="{{ $primaryWhatsapp['url'] }}" target="_blank" rel="noopener">{{ $primaryWhatsapp['number'] ?? '+62 857-3033-9469' }}</a>
+                            <a href="{{ $primaryWhatsapp['url'] ?? '#' }}" target="_blank" rel="noopener">
+                                {{ $primaryWhatsapp['number'] ?? 'Nomor WhatsApp belum tersedia' }}
+                            </a>
                         </div>
                     </article>
                 </div>
@@ -118,7 +125,15 @@
         </div>
     </section>
 
-    <a class="wa-floating" href="{{ $primaryWhatsapp['url'] }}" target="_blank" rel="noopener" aria-label="Chat WhatsApp Admin PMB">
+    <a
+        class="wa-floating"
+        href="{{ $primaryWhatsapp['url'] ?? '#' }}"
+        target="_blank"
+        rel="noopener"
+        aria-label="Chat WhatsApp {{ $primaryWhatsapp['name'] ?? 'Admin WhatsApp' }}"
+        data-wa-admin-name="{{ $primaryWhatsapp['name'] ?? 'Admin WhatsApp' }}"
+        data-wa-admin-number="{{ $primaryWhatsapp['number'] ?? '' }}"
+        data-wa-admin-url="{{ $primaryWhatsapp['url'] ?? '#' }}">
         <i class="fab fa-whatsapp"></i>
     </a>
 
