@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\PostgraduateLecturer\Tables;
 
 use App\Filament\Resources\PostgraduateLecturer\PostgraduateLecturerResource;
+use App\Models\PostgraduateLecturer;
 use App\Models\StudyProgram;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -65,11 +66,19 @@ class PostgraduateLecturerTable
                 EditAction::make()
                     ->url(fn ($record) => PostgraduateLecturerResource::getUrl('edit', ['record' => $record])),
 
-                DeleteAction::make(),
+                DeleteAction::make()
+                    ->label('Remove from Postgraduate')
+                    ->action(function ($record): void {
+                        PostgraduateLecturer::where('sinta_id', $record->sinta_id)->delete();
+                    }),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->label('Remove selected from Postgraduate')
+                        ->action(function ($records): void {
+                            PostgraduateLecturer::whereIn('sinta_id', $records->pluck('sinta_id')->filter()->all())->delete();
+                        }),
                 ]),
             ]);
     }
