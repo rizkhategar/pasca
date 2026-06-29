@@ -14,7 +14,8 @@ class ListAboutPostgraduates extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->hidden(fn () => AboutPostgraduate::count() > 0),
+            CreateAction::make()
+                ->hidden(fn (): bool => ! (auth()->user()?->canManageContent() ?? false) || AboutPostgraduate::count() > 0),
         ];
     }
 }
