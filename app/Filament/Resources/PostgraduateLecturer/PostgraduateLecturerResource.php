@@ -20,6 +20,7 @@ use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class PostgraduateLecturerResource extends Resource
 {
@@ -34,6 +35,11 @@ class PostgraduateLecturerResource extends Resource
     protected static ?string $pluralModelLabel = 'Postgraduate Lecturers';
 
     protected static string|UnitEnum|null $navigationGroup = 'SINTA Integration';
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->whereHas('postgraduateLecturer');
+    }
 
     public static function form(Schema $schema): Schema
     {
