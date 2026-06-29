@@ -15,8 +15,7 @@
     <meta name="pasca-contact-url" content="{{ route('contact.index') }}">
     <meta name="pasca-about-url" content="{{ route('tentang') }}">
     <meta name="pasca-vision-mission-url" content="{{ route('visi-misi') }}">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link rel="stylesheet" href="{{ asset('css/home-slider.css') }}">
+    @vite(['resources/css/app.css', 'resources/css/home-fixes.css', 'resources/js/app.js'])
     @stack('styles')
 </head>
 <body class="@yield('body_class')">
