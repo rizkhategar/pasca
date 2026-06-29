@@ -30,7 +30,16 @@ Route::get('/slider-image/{id}', function (int $id) {
 })->whereNumber('id')->name('slider.image');
 
 Route::get('/sliders/{id}/image', function (int $id) {
-    return redirect()->route('slider.image', ['id' => $id]);
+    $slider = Slider::query()->findOrFail($id);
+    $path = Slider::normalizeImagePath($slider->image_path);
+
+    abort_unless($path && Storage::disk('public')->exists($path), 404);
+
+    return response()->file(Storage::disk('public')->path($path), [
+        'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+        'Pragma' => 'no-cache',
+        'Expires' => '0',
+    ]);
 })->whereNumber('id')->name('sliders.image');
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
