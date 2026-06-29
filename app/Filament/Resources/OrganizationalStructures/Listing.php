@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\OrganizationalStructures;
 
+use App\Models\OrganizationalStructure;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
@@ -17,9 +18,12 @@ class Listing
             ->columns([
                 ImageColumn::make('image_path')
                     ->label('Image')
-                    ->disk('public')
+                    ->getStateUsing(fn (OrganizationalStructure $record): ?string => $record->image_path
+                        ? url(route('organization-structures.image', $record, false)) . '?v=' . optional($record->updated_at)->timestamp
+                        : null)
                     ->height(80)
-                    ->width(120),
+                    ->width(120)
+                    ->square(false),
 
                 TextColumn::make('title')
                     ->label('Title')
