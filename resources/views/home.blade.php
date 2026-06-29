@@ -36,7 +36,7 @@
             'slug' => $resolveProgramSlug(['s2-manajemen-pendidikan', 'magister-manajemen-pendidikan']),
             'desc' => 'Mengembangkan kepemimpinan, manajemen, dan inovasi pendidikan yang adaptif terhadap kebutuhan zaman.',
             'tag' => 'Education Management',
-            'icon' => 'M12 3 1 9l11 6 9-4.91V17h2V9L12 3Zm0 14.2 7-3.8V17l-7 4v-3.6l7 3.8Z',
+            'icon' => 'M12 3 1 9l11 6 9-4.91V17h2V9L12 3Zm0 14.2 7-3.8V17l-7 4-7-4v-3.6l7 3.8Z',
         ],
         [
             'number' => '04',
@@ -45,7 +45,7 @@
             'slug' => $resolveProgramSlug(['s2-hukum', 'magister-hukum']),
             'desc' => 'Program lanjutan untuk penguatan kompetensi hukum, tata kelola, dan penyelesaian persoalan hukum modern.',
             'tag' => 'Legal Governance',
-            'icon' => 'M12 2a1 1 0 0 1 1 1v2h5a1 1 0 1 1 0 2h-1l2.5 5a3.5 3.5 0 0 1-7 0L15 7h-2v11h4a1 1 0 1 1 0 2H7a1 1 0 1 1 0-2h4V7H9l2.5 5a3.5 0 0 1-7 0L7 7H6a1 1 0 1 1 0-2h5V3a1 1 0 0 1 1-1Zm-4 6-1.6 3h3.2L8 8Zm8 0-1.6 3h3.2L16 8Z',
+            'icon' => 'M12 2a1 1 0 0 1 1 1v2h5a1 1 0 1 1 0 2h-1l2.5 5a3.5 3.5 0 0 1-7 0L15 7h-2v11h4a1 1 0 1 1 0 2H7a1 1 0 1 1 0-2h4V7H9l2.5 5a3.5 3.5 0 0 1-7 0L7 7H6a1 1 0 1 1 0-2h5V3a1 1 0 0 1 1-1Zm-4 6-1.6 3h3.2L8 8Zm8 0-1.6 3h3.2L16 8Z',
         ],
     ];
 @endphp
@@ -60,11 +60,11 @@
         .home-page .program-section {
             position: relative;
             overflow: hidden;
-            padding: 48px 0 66px;
+            padding: 46px 0 58px;
             background:
-                radial-gradient(circle at 12% 9%, rgba(45, 156, 219, .13), transparent 26%),
-                radial-gradient(circle at 88% 13%, rgba(247, 181, 0, .18), transparent 26%),
-                linear-gradient(180deg, #f8fcff 0%, #f4f8fa 52%, #edf5f6 100%);
+                radial-gradient(circle at 14% 10%, rgba(45, 156, 219, .12), transparent 27%),
+                radial-gradient(circle at 86% 12%, rgba(247, 181, 0, .18), transparent 25%),
+                linear-gradient(180deg, #f8fcff 0%, #f5f9fb 50%, #eef5f6 100%);
         }
 
         .home-page .program-section::before {
@@ -72,34 +72,22 @@
             position: absolute;
             inset: 0;
             background-image:
-                linear-gradient(rgba(7, 43, 87, .045) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(7, 43, 87, .045) 1px, transparent 1px);
+                linear-gradient(rgba(7, 43, 87, .04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(7, 43, 87, .04) 1px, transparent 1px);
             background-size: 42px 42px;
-            pointer-events: none;
-        }
-
-        .home-page .program-section::after {
-            content: "";
-            position: absolute;
-            left: 50%;
-            bottom: -150px;
-            width: min(720px, 78vw);
-            height: 250px;
-            transform: translateX(-50%);
-            border-radius: 999px;
-            background: radial-gradient(circle, rgba(7, 43, 87, .10), transparent 68%);
             pointer-events: none;
         }
 
         .home-page .program-section .container {
             position: relative;
             z-index: 2;
-            width: min(1370px, 86vw) !important;
+            width: min(1120px, 92%) !important;
+            max-width: 1120px !important;
         }
 
         .home-page .program-head {
-            max-width: 780px;
-            margin: 0 auto 48px;
+            max-width: 720px;
+            margin: 0 auto 34px;
             text-align: center;
         }
 
@@ -107,15 +95,15 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            margin: 0 auto 18px;
-            padding: 12px 22px;
+            gap: 8px;
+            margin: 0 auto 14px;
+            padding: 10px 18px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, .92);
+            background: rgba(255, 255, 255, .94);
             border: 1px solid rgba(7, 43, 87, .10);
             color: #072b57;
-            box-shadow: 0 12px 30px rgba(15, 23, 42, .06);
-            font-size: 13px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, .055);
+            font-size: 12px;
             line-height: 1;
             font-weight: 900;
             letter-spacing: .07em;
@@ -124,54 +112,52 @@
 
         .home-page .program-kicker i {
             color: #f7b500;
+            font-size: 12px;
         }
 
         .home-page .program-head h2 {
-            margin: 0 0 16px;
+            margin: 0 0 12px;
             color: #072b57;
-            font-size: clamp(36px, 3.45vw, 52px);
-            line-height: 1.05;
+            font-size: clamp(30px, 3.1vw, 42px);
+            line-height: 1.08;
             font-weight: 900;
-            letter-spacing: -.045em;
+            letter-spacing: -.04em;
             text-transform: uppercase;
         }
 
         .home-page .program-head p {
-            max-width: 730px;
+            max-width: 650px;
             margin: 0 auto;
             color: #64748b;
-            font-size: clamp(16px, 1.28vw, 19px);
-            line-height: 1.78;
+            font-size: 15px;
+            line-height: 1.72;
             font-weight: 600;
         }
 
         .home-page .program-grid {
             display: grid !important;
             grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-            gap: 28px !important;
+            gap: 24px !important;
             align-items: stretch;
+            max-width: 1120px;
+            margin: 0 auto;
         }
 
         .home-page .program-card {
             position: relative;
             isolation: isolate;
             overflow: hidden;
-            min-height: 405px;
+            min-height: 330px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 30px 28px 26px;
-            border-radius: 0 0 28px 28px;
+            padding: 24px 22px 20px;
+            border-radius: 0 0 24px 24px;
             border: 1px solid rgba(226, 232, 240, .95);
-            background: rgba(255, 255, 255, .92);
-            box-shadow: 0 20px 48px rgba(15, 23, 42, .075);
+            background: rgba(255, 255, 255, .94);
+            box-shadow: 0 18px 42px rgba(15, 23, 42, .075);
             transform: translateY(0);
-            transition:
-                transform .28s ease,
-                box-shadow .28s ease,
-                border-color .28s ease,
-                background .28s ease;
-            will-change: transform;
+            transition: transform .24s ease, box-shadow .24s ease, border-color .24s ease, background .24s ease;
         }
 
         .home-page .program-card::before {
@@ -180,22 +166,22 @@
             inset: 0;
             z-index: -2;
             background:
-                radial-gradient(circle at 100% 0%, rgba(247, 181, 0, .16) 0 0, transparent 31%),
+                radial-gradient(circle at 100% 0%, rgba(247, 181, 0, .15), transparent 32%),
                 linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(255, 255, 255, .88));
-            transition: transform .28s ease;
+            transition: transform .24s ease;
         }
 
         .home-page .program-card::after {
             content: "";
             position: absolute;
-            top: -72px;
-            right: -54px;
-            width: 168px;
-            height: 168px;
+            top: -60px;
+            right: -46px;
+            width: 138px;
+            height: 138px;
             z-index: -1;
             border-radius: 999px;
             background: rgba(247, 181, 0, .12);
-            transition: transform .28s ease, background .28s ease;
+            transition: transform .24s ease, background .24s ease;
         }
 
         .home-page .program-card-glow {
@@ -207,9 +193,9 @@
             border-radius: inherit;
             pointer-events: none;
             opacity: 0;
-            transform: translateX(-120%) skewX(-18deg);
-            background: linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, .15) 38%, rgba(255, 255, 255, .62) 50%, rgba(247, 181, 0, .16) 58%, transparent 72%);
-            transition: transform .62s ease, opacity .24s ease;
+            transform: translateX(-115%) skewX(-18deg);
+            background: linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, .12) 38%, rgba(255, 255, 255, .48) 50%, rgba(247, 181, 0, .12) 58%, transparent 72%);
+            transition: transform .52s ease, opacity .2s ease;
         }
 
         .home-page .program-tag {
@@ -217,68 +203,67 @@
         }
 
         .home-page .program-card:hover {
-            transform: translateY(-8px);
-            border-color: rgba(247, 181, 0, .48);
-            background: rgba(255, 255, 255, .98);
-            box-shadow: 0 28px 64px rgba(7, 43, 87, .14), 0 0 0 5px rgba(247, 181, 0, .06);
+            transform: translateY(-6px);
+            border-color: rgba(247, 181, 0, .44);
+            background: rgba(255, 255, 255, .99);
+            box-shadow: 0 24px 54px rgba(7, 43, 87, .13), 0 0 0 4px rgba(247, 181, 0, .055);
         }
 
         .home-page .program-card:hover::before {
-            transform: scale(1.02);
+            transform: scale(1.015);
         }
 
         .home-page .program-card:hover::after {
-            transform: scale(1.12) translate(-5px, 6px);
-            background: rgba(247, 181, 0, .19);
+            transform: scale(1.09) translate(-4px, 5px);
+            background: rgba(247, 181, 0, .18);
         }
 
         .home-page .program-card:hover .program-card-glow {
             opacity: 1;
-            transform: translateX(120%) skewX(-18deg);
+            transform: translateX(115%) skewX(-18deg);
         }
 
         .home-page .program-top {
             display: flex;
             align-items: flex-start;
             justify-content: space-between;
-            gap: 16px;
-            margin-bottom: 24px;
+            gap: 14px;
+            margin-bottom: 20px;
         }
 
         .home-page .program-icon {
-            width: 70px;
-            height: 70px;
+            width: 58px;
+            height: 58px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            border-radius: 20px;
+            border-radius: 17px;
             color: #ffffff;
             background: linear-gradient(135deg, #003f78 0%, #075895 100%);
-            box-shadow: 0 16px 30px rgba(7, 43, 87, .18);
-            transition: transform .26s ease, box-shadow .26s ease, background .26s ease;
+            box-shadow: 0 14px 26px rgba(7, 43, 87, .18);
+            transition: transform .22s ease, box-shadow .22s ease, background .22s ease;
         }
 
         .home-page .program-icon svg {
-            width: 34px;
-            height: 34px;
+            width: 28px;
+            height: 28px;
             fill: currentColor;
-            transform-origin: center;
-            transition: transform .26s ease;
+            transition: transform .22s ease;
         }
 
         .home-page .program-card:hover .program-icon {
-            transform: translateY(-5px);
+            transform: translateY(-4px);
             background: linear-gradient(135deg, #004a85 0%, #0868ad 100%);
-            box-shadow: 0 22px 38px rgba(7, 43, 87, .24);
+            box-shadow: 0 18px 32px rgba(7, 43, 87, .23);
         }
 
         .home-page .program-card:hover .program-icon svg {
-            transform: scale(1.07) rotate(-3deg);
+            transform: scale(1.05) rotate(-2deg);
         }
 
         .home-page .program-number {
-            width: 46px;
-            height: 46px;
+            width: 40px;
+            height: 40px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -286,18 +271,18 @@
             color: #072b57;
             background: #fff3c4;
             border: 1px solid rgba(247, 181, 0, .42);
-            font-size: 14px;
+            font-size: 12px;
             line-height: 1;
             font-weight: 900;
             letter-spacing: .04em;
-            box-shadow: 0 10px 22px rgba(247, 181, 0, .12);
-            transition: transform .26s ease, box-shadow .26s ease, background .26s ease;
+            box-shadow: 0 9px 18px rgba(247, 181, 0, .11);
+            transition: transform .22s ease, box-shadow .22s ease, background .22s ease;
         }
 
         .home-page .program-card:hover .program-number {
-            transform: translateY(-4px);
+            transform: translateY(-3px);
             background: #ffe08a;
-            box-shadow: 0 0 0 6px rgba(247, 181, 0, .11), 0 14px 26px rgba(247, 181, 0, .18);
+            box-shadow: 0 0 0 5px rgba(247, 181, 0, .10), 0 12px 22px rgba(247, 181, 0, .17);
         }
 
         .home-page .program-body {
@@ -307,35 +292,35 @@
         }
 
         .home-page .program-title {
-            max-width: 255px;
-            margin: 0 0 16px;
+            max-width: 230px;
+            margin: 0 0 13px;
             color: #072b57;
-            font-size: clamp(21px, 1.45vw, 25px);
-            line-height: 1.17;
+            font-size: 18px;
+            line-height: 1.18;
             font-weight: 900;
-            letter-spacing: -.025em;
+            letter-spacing: .02em;
             text-transform: uppercase;
-            transition: color .24s ease, transform .24s ease;
+            transition: color .22s ease, transform .22s ease;
         }
 
         .home-page .program-desc {
-            max-width: 275px;
+            max-width: 230px;
             margin: 0;
             color: #64748b;
-            font-size: 15px;
-            line-height: 1.72;
+            font-size: 13.5px;
+            line-height: 1.68;
             font-weight: 600;
-            transition: color .24s ease, transform .24s ease;
+            transition: color .22s ease, transform .22s ease;
         }
 
         .home-page .program-card:hover .program-title {
             color: #075895;
-            transform: translateX(3px);
+            transform: translateX(2px);
         }
 
         .home-page .program-card:hover .program-desc {
             color: #475569;
-            transform: translateX(3px);
+            transform: translateX(2px);
         }
 
         .home-page .program-detail {
@@ -346,20 +331,20 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            min-height: 40px;
-            margin-top: 24px;
-            padding: 0 18px;
+            gap: 8px;
+            min-height: 34px;
+            margin-top: 20px;
+            padding: 0 15px;
             border-radius: 999px;
             color: #072b57;
             background: #ffffff;
             border: 1px solid #dbe3ee;
-            box-shadow: 0 9px 22px rgba(15, 23, 42, .045);
-            font-size: 13px;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, .045);
+            font-size: 12px;
             line-height: 1;
             font-weight: 900;
             text-transform: none;
-            transition: transform .24s ease, color .24s ease, background .24s ease, border-color .24s ease, box-shadow .24s ease;
+            transition: transform .22s ease, color .22s ease, background .22s ease, border-color .22s ease, box-shadow .22s ease;
         }
 
         .home-page .program-detail::before {
@@ -372,7 +357,7 @@
             transform: skewX(-18deg);
             background: rgba(255, 255, 255, .42);
             opacity: 0;
-            transition: left .45s ease, opacity .22s ease;
+            transition: left .4s ease, opacity .2s ease;
         }
 
         .home-page .program-detail span,
@@ -383,7 +368,8 @@
 
         .home-page .program-detail i {
             color: #f7b500;
-            transition: transform .24s ease, color .24s ease;
+            font-size: 11px;
+            transition: transform .22s ease, color .22s ease;
         }
 
         .home-page .program-detail:hover {
@@ -391,7 +377,7 @@
             color: #ffffff;
             background: #f7b500;
             border-color: #f7b500;
-            box-shadow: 0 14px 28px rgba(247, 181, 0, .24);
+            box-shadow: 0 12px 24px rgba(247, 181, 0, .22);
         }
 
         .home-page .program-detail:hover::before {
@@ -401,14 +387,10 @@
 
         .home-page .program-detail:hover i {
             color: #ffffff;
-            transform: translateX(4px);
+            transform: translateX(3px);
         }
 
         @media (max-width: 1180px) {
-            .home-page .program-section .container {
-                width: min(1120px, 92%) !important;
-            }
-
             .home-page .program-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
             }
@@ -416,67 +398,50 @@
 
         @media (max-width: 640px) {
             .home-page .program-section {
-                padding: 44px 0 56px;
+                padding: 40px 0 52px;
             }
 
             .home-page .program-section .container {
                 width: min(100% - 28px, 1120px) !important;
             }
 
-            .home-page .program-kicker {
-                padding: 10px 16px;
-                font-size: 11px;
+            .home-page .program-head {
+                margin-bottom: 28px;
             }
 
-            .home-page .program-head {
-                margin-bottom: 30px;
+            .home-page .program-kicker {
+                padding: 9px 14px;
+                font-size: 10px;
             }
 
             .home-page .program-head h2 {
-                font-size: 30px;
+                font-size: 28px;
             }
 
             .home-page .program-head p {
-                font-size: 14px;
-                line-height: 1.7;
+                font-size: 13.5px;
+                line-height: 1.65;
             }
 
             .home-page .program-grid {
                 grid-template-columns: 1fr !important;
-                gap: 18px !important;
+                gap: 16px !important;
             }
 
             .home-page .program-card {
                 min-height: 0;
-                padding: 26px 22px 24px;
-                border-radius: 0 0 24px 24px;
+                padding: 24px 20px 22px;
+                border-radius: 0 0 22px 22px;
             }
 
             .home-page .program-icon {
-                width: 62px;
-                height: 62px;
-            }
-
-            .home-page .program-icon svg {
-                width: 30px;
-                height: 30px;
+                width: 56px;
+                height: 56px;
             }
 
             .home-page .program-title,
             .home-page .program-desc {
                 max-width: none;
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .home-page .program-card,
-            .home-page .program-icon,
-            .home-page .program-icon svg,
-            .home-page .program-number,
-            .home-page .program-detail,
-            .home-page .program-card-glow {
-                animation: none !important;
-                transition: none !important;
             }
         }
     </style>
