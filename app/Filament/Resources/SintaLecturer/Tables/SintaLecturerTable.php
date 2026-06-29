@@ -18,12 +18,12 @@ class SintaLecturerTable
                     ->sortable(),
 
                 TextColumn::make('name')
-                    ->label('Nama')
+                    ->label('Name')
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('department')
-                    ->label('Departemen')
+                    ->label('Department')
                     ->searchable()
                     ->wrap(),
 
@@ -58,7 +58,7 @@ class SintaLecturerTable
                     ->sortable(),
 
                 IconColumn::make('has_detail')
-                    ->label('Detail')
+                    ->label('Has Detail')
                     ->state(fn ($record): bool => (bool) $record->detail)
                     ->boolean(),
             ])

@@ -26,24 +26,24 @@ class PostgraduateLecturerTable
                     ->sortable(),
 
                 TextColumn::make('lecturer.name')
-                    ->label('Nama')
+                    ->label('Name')
                     ->searchable(),
 
                 TextColumn::make('institution')
-                    ->label('Institusi')
+                    ->label('Institution')
                     ->searchable(),
 
                 TextColumn::make('study_program')
-                    ->label('Program Studi SINTA')
+                    ->label('SINTA Study Program')
                     ->searchable(),
 
                 TextColumn::make('study_program_names')
-                    ->label('Program Studi Pascasarjana')
+                    ->label('Postgraduate Study Programs')
                     ->getStateUsing(fn ($record): string => self::resolveStudyProgramNames($record))
                     ->wrap(),
 
                 TextColumn::make('research_interests')
-                    ->label('Bidang Minat')
+                    ->label('Research Interests')
                     ->searchable(),
 
                 TextColumn::make('sinta_score_overall')

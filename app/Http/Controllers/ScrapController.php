@@ -59,16 +59,16 @@ class ScrapController extends Controller
         $fileName = basename($filePath);
 
         if (! file_exists($filePath)) {
-            return "<span class='text-gray-400'>[CLEANUP]</span> File {$fileName} sudah tidak ada di scripts/output.\n";
+            return "<span class='text-gray-400'>[CLEANUP]</span> File {$fileName} no longer exists in scripts/output.\n";
         }
 
         if (@unlink($filePath)) {
-            return "<span class='text-success-400'>[CLEANUP]</span> File {$fileName} berhasil dihapus dari scripts/output.\n";
+            return "<span class='text-success-400'>[CLEANUP]</span> File {$fileName} was deleted from scripts/output.\n";
         }
 
-        Log::warning("Gagal menghapus file import Excel: {$filePath}");
+        Log::warning("Failed to delete imported Excel file: {$filePath}");
 
-        return "<span class='text-warning-500'>[CLEANUP - WARN]</span> File {$fileName} sudah berhasil diimport, tetapi gagal dihapus. Cek permission file/folder scripts/output.\n";
+        return "<span class='text-warning-500'>[CLEANUP - WARN]</span> File {$fileName} was imported successfully, but could not be deleted. Check scripts/output file or folder permissions.\n";
     }
 
     private function downloadLecturerPhotoToStorage(string $photoUrl, string $sintaId): ?string
@@ -76,7 +76,7 @@ class ScrapController extends Controller
         $response = Http::withoutVerifying()->timeout(15)->get($photoUrl);
 
         if (! $response->successful()) {
-            $this->stream(['output' => "<span class='text-warning-500'>[FOTO - WARN] Gagal mengunduh foto (Status HTTP: " . $response->status() . "). Tetap menggunakan URL asli.</span>\n"]);
+            $this->stream(['output' => "<span class='text-warning-500'>[PHOTO - WARN] Failed to download profile photo. HTTP status: " . $response->status() . ". Keeping the original URL.</span>\n"]);
             return null;
         }
 
@@ -86,7 +86,7 @@ class ScrapController extends Controller
         Storage::disk('public')->makeDirectory($this->photoStorageDirectory);
         Storage::disk('public')->put($photoPath, $response->body());
 
-        $this->stream(['output' => "<span class='text-success-400'>[FOTO]</span> ✔ Foto profil berhasil disimpan ke direktori: storage/app/public/{$photoPath}\n"]);
+        $this->stream(['output' => "<span class='text-success-400'>[PHOTO]</span> ✔ Profile photo saved to: storage/app/public/{$photoPath}\n"]);
 
         return $photoPath;
     }
@@ -98,7 +98,7 @@ class ScrapController extends Controller
             $dosenList = $response->successful() ? $response->json() : [];
         } catch (\Exception $e) {
             $dosenList = [];
-            Log::error('Gagal mengambil data dosen dari API Python: ' . $e->getMessage());
+            Log::error('Failed to fetch lecturer data from Python API: ' . $e->getMessage());
         }
 
         return view('filament.resources.detail-dosens.pages.import-detail-dosen', compact('dosenList'));
@@ -137,7 +137,7 @@ class ScrapController extends Controller
             $success = curl_exec($ch);
 
             if (! $success) {
-                $this->stream(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> Gagal terhubung ke Docker Python Scraper. URL: {$streamUrl}. Error: " . curl_error($ch) . "\n"]);
+                $this->stream(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> Failed to connect to the Docker Python scraper. URL: {$streamUrl}. Error: " . curl_error($ch) . "\n"]);
             }
 
             curl_close($ch);
@@ -157,11 +157,11 @@ class ScrapController extends Controller
     private function downloadAndImportMasterLecturers(string $baseUrl): void
     {
         $downloadUrl = $baseUrl . '/api/download-excel-dosen';
-        $this->stream(['output' => "\n[LARAVEL] Menghubungi API Docker untuk mengunduh berkas Excel master...\n"]);
+        $this->stream(['output' => "\n[LARAVEL] Contacting Docker API to download the master lecturer Excel file...\n"]);
         $fileResponse = Http::get($downloadUrl);
 
         if (! $fileResponse->successful() || isset($fileResponse->json()['error'])) {
-            $this->stream(['output' => "\n<span class='text-warning-500'>[WARN] File excel dosen gagal diunduh atau belum tercipta di container Docker.</span>\n----------------------------------------\n"]);
+            $this->stream(['output' => "\n<span class='text-warning-500'>[WARN] Lecturer Excel file could not be downloaded or has not been generated inside the Docker container.</span>\n----------------------------------------\n"]);
             return;
         }
 
@@ -172,7 +172,7 @@ class ScrapController extends Controller
         }
 
         file_put_contents($excelPath, $fileResponse->body());
-        $this->stream(['output' => "<span class='text-success-400 font-bold'>[OK]</span> Berkas Excel berhasil diunduh. Memulai migrasi data ke tabel sinta_lecturers...\n"]);
+        $this->stream(['output' => "<span class='text-success-400 font-bold'>[OK]</span> Excel file downloaded successfully. Starting migration into the sinta_lecturers table...\n"]);
 
         try {
             $rows = (new FastExcel())->import($excelPath);
@@ -206,14 +206,14 @@ class ScrapController extends Controller
             }
 
             DB::commit();
-            $this->stream(['output' => "<span class='text-success-400 font-bold'>[SUKSES] Auto-Import Selesai!</span> Berhasil memperbarui {$insertedCount} dosen ke tabel database sinta_lecturers.\n"]);
+            $this->stream(['output' => "<span class='text-success-400 font-bold'>[SUCCESS] Auto-import completed.</span> Successfully updated {$insertedCount} lecturers into the sinta_lecturers database table.\n"]);
             $this->stream(['output' => $this->deleteImportedExcelFile($excelPath) . "----------------------------------------\n"]);
         } catch (\Throwable $importError) {
             if (DB::transactionLevel() > 0) {
                 DB::rollBack();
             }
 
-            $this->stream(['output' => "\n<span class='text-danger-500 font-bold'>[DATABASE ERROR]</span> Gagal menyimpan data: " . addslashes($importError->getMessage()) . "\n----------------------------------------\n"]);
+            $this->stream(['output' => "\n<span class='text-danger-500 font-bold'>[DATABASE ERROR]</span> Failed to save lecturer data: " . addslashes($importError->getMessage()) . "\n----------------------------------------\n"]);
         }
     }
 
@@ -232,7 +232,7 @@ class ScrapController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Dosen baru berhasil didaftarkan ke dalam database master!',
+            'message' => 'The lecturer has been registered into the master lecturer database.',
         ]);
     }
 
@@ -241,7 +241,7 @@ class ScrapController extends Controller
         return new StreamedResponse(function () {
             set_time_limit(0);
             ignore_user_abort(true);
-            $this->stream(['output' => "Menghubungi API UNW program studi...\n"]);
+            $this->stream(['output' => "Contacting UNW study program API...\n"]);
 
             try {
                 $response = Http::withoutVerifying()
@@ -249,7 +249,7 @@ class ScrapController extends Controller
                     ->get('https://panel-web.unw.ac.id/api/unw-program-studi');
 
                 if (! $response->successful()) {
-                    $this->stream(['output' => "<span class='text-danger-500'>[ERROR]</span> API program studi gagal diakses. Status HTTP: " . $response->status() . "\n"]);
+                    $this->stream(['output' => "<span class='text-danger-500'>[ERROR]</span> Study program API could not be accessed. HTTP status: " . $response->status() . "\n"]);
                     $this->stream(['done' => true]);
                     return;
                 }
@@ -288,13 +288,13 @@ class ScrapController extends Controller
                 DB::commit();
                 Cache::forget('study_programs_select_import');
                 Cache::forget('academic_programs_nav');
-                $this->stream(['output' => "<span class='text-success-400'>[OK]</span> Berhasil menyinkronkan {$syncedCount} program studi ke tabel study_programs.\n"]);
+                $this->stream(['output' => "<span class='text-success-400'>[OK]</span> Successfully synced {$syncedCount} study programs into the study_programs table.\n"]);
             } catch (\Throwable $e) {
                 if (DB::transactionLevel() > 0) {
                     DB::rollBack();
                 }
 
-                Log::error('Gagal sinkronisasi program studi: ' . $e->getMessage());
+                Log::error('Failed to sync study programs: ' . $e->getMessage());
                 $this->stream(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> " . addslashes($e->getMessage()) . "\n"]);
             }
 
@@ -340,7 +340,7 @@ class ScrapController extends Controller
             $success = curl_exec($ch);
 
             if (! $success) {
-                $this->stream(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> Gagal terhubung ke Docker Python Scraper. URL: {$streamUrl}. Error: " . curl_error($ch) . "\n"]);
+                $this->stream(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> Failed to connect to the Docker Python scraper. URL: {$streamUrl}. Error: " . curl_error($ch) . "\n"]);
             }
 
             curl_close($ch);
@@ -360,11 +360,11 @@ class ScrapController extends Controller
     private function downloadMergedDetailExcel(string $baseUrl, string $sintaId): void
     {
         $downloadUrl = $baseUrl . "/api/download-excel-detail/{$sintaId}";
-        $this->stream(['output' => "\n[LARAVEL] Menghubungi API Docker untuk menarik file excel gabungan (merged_data)...\n"]);
+        $this->stream(['output' => "\n[LARAVEL] Contacting Docker API to download merged detail Excel file...\n"]);
         $fileResponse = Http::get($downloadUrl);
 
         if (! $fileResponse->successful() || isset($fileResponse->json()['error'])) {
-            $this->stream(['output' => "\n<span class='text-danger-500'>[ERROR]</span> Berkas merged_data_{$sintaId}.xlsx tidak ditemukan/gagal diunduh dari API Docker.\n----------------------------------------\n"]);
+            $this->stream(['output' => "\n<span class='text-danger-500'>[ERROR]</span> merged_data_{$sintaId}.xlsx was not found or could not be downloaded from Docker API.\n----------------------------------------\n"]);
             return;
         }
 
@@ -375,7 +375,7 @@ class ScrapController extends Controller
         }
 
         file_put_contents($excelPath, $fileResponse->body());
-        $this->stream(['output' => "<span class='text-success-400 font-bold'>[OK]</span> Berkas merged_data_{$sintaId}.xlsx sukses diunduh ke laptop. Memulai sinkronisasi Database...\n"]);
+        $this->stream(['output' => "<span class='text-success-400 font-bold'>[OK]</span> merged_data_{$sintaId}.xlsx downloaded successfully. Starting database sync...\n"]);
     }
 
     public function importData(Request $request, $sinta_id): StreamedResponse
@@ -389,13 +389,13 @@ class ScrapController extends Controller
             $filePath = base_path("scripts/output/merged_data_{$sintaId}.xlsx");
 
             if (! file_exists($filePath)) {
-                $this->stream(['output' => "<span class='text-danger-500'>[ERROR] File Excel tidak ditemukan.</span>\n"]);
+                $this->stream(['output' => "<span class='text-danger-500'>[ERROR] Excel file was not found.</span>\n"]);
                 $this->stream(['done' => true]);
                 return;
             }
 
             try {
-                $this->stream(['output' => "Membaca file Excel: merged_data_{$sintaId}.xlsx...\n"]);
+                $this->stream(['output' => "Reading Excel file: merged_data_{$sintaId}.xlsx...\n"]);
                 $sheets = (new FastExcel())->importSheets($filePath);
                 $expectedSheets = [
                     0 => 'DATA_DOSEN',
@@ -415,10 +415,10 @@ class ScrapController extends Controller
                 foreach ($sheets as $sheetIndex => $rows) {
                     $sheetNameUpper = strtoupper($expectedSheets[$sheetIndex] ?? "SHEET_{$sheetIndex}");
                     $this->stream(['output' => "----------------------------------------\n"]);
-                    $this->stream(['output' => "Memproses Sheet: <span class='text-primary-400 font-bold'>{$sheetNameUpper}</span>...\n"]);
+                    $this->stream(['output' => "Processing sheet: <span class='text-primary-400 font-bold'>{$sheetNameUpper}</span>...\n"]);
 
                     if (empty($rows) || count($rows) === 0 || ! collect($rows)->first()) {
-                        $this->stream(['output' => "<span class='text-gray-400'>--> Sheet kosong, dilewati.</span>\n"]);
+                        $this->stream(['output' => "<span class='text-gray-400'>--> Empty sheet. Skipped.</span>\n"]);
                         continue;
                     }
 
@@ -426,7 +426,7 @@ class ScrapController extends Controller
                     $values = array_map('strtolower', array_map('trim', array_values((array) $firstRow)));
 
                     if (in_array('none', $values, true)) {
-                        $this->stream(['output' => "<span class='text-gray-400'>--> Sheet berisi 'none', dilewati.</span>\n"]);
+                        $this->stream(['output' => "<span class='text-gray-400'>--> Sheet contains 'none'. Skipped.</span>\n"]);
                         continue;
                     }
 
@@ -513,10 +513,10 @@ class ScrapController extends Controller
                     }
 
                     DB::commit();
-                    $this->stream(['output' => $insertedCount > 0 ? "<span class='text-success-400'>[OK] Berhasil menyimpan {$insertedCount} baris ke database.</span>\n" : "<span class='text-gray-400'>--> Tidak ada data valid yang diproses.</span>\n"]);
+                    $this->stream(['output' => $insertedCount > 0 ? "<span class='text-success-400'>[OK] Successfully saved {$insertedCount} rows into the database.</span>\n" : "<span class='text-gray-400'>--> No valid data was processed.</span>\n"]);
                 }
 
-                $this->stream(['output' => "----------------------------------------\n<span class='text-success-400 font-bold'>[SUKSES IMPORT]</span> Seluruh sheet selesai diimpor!\n"]);
+                $this->stream(['output' => "----------------------------------------\n<span class='text-success-400 font-bold'>[IMPORT SUCCESS]</span> All sheets have been imported successfully.\n"]);
                 $this->stream(['output' => $this->deleteImportedExcelFile($filePath)]);
                 $this->stream(['done' => true]);
             } catch (\Throwable $e) {
@@ -524,7 +524,7 @@ class ScrapController extends Controller
                     DB::rollBack();
                 }
 
-                $this->stream(['output' => "\n<span class='text-danger-500 font-bold'>[ERROR FATAL]</span> " . addslashes($e->getMessage()) . " (Baris: {$e->getLine()})\n"]);
+                $this->stream(['output' => "\n<span class='text-danger-500 font-bold'>[FATAL ERROR]</span> " . addslashes($e->getMessage()) . " (Line: {$e->getLine()})\n"]);
                 $this->stream(['done' => true]);
             }
         }, 200, [
@@ -540,13 +540,13 @@ class ScrapController extends Controller
 
         if (! empty($photoValue) && filter_var($photoValue, FILTER_VALIDATE_URL)) {
             try {
-                $this->stream(['output' => "<span style='color: #0ea5e9;'>[FOTO]</span> URL foto ditemukan: {$photoValue}\n"]);
+                $this->stream(['output' => "<span style='color: #0ea5e9;'>[PHOTO]</span> Photo URL found: {$photoValue}\n"]);
                 $storedPhotoPath = $this->downloadLecturerPhotoToStorage($photoValue, $sintaId);
                 if ($storedPhotoPath) {
                     $photoValue = $storedPhotoPath;
                 }
             } catch (\Throwable $photoError) {
-                $this->stream(['output' => "<span class='text-warning-500'>[FOTO - ERROR] Request Timeout / Gagal: " . addslashes($photoError->getMessage()) . "</span>\n"]);
+                $this->stream(['output' => "<span class='text-warning-500'>[PHOTO - ERROR] Request timeout or failed request: " . addslashes($photoError->getMessage()) . "</span>\n"]);
             }
         } elseif (is_string($photoValue) && trim($photoValue) !== '') {
             $photoValue = trim(str_replace('\\', '/', $photoValue), '/');
