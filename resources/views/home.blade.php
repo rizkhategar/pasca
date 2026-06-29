@@ -36,7 +36,7 @@
             'slug' => $resolveProgramSlug(['s2-manajemen-pendidikan', 'magister-manajemen-pendidikan']),
             'desc' => 'Mengembangkan kepemimpinan, manajemen, dan inovasi pendidikan yang adaptif terhadap kebutuhan zaman.',
             'tag' => 'Education Management',
-            'icon' => 'M12 3 1 9l11 6 9-4.91V17h2V9L12 3Zm0 14.2 7-3.8V17l-7 4-7-4v-3.6l7 3.8Z',
+            'icon' => 'M12 3 1 9l11 6 9-4.91V17h2V9L12 3Zm0 14.2 7-3.8V17l-7 4v-3.6l7 3.8Z',
         ],
         [
             'number' => '04',
@@ -60,7 +60,7 @@
         @if (isset($sliders) && $sliders->count() > 0)
             @foreach ($sliders as $index => $slider)
                 <div class="hero-slide {{ $index === 0 ? 'active' : '' }}"
-                    style="background-image: url('{{ route('sliders.image', $slider) }}?v={{ optional($slider->updated_at)->timestamp }}');"
+                    style="background-image: url('{{ $slider->hero_image_url }}');"
                     data-duration="{{ $slider->duration_ms ?? 3000 }}">
                 </div>
             @endforeach
@@ -69,9 +69,6 @@
                 style="background-image: url('{{ asset('assets/images/hero-campus.png') }}');" data-duration="3000">
             </div>
         @endif
-
-        <button class="hero-arrow left" id="prevSlide" type="button" aria-label="Slide sebelumnya">‹</button>
-        <button class="hero-arrow right" id="nextSlide" type="button" aria-label="Slide berikutnya">›</button>
 
         <div class="container">
             <div class="hero-content">
