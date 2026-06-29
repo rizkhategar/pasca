@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\ManageAccounts\Pages;
+namespace App\Filament\Resources\Users\Pages;
 
-use App\Filament\Resources\ManageAccounts\ManageAccountResource;
+use App\Filament\Resources\Users\UserResource;
 use Filament\Resources\Pages\CreateRecord;
 use Spatie\Permission\Models\Role;
 
-class CreateManageAccount extends CreateRecord
+class CreateUser extends CreateRecord
 {
-    protected static string $resource = ManageAccountResource::class;
+    protected static string $resource = UserResource::class;
 
     protected function afterCreate(): void
     {

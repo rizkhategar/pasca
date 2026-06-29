@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\ManageAccounts\Schemas;
+namespace App\Filament\Resources\Users\Schemas;
 
 use App\Models\User;
 use Filament\Forms\Components\Select;
@@ -8,14 +8,14 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
-class ManageAccountForm
+class UserForm
 {
     public static function configure(Schema $schema): Schema
     {
         return $schema
             ->columns(1)
             ->components([
-                Section::make('Account Information')
+                Section::make('User Information')
                     ->description('Kelola akun admin dan role akses Filament.')
                     ->columnSpanFull()
                     ->schema([

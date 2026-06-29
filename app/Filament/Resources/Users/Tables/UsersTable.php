@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\ManageAccounts\Tables;
+namespace App\Filament\Resources\Users\Tables;
 
 use App\Models\User;
 use Filament\Actions\DeleteAction;
@@ -8,7 +8,7 @@ use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
-class ManageAccountsTable
+class UsersTable
 {
     public static function configure(Table $table): Table
     {
