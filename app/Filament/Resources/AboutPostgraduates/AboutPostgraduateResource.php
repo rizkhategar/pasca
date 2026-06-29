@@ -10,6 +10,7 @@ use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class AboutPostgraduateResource extends Resource
@@ -25,5 +26,8 @@ class AboutPostgraduateResource extends Resource
     public static function form(Schema $schema): Schema { return AboutPostgraduateForm::configure($schema); }
     public static function table(Table $table): Table { return AboutPostgraduatesTable::configure($table); }
     public static function getPages(): array { return ['index' => Pages\ListAboutPostgraduates::route('/'), 'create' => Pages\CreatePostgraduateAbout::route('/create'), 'edit' => Pages\EditPostgraduateAbout::route('/{record}/edit')]; }
-    public static function canCreate(): bool { return AboutPostgraduate::count() === 0; }
+    public static function canViewAny(): bool { return auth()->user()?->canManageContent() ?? false; }
+    public static function canCreate(): bool { return (auth()->user()?->canManageContent() ?? false) && AboutPostgraduate::count() === 0; }
+    public static function canEdit(Model $record): bool { return auth()->user()?->canManageContent() ?? false; }
+    public static function canDelete(Model $record): bool { return auth()->user()?->canManageContent() ?? false; }
 }
