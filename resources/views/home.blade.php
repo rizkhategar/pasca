@@ -149,6 +149,7 @@
             grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
             gap: 28px !important;
             align-items: stretch;
+            perspective: 1200px;
         }
 
         .home-page .program-card {
@@ -164,7 +165,14 @@
             border: 1px solid rgba(226, 232, 240, .95);
             background: rgba(255, 255, 255, .92);
             box-shadow: 0 22px 52px rgba(15, 23, 42, .08);
-            transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease;
+            transform: translateY(0) rotateX(0deg) rotateY(0deg) scale(1);
+            transform-style: preserve-3d;
+            transition:
+                transform .45s cubic-bezier(.2, .9, .22, 1),
+                box-shadow .45s ease,
+                border-color .35s ease,
+                background .35s ease;
+            will-change: transform;
         }
 
         .home-page .program-card::before {
@@ -175,6 +183,7 @@
             background:
                 radial-gradient(circle at 100% 0%, rgba(247, 181, 0, .18) 0 0, transparent 32%),
                 linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(255, 255, 255, .86));
+            transition: opacity .35s ease, transform .45s ease;
         }
 
         .home-page .program-card::after {
@@ -187,23 +196,47 @@
             z-index: -1;
             border-radius: 999px;
             background: rgba(247, 181, 0, .13);
-            transition: transform .3s ease, background .3s ease;
+            transition: transform .45s cubic-bezier(.2, .9, .22, 1), background .35s ease, filter .35s ease;
         }
 
-        .home-page .program-card-glow,
+        .home-page .program-card-glow {
+            display: block !important;
+            position: absolute;
+            inset: 0;
+            z-index: 4;
+            height: auto;
+            border-radius: inherit;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateX(-125%) skewX(-18deg);
+            background: linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, .16) 38%, rgba(255, 255, 255, .72) 50%, rgba(247, 181, 0, .20) 58%, transparent 72%);
+            transition: transform .75s ease, opacity .3s ease;
+        }
+
         .home-page .program-tag {
             display: none !important;
         }
 
         .home-page .program-card:hover {
-            transform: translateY(-10px);
-            border-color: rgba(247, 181, 0, .46);
-            box-shadow: 0 34px 76px rgba(7, 43, 87, .15);
+            transform: translateY(-16px) rotateX(2deg) rotateY(-2deg) scale(1.018);
+            border-color: rgba(247, 181, 0, .62);
+            background: rgba(255, 255, 255, .98);
+            box-shadow: 0 34px 76px rgba(7, 43, 87, .18), 0 0 0 7px rgba(247, 181, 0, .08);
+        }
+
+        .home-page .program-card:hover::before {
+            transform: scale(1.04);
         }
 
         .home-page .program-card:hover::after {
-            transform: scale(1.12);
-            background: rgba(247, 181, 0, .20);
+            transform: scale(1.22) translate(-8px, 10px);
+            background: rgba(247, 181, 0, .24);
+            filter: blur(.2px);
+        }
+
+        .home-page .program-card:hover .program-card-glow {
+            opacity: 1;
+            transform: translateX(125%) skewX(-18deg);
         }
 
         .home-page .program-top {
@@ -224,12 +257,26 @@
             color: #ffffff;
             background: linear-gradient(135deg, #003f78 0%, #075895 100%);
             box-shadow: 0 18px 32px rgba(7, 43, 87, .20);
+            transform: translateZ(0) rotate(0deg);
+            transition: transform .35s ease, box-shadow .35s ease, background .35s ease;
         }
 
         .home-page .program-icon svg {
             width: 36px;
             height: 36px;
             fill: currentColor;
+            transform-origin: center;
+            transition: transform .35s ease;
+        }
+
+        .home-page .program-card:hover .program-icon {
+            animation: programIconPop .68s cubic-bezier(.2, .9, .22, 1) both;
+            background: linear-gradient(135deg, #f7b500 0%, #ffcc35 100%);
+            box-shadow: 0 22px 40px rgba(247, 181, 0, .34);
+        }
+
+        .home-page .program-card:hover .program-icon svg {
+            animation: programIconWiggle .72s ease both;
         }
 
         .home-page .program-number {
@@ -247,10 +294,19 @@
             font-weight: 900;
             letter-spacing: .04em;
             box-shadow: 0 10px 24px rgba(247, 181, 0, .13);
+            transition: transform .35s ease, box-shadow .35s ease, background .35s ease;
+        }
+
+        .home-page .program-card:hover .program-number {
+            animation: programNumberPulse 1.15s ease-in-out infinite;
+            background: #ffe08a;
+            box-shadow: 0 0 0 7px rgba(247, 181, 0, .13), 0 16px 28px rgba(247, 181, 0, .22);
         }
 
         .home-page .program-body {
             flex: 1;
+            position: relative;
+            z-index: 2;
         }
 
         .home-page .program-title {
@@ -262,6 +318,7 @@
             font-weight: 900;
             letter-spacing: -.025em;
             text-transform: uppercase;
+            transition: transform .32s ease, color .32s ease;
         }
 
         .home-page .program-desc {
@@ -271,10 +328,24 @@
             font-size: 15px;
             line-height: 1.74;
             font-weight: 600;
+            transition: transform .32s ease, color .32s ease;
+        }
+
+        .home-page .program-card:hover .program-title {
+            color: #075895;
+            transform: translateX(5px);
+        }
+
+        .home-page .program-card:hover .program-desc {
+            color: #475569;
+            transform: translateX(5px);
         }
 
         .home-page .program-detail {
+            position: relative;
+            z-index: 5;
             width: fit-content;
+            overflow: hidden;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -290,25 +361,67 @@
             line-height: 1;
             font-weight: 900;
             text-transform: none;
-            transition: .22s ease;
+            transition: transform .28s ease, color .28s ease, background .28s ease, border-color .28s ease, box-shadow .28s ease;
+        }
+
+        .home-page .program-detail::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: -45%;
+            width: 34%;
+            transform: skewX(-18deg);
+            background: rgba(255, 255, 255, .45);
+            opacity: 0;
+            transition: left .5s ease, opacity .25s ease;
+        }
+
+        .home-page .program-detail span,
+        .home-page .program-detail i {
+            position: relative;
+            z-index: 1;
         }
 
         .home-page .program-detail i {
             color: #f7b500;
-            transition: transform .22s ease;
+            transition: transform .28s ease, color .28s ease;
         }
 
         .home-page .program-detail:hover {
-            transform: translateY(-2px);
+            transform: translateY(-3px) scale(1.04);
             color: #ffffff;
             background: #f7b500;
             border-color: #f7b500;
-            box-shadow: 0 16px 30px rgba(247, 181, 0, .24);
+            box-shadow: 0 16px 30px rgba(247, 181, 0, .28);
+        }
+
+        .home-page .program-detail:hover::before {
+            left: 118%;
+            opacity: 1;
         }
 
         .home-page .program-detail:hover i {
             color: #ffffff;
-            transform: translateX(3px);
+            transform: translateX(5px);
+        }
+
+        @keyframes programIconPop {
+            0% { transform: translateY(0) rotate(0deg) scale(1); }
+            45% { transform: translateY(-7px) rotate(-5deg) scale(1.08); }
+            100% { transform: translateY(-3px) rotate(0deg) scale(1.04); }
+        }
+
+        @keyframes programIconWiggle {
+            0% { transform: rotate(0deg) scale(1); }
+            28% { transform: rotate(-8deg) scale(1.04); }
+            58% { transform: rotate(7deg) scale(1.04); }
+            100% { transform: rotate(0deg) scale(1.02); }
+        }
+
+        @keyframes programNumberPulse {
+            0%, 100% { transform: translateY(-3px) scale(1.04); }
+            50% { transform: translateY(-7px) scale(1.12); }
         }
 
         @media (max-width: 1100px) {
@@ -354,6 +467,18 @@
             .home-page .program-title,
             .home-page .program-desc {
                 max-width: none;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .home-page .program-card,
+            .home-page .program-icon,
+            .home-page .program-icon svg,
+            .home-page .program-number,
+            .home-page .program-detail,
+            .home-page .program-card-glow {
+                animation: none !important;
+                transition: none !important;
             }
         }
     </style>
