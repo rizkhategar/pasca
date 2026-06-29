@@ -50,21 +50,28 @@ class SliderForm
                                             ? route('sliders.image', $record) . '?v=' . optional($record->updated_at)->timestamp
                                             : asset('storage/' . ltrim((string) $path, '/'));
 
-                                        return new HtmlString("<img src=\"{$url}\" alt=\"Gambar slider saat ini\" style=\"width:100%;max-width:420px;max-height:220px;object-fit:cover;border-radius:14px;border:1px solid rgba(148,163,184,.35);\">");
+                                        return new HtmlString("<img src=\"{$url}\" alt=\"Gambar slider saat ini\" style=\"width:100%;max-width:520px;aspect-ratio:16/9;max-height:293px;object-fit:cover;border-radius:14px;border:1px solid rgba(148,163,184,.35);\">");
                                     }),
 
                                 FileUpload::make('image_path_upload')
                                     ->label('Upload / Ganti Gambar Slider')
                                     ->image()
+                                    ->imageEditor()
+                                    ->imageEditorAspectRatios(['16:9'])
+                                    ->imageCropAspectRatio('16:9')
+                                    ->imageResizeMode('cover')
+                                    ->imageResizeTargetWidth('1920')
+                                    ->imageResizeTargetHeight('1080')
+                                    ->panelAspectRatio('16:9')
                                     ->required(fn (string $operation): bool => $operation === 'create')
                                     ->maxSize(8192)
                                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                                     ->fetchFileInformation(false)
-                                    ->previewable(false)
+                                    ->previewable(true)
                                     ->openable(false)
                                     ->downloadable(false)
                                     ->panelLayout('compact')
-                                    ->imagePreviewHeight('120')
+                                    ->imagePreviewHeight('180')
                                     ->loadingIndicatorPosition('right')
                                     ->removeUploadedFileButtonPosition('right')
                                     ->uploadProgressIndicatorPosition('right')
@@ -74,7 +81,7 @@ class SliderForm
                                     ->deleteUploadedFileUsing(
                                         fn (string|array|null $file): null => tap(null, fn () => FilamentImageUpload::deleteFromPublicDisk($file))
                                     )
-                                    ->helperText('Gunakan gambar JPG, PNG, atau WEBP. Maksimal 8MB.'),
+                                    ->helperText('Upload gambar landscape. Sistem akan menyesuaikan crop ke rasio 16:9 dengan ukuran target 1920 × 1080.'),
                             ]),
 
                         TextInput::make('sort_order')
