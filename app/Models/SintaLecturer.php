@@ -38,4 +38,9 @@ class SintaLecturer extends Model
     {
         return $this->hasOne(PostgraduateLecturer::class, 'sinta_id', 'sinta_id');
     }
+
+    public function undergraduateLecturer()
+    {
+        return $this->hasOne(UndergraduateLecturer::class, 'sinta_id', 'sinta_id');
+    }
 }
