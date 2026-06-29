@@ -40,6 +40,7 @@ class SintaLecturerDetail extends Model
             }
 
             $lecturerDetail->postgraduateLecturer()->delete();
+            $lecturerDetail->undergraduateLecturer()->delete();
 
             $safeSintaId = Str::of($sintaId)
                 ->trim()
@@ -79,6 +80,11 @@ class SintaLecturerDetail extends Model
         return $this->hasOne(PostgraduateLecturer::class, 'sinta_id', 'sinta_id');
     }
 
+    public function undergraduateLecturer()
+    {
+        return $this->hasOne(UndergraduateLecturer::class, 'sinta_id', 'sinta_id');
+    }
+
     public function pascaLecturer()
     {
         return $this->postgraduateLecturer();
@@ -91,6 +97,18 @@ class SintaLecturerDetail extends Model
             PostgraduateLecturer::class,
             'sinta_id',
             'postgraduate_lecturer_id',
+            'sinta_id',
+            'id'
+        );
+    }
+
+    public function undergraduateStudyProgramPivots()
+    {
+        return $this->hasManyThrough(
+            UndergraduateLecturerStudyProgram::class,
+            UndergraduateLecturer::class,
+            'sinta_id',
+            'undergraduate_lecturer_id',
             'sinta_id',
             'id'
         );
