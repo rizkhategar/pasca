@@ -11,6 +11,11 @@ class EditManageAccount extends EditRecord
 {
     protected static string $resource = ManageAccountResource::class;
 
+    protected function afterSave(): void
+    {
+        $this->record->syncRoles([$this->record->role]);
+    }
+
     protected function getHeaderActions(): array
     {
         return [
