@@ -27,11 +27,60 @@ class Slider extends Model
         ];
     }
 
+    public static function normalizeImagePath(mixed $value): ?string
+    {
+        if (is_array($value)) {
+            foreach (array_reverse($value) as $item) {
+                $path = self::normalizeImagePath($item);
+
+                if ($path) {
+                    return $path;
+                }
+            }
+
+            return null;
+        }
+
+        if (! is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        $value = trim($value);
+
+        if (str_starts_with($value, '[') || str_starts_with($value, '{')) {
+            $decoded = json_decode($value, true);
+
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return self::normalizeImagePath($decoded);
+            }
+        }
+
+        if (filter_var($value, FILTER_VALIDATE_URL)) {
+            $pathFromUrl = parse_url($value, PHP_URL_PATH);
+            $value = is_string($pathFromUrl) ? $pathFromUrl : $value;
+        }
+
+        $path = trim(str_replace('\\', '/', $value));
+        $path = preg_replace('#^/?storage/#', '', $path) ?: $path;
+        $path = preg_replace('#^/?public/#', '', $path) ?: $path;
+        $path = preg_replace('#^/?app/public/#', '', $path) ?: $path;
+        $path = preg_replace('#^/?storage/app/public/#', '', $path) ?: $path;
+
+        return ltrim($path, '/');
+    }
+
+    public function getNormalizedImagePathAttribute(): ?string
+    {
+        return self::normalizeImagePath($this->image_path);
+    }
+
     protected static function booted(): void
     {
         static::deleting(function (Slider $slider): void {
-            if ($slider->image_path && Storage::disk('public')->exists($slider->image_path)) {
-                Storage::disk('public')->delete($slider->image_path);
+            $path = self::normalizeImagePath($slider->image_path);
+
+            if ($path && Storage::disk('public')->exists($path)) {
+                Storage::disk('public')->delete($path);
             }
         });
     }
