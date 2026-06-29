@@ -1,6 +1,6 @@
 <?php
 
-use App\Filament\Resources\PostgraduateLecturer\PostgraduateLecturerResource;
+use App\Filament\Resources\SintaLecturer\SintaLecturerResource;
 use App\Http\Controllers\AboutController;
 use App\Http\Controllers\AcademicController;
 use App\Http\Controllers\ContactController;
@@ -9,7 +9,6 @@ use App\Http\Controllers\NewsController;
 use App\Http\Controllers\OrganizationStructureController;
 use App\Http\Controllers\RisetController;
 use App\Http\Controllers\ScrapController;
-use App\Http\Controllers\UndergraduateScrapController;
 use App\Http\Controllers\VisionMissionController;
 use App\Models\AboutPostgraduate;
 use App\Models\OrganizationalStructure;
@@ -110,12 +109,11 @@ Route::get('/akademik/{slug}', [AcademicController::class, 'show'])->name('akade
 Route::get('/visi-misi', [VisionMissionController::class, 'index'])->name('visi-misi');
 Route::get('/profil/struktur-organisasi', [OrganizationStructureController::class, 'index'])->name('profil.struktur-organisasi');
 Route::get('/tentang-pascasarjana', [AboutController::class, 'index'])->name('tentang');
-Route::get('/scrap/ambildatadosen', fn () => redirect(PostgraduateLecturerResource::getUrl('import')))->name('scrap.index');
+Route::get('/scrap/ambildatadosen', fn () => redirect(SintaLecturerResource::getUrl('import')))->name('scrap.index');
 Route::get('/scrap/perbarui-dosen', [ScrapController::class, 'perbaruiDosen'])->name('scrap.perbaruiDosen');
 Route::get('/scrap/sinkronisasi-program-studi', [ScrapController::class, 'syncStudyPrograms'])->name('scrap.syncStudyPrograms');
 Route::get('/scrap/ambil-detail/{sinta_id}', [ScrapController::class, 'ambilDetail'])->name('scrap.ambilDetail');
 Route::get('/scrap/import/{sinta_id}', [ScrapController::class, 'importData'])->name('scrap.importData');
-Route::get('/undergraduate-scrap/import/{sinta_id}', [UndergraduateScrapController::class, 'importData'])->name('undergraduate-scrap.importData');
 Route::get('/riset-dosen', [RisetController::class, 'listDosen'])->name('riset.dosen');
 Route::get('/riset-dosen/detail/{sinta_id}', [RisetController::class, 'detailDosen'])->name('riset.detail');
 

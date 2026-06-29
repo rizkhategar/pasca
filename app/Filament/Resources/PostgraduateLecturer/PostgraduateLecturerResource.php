@@ -36,6 +36,8 @@ class PostgraduateLecturerResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'SINTA Integration';
 
+    protected static ?int $navigationSort = 2;
+
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->whereHas('postgraduateLecturer');
