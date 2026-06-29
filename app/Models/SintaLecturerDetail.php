@@ -85,11 +85,6 @@ class SintaLecturerDetail extends Model
         return $this->hasOne(PostgraduateLecturer::class, 'sinta_id', 'sinta_id');
     }
 
-    public function postgraduateDetail()
-    {
-        return $this->hasOne(PostgraduateLecturerDetail::class, 'sinta_id', 'sinta_id');
-    }
-
     public function departments()
     {
         return $this->hasMany(Departement::class, 'sinta_id', 'sinta_id');
