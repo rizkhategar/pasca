@@ -2,24 +2,23 @@
 
 namespace App\Filament\Resources\DetailDosens\Tables;
 
-// Import Resource utama agar bisa membaca rute URL panel
 use App\Filament\Resources\DetailDosens\DetailDosenResource;
-
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
+use App\Support\StudyProgramOptions;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class DetailDosensTable
 {
     public static function configure(Table $table): Table
     {
-         return $table
+        return $table
             ->columns([
                 TextColumn::make('sinta_id')
                     ->label('SINTA ID')
@@ -35,12 +34,12 @@ class DetailDosensTable
                     ->searchable(),
 
                 TextColumn::make('study_program')
-                    ->label('Program Studi')
+                    ->label('Program Studi SINTA')
                     ->searchable(),
 
                 TextColumn::make('department_names')
-                    ->label('Jurusan/Departemen')
-                    ->getStateUsing(fn ($record): string => self::resolveDepartmentNames($record))
+                    ->label('Program Studi Terhubung')
+                    ->getStateUsing(fn ($record): string => self::resolveStudyProgramNames($record))
                     ->wrap(),
 
                 TextColumn::make('research_interests')
@@ -57,28 +56,7 @@ class DetailDosensTable
                     ->numeric()
                     ->sortable(),
             ])
-            ->filters([
-                //
-            ])
             ->actions([
-                ViewAction::make()
-                    ->url(fn ($record) => DetailDosenResource::getUrl('view', ['record' => $record])),
-
-                EditAction::make()
-                    ->url(fn ($record) => DetailDosenResource::getUrl('edit', ['record' => $record])),
-
-                DeleteAction::make(),
-            ])
-            ->bulkActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ])
-            ->filters([
-                //
-            ])
-            ->actions([
-                // PERBAIKAN: Paksa mengarah ke rute halaman penuh via getUrl()
                 ViewAction::make()
                     ->url(fn ($record) => DetailDosenResource::getUrl('view', ['record' => $record])),
 
@@ -94,42 +72,51 @@ class DetailDosensTable
             ]);
     }
 
-    private static function resolveDepartmentNames($record): string
+    private static function resolveStudyProgramNames($record): string
     {
-        $departmentIds = $record->departments()
-            ->pluck('id_departement')
-            ->filter()
-            ->map(fn ($id) => (string) $id)
-            ->unique()
-            ->values();
+        $ids = self::postgraduateStudyProgramIds($record);
 
-        if ($departmentIds->isEmpty()) {
+        if (empty($ids)) {
             return '-';
         }
 
-        $departmentMap = self::getPascasarjanaDepartmentMap();
-
-        return $departmentIds
-            ->map(fn (string $id): string => $departmentMap[$id] ?? $id)
-            ->implode(', ');
+        return collect(StudyProgramOptions::resolveNames($ids))->implode(', ');
     }
 
-    private static function getPascasarjanaDepartmentMap(): array
+    private static function postgraduateStudyProgramIds($record): array
     {
-        return Cache::remember('academic_programs_select_import', now()->addHours(12), function () {
-            $response = Http::withoutVerifying()->get('https://panel-web.unw.ac.id/api/unw-program-studi');
+        $sintaId = $record->sinta_id;
 
-            if (!$response->successful()) {
-                return [];
+        if (! $sintaId) {
+            return [];
+        }
+
+        if (Schema::hasTable('postgraduate_lecturers') && Schema::hasTable('postgraduate_lecturer_study_programs')) {
+            $lecturerId = DB::table('postgraduate_lecturers')
+                ->where('sinta_id', $sintaId)
+                ->value('id');
+
+            if ($lecturerId) {
+                $ids = DB::table('postgraduate_lecturer_study_programs')
+                    ->where('postgraduate_lecturer_id', $lecturerId)
+                    ->pluck('study_program_id')
+                    ->map(fn ($id): string => (string) $id)
+                    ->toArray();
+
+                if (! empty($ids)) {
+                    return $ids;
+                }
             }
+        }
 
-            return collect($response->json('data', []))
-                ->filter(fn ($item) => isset($item['id'], $item['nama'], $item['unwFakultas']['nama']) && trim($item['unwFakultas']['nama']) === 'Pascasarjana')
-                ->mapWithKeys(fn ($item) => [
-                    (string) $item['id'] => trim(($item['jenjang'] ?? '') . ' ' . ($item['nama'] ?? ''))
-                ])
-                ->sortBy(fn ($value) => $value)
-                ->toArray();
-        });
+        if (! Schema::hasTable('departement')) {
+            return [];
+        }
+
+        return DB::table('departement')
+            ->where('sinta_id', $sintaId)
+            ->pluck('id_departement')
+            ->map(fn ($id): string => (string) $id)
+            ->toArray();
     }
 }
