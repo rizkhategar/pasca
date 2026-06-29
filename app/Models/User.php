@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'email', 'password', 'role'])]
 #[Hidden(['password', 'remember_token'])]
@@ -19,13 +20,13 @@ class User extends Authenticatable implements FilamentUser
     public const ROLE_ADMIN = 'admin';
     public const ROLE_ADMIN_PMB = 'admin_pmb';
 
+    /** @use HasFactory<UserFactory> */
+    use HasFactory, HasRoles, Notifiable;
+
     public function canAccessPanel(Panel $panel): bool
     {
-        return in_array($this->role, array_keys(self::roleOptions()), true);
+        return $this->hasAnyRole(array_keys(self::roleOptions())) || in_array($this->role, array_keys(self::roleOptions()), true);
     }
-
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
 
     public static function roleOptions(): array
     {
@@ -38,17 +39,17 @@ class User extends Authenticatable implements FilamentUser
 
     public function isSuperAdmin(): bool
     {
-        return $this->role === self::ROLE_SUPER_ADMIN;
+        return $this->hasRole(self::ROLE_SUPER_ADMIN) || $this->role === self::ROLE_SUPER_ADMIN;
     }
 
     public function isAdmin(): bool
     {
-        return $this->role === self::ROLE_ADMIN;
+        return $this->hasRole(self::ROLE_ADMIN) || $this->role === self::ROLE_ADMIN;
     }
 
     public function isAdminPmb(): bool
     {
-        return $this->role === self::ROLE_ADMIN_PMB;
+        return $this->hasRole(self::ROLE_ADMIN_PMB) || $this->role === self::ROLE_ADMIN_PMB;
     }
 
     public function canManageAccounts(): bool
