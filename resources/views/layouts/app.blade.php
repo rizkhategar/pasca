@@ -15,7 +15,7 @@
     <meta name="pasca-contact-url" content="{{ route('contact.index') }}">
     <meta name="pasca-about-url" content="{{ route('tentang') }}">
     <meta name="pasca-vision-mission-url" content="{{ route('visi-misi') }}">
-    @vite(['resources/css/app.css', 'resources/css/home-fixes.css', 'resources/css/slider-mobile-fix.css', 'resources/css/slider-dot-fix.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/css/home-fixes.css', 'resources/css/slider-mobile-fix.css', 'resources/css/slider-dot-fix.css', 'resources/js/app.js', 'resources/js/hero-slider-fix.js'])
     @stack('styles')
 </head>
 <body class="@yield('body_class')">
