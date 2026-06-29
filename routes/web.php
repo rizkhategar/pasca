@@ -9,6 +9,7 @@ use App\Http\Controllers\NewsController;
 use App\Http\Controllers\OrganizationStructureController;
 use App\Http\Controllers\RisetController;
 use App\Http\Controllers\ScrapController;
+use App\Http\Controllers\UndergraduateScrapController;
 use App\Http\Controllers\VisionMissionController;
 use App\Models\AboutPostgraduate;
 use App\Models\OrganizationalStructure;
@@ -89,6 +90,7 @@ Route::get('/scrap/perbarui-dosen', [ScrapController::class, 'perbaruiDosen'])->
 Route::get('/scrap/sinkronisasi-program-studi', [ScrapController::class, 'syncStudyPrograms'])->name('scrap.syncStudyPrograms');
 Route::get('/scrap/ambil-detail/{sinta_id}', [ScrapController::class, 'ambilDetail'])->name('scrap.ambilDetail');
 Route::get('/scrap/import/{sinta_id}', [ScrapController::class, 'importData'])->name('scrap.importData');
+Route::get('/undergraduate-scrap/import/{sinta_id}', [UndergraduateScrapController::class, 'importData'])->name('undergraduate-scrap.importData');
 Route::get('/riset-dosen', [RisetController::class, 'listDosen'])->name('riset.dosen');
 Route::get('/riset-dosen/detail/{sinta_id}', [RisetController::class, 'detailDosen'])->name('riset.detail');
 
