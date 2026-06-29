@@ -16,7 +16,7 @@
             'title' => 'Magister Keperawatan',
             'short_title' => 'Keperawatan',
             'slug' => $resolveProgramSlug(['s2-keperawatan', 'magister-keperawatan']),
-            'desc' => 'Mendukung peningkatan profesionalisme keperawatan melalui kajian lanjut, praktik klinis, kepemimpinan, dan riset kesehatan.',
+            'desc' => 'Mendukung peningkatan profesionalisme keperawatan melalui kajian lanjut, praktik, dan riset kesehatan.',
             'tag' => 'Nursing Leadership',
             'icon' => 'M12 2 6 4v5c0 3.7 2.5 7.1 6 8 3.5-.9 6-4.3 6-8V4l-6-2Zm1 3v2h2v2h-2v2h-2V9H9V7h2V5h2Zm-8 14c0-2.2 4.7-3.4 7-3.4s7 1.2 7 3.4V22H5v-3Z',
         ],
@@ -25,27 +25,27 @@
             'title' => 'Magister Kesehatan Masyarakat',
             'short_title' => 'Kesehatan Masyarakat',
             'slug' => $resolveProgramSlug(['s2-kesehatan-masyarakat', 'magister-kesehatan-masyarakat']),
-            'desc' => 'Berfokus pada pengembangan ilmu kesehatan masyarakat, kebijakan kesehatan, promosi kesehatan, dan peningkatan kualitas layanan.',
+            'desc' => 'Fokus pada pengembangan ilmu kesehatan masyarakat, kebijakan kesehatan, dan peningkatan kualitas layanan.',
             'tag' => 'Public Health',
             'icon' => 'M12 21s-7.5-4.6-9.7-9.2C.6 8.2 2.6 4 6.5 4c2.2 0 3.7 1.2 4.5 2.6C11.8 5.2 13.3 4 15.5 4c3.9 0 5.9 4.2 4.2 7.8C17.5 16.4 12 21 12 21Zm-1.3-7.7h2.6v-2.1h2.1V8.6h-2.1V6.5h-2.6v2.1H8.6v2.6h2.1v2.1Z',
         ],
         [
             'number' => '03',
-            'title' => 'Magister Hukum',
-            'short_title' => 'Hukum',
-            'slug' => $resolveProgramSlug(['s2-hukum', 'magister-hukum']),
-            'desc' => 'Program lanjutan untuk penguatan kompetensi hukum, tata kelola, advokasi, dan penyelesaian persoalan hukum modern.',
-            'tag' => 'Legal Governance',
-            'icon' => 'M12 2a1 1 0 0 1 1 1v2h5a1 1 0 1 1 0 2h-1l2.5 5a3.5 3.5 0 0 1-7 0L15 7h-2v11h4a1 1 0 1 1 0 2H7a1 1 0 1 1 0-2h4V7H9l2.5 5a3.5 3.5 0 0 1-7 0L7 7H6a1 1 0 1 1 0-2h5V3a1 1 0 0 1 1-1Zm-4 6-1.6 3h3.2L8 8Zm8 0-1.6 3h3.2L16 8Z',
-        ],
-        [
-            'number' => '04',
             'title' => 'Magister Manajemen Pendidikan',
             'short_title' => 'Manajemen Pendidikan',
             'slug' => $resolveProgramSlug(['s2-manajemen-pendidikan', 'magister-manajemen-pendidikan']),
-            'desc' => 'Mengembangkan kepemimpinan, manajemen, inovasi pendidikan, dan strategi pengelolaan lembaga yang adaptif terhadap zaman.',
+            'desc' => 'Mengembangkan kepemimpinan, manajemen, dan inovasi pendidikan yang adaptif terhadap kebutuhan zaman.',
             'tag' => 'Education Management',
-            'icon' => 'M12 3 1 9l11 6 9-4.91V17h2V9L12 3Zm0 14.2 7-3.8V17l-7 4-7-4v-3.6l7 3.8Z',
+            'icon' => 'M12 3 1 9l11 6 9-4.91V17h2V9L12 3Zm0 14.2 7-3.8V17l-7 4v-3.6l7 3.8Z',
+        ],
+        [
+            'number' => '04',
+            'title' => 'Magister Hukum',
+            'short_title' => 'Hukum',
+            'slug' => $resolveProgramSlug(['s2-hukum', 'magister-hukum']),
+            'desc' => 'Program lanjutan untuk penguatan kompetensi hukum, tata kelola, dan penyelesaian persoalan hukum modern.',
+            'tag' => 'Legal Governance',
+            'icon' => 'M12 2a1 1 0 0 1 1 1v2h5a1 1 0 1 1 0 2h-1l2.5 5a3.5 3.5 0 0 1-7 0L15 7h-2v11h4a1 1 0 1 1 0 2H7a1 1 0 1 1 0-2h4V7H9l2.5 5a3.5 3.5 0 0 1-7 0L7 7H6a1 1 0 1 1 0-2h5V3a1 1 0 0 1 1-1Zm-4 6-1.6 3h3.2L8 8Zm8 0-1.6 3h3.2L16 8Z',
         ],
     ];
 @endphp
@@ -54,6 +54,310 @@
 
 @section('title', 'Pascasarjana Universitas Ngudi Waluyo')
 @section('body_class', 'home-page')
+
+@push('styles')
+    <style>
+        .home-page .program-section {
+            position: relative;
+            overflow: hidden;
+            padding: clamp(54px, 6vw, 78px) 0 clamp(64px, 7vw, 96px);
+            background:
+                radial-gradient(circle at 12% 10%, rgba(45, 156, 219, .14), transparent 28%),
+                radial-gradient(circle at 88% 12%, rgba(247, 181, 0, .22), transparent 25%),
+                linear-gradient(180deg, #f8fcff 0%, #f3f8fa 52%, #eef5f6 100%);
+        }
+
+        .home-page .program-section::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(7, 43, 87, .045) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(7, 43, 87, .045) 1px, transparent 1px);
+            background-size: 42px 42px;
+            pointer-events: none;
+        }
+
+        .home-page .program-section::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: -170px;
+            width: min(760px, 82vw);
+            height: 300px;
+            transform: translateX(-50%);
+            border-radius: 999px;
+            background: radial-gradient(circle, rgba(7, 43, 87, .12), transparent 70%);
+            pointer-events: none;
+        }
+
+        .home-page .program-section .container {
+            position: relative;
+            z-index: 2;
+        }
+
+        .home-page .program-head {
+            max-width: 780px;
+            margin: 0 auto clamp(34px, 4vw, 54px);
+            text-align: center;
+        }
+
+        .home-page .program-kicker {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 0 auto 18px;
+            padding: 12px 22px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .92);
+            border: 1px solid rgba(7, 43, 87, .10);
+            color: #072b57;
+            box-shadow: 0 16px 38px rgba(15, 23, 42, .07);
+            font-size: 13px;
+            line-height: 1;
+            font-weight: 900;
+            letter-spacing: .07em;
+            text-transform: uppercase;
+        }
+
+        .home-page .program-kicker i {
+            color: #f7b500;
+        }
+
+        .home-page .program-head h2 {
+            margin: 0 0 16px;
+            color: #072b57;
+            font-size: clamp(34px, 4vw, 52px);
+            line-height: 1.05;
+            font-weight: 900;
+            letter-spacing: -.045em;
+            text-transform: uppercase;
+        }
+
+        .home-page .program-head p {
+            max-width: 720px;
+            margin: 0 auto;
+            color: #64748b;
+            font-size: clamp(15px, 1.45vw, 19px);
+            line-height: 1.75;
+            font-weight: 600;
+        }
+
+        .home-page .program-grid {
+            display: grid !important;
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            gap: 28px !important;
+            align-items: stretch;
+        }
+
+        .home-page .program-card {
+            position: relative;
+            isolation: isolate;
+            overflow: hidden;
+            min-height: 310px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 34px 28px 28px;
+            border-radius: 0 0 26px 26px;
+            border: 1px solid rgba(226, 232, 240, .95);
+            background: rgba(255, 255, 255, .92);
+            box-shadow: 0 22px 52px rgba(15, 23, 42, .08);
+            transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease;
+        }
+
+        .home-page .program-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: -2;
+            background:
+                radial-gradient(circle at 100% 0%, rgba(247, 181, 0, .18) 0 0, transparent 32%),
+                linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(255, 255, 255, .86));
+        }
+
+        .home-page .program-card::after {
+            content: "";
+            position: absolute;
+            top: -74px;
+            right: -54px;
+            width: 174px;
+            height: 174px;
+            z-index: -1;
+            border-radius: 999px;
+            background: rgba(247, 181, 0, .13);
+            transition: transform .3s ease, background .3s ease;
+        }
+
+        .home-page .program-card-glow,
+        .home-page .program-tag {
+            display: none !important;
+        }
+
+        .home-page .program-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(247, 181, 0, .46);
+            box-shadow: 0 34px 76px rgba(7, 43, 87, .15);
+        }
+
+        .home-page .program-card:hover::after {
+            transform: scale(1.12);
+            background: rgba(247, 181, 0, .20);
+        }
+
+        .home-page .program-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .home-page .program-icon {
+            width: 74px;
+            height: 74px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px;
+            color: #ffffff;
+            background: linear-gradient(135deg, #003f78 0%, #075895 100%);
+            box-shadow: 0 18px 32px rgba(7, 43, 87, .20);
+        }
+
+        .home-page .program-icon svg {
+            width: 36px;
+            height: 36px;
+            fill: currentColor;
+        }
+
+        .home-page .program-number {
+            width: 46px;
+            height: 46px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            color: #072b57;
+            background: #fff3c4;
+            border: 1px solid rgba(247, 181, 0, .42);
+            font-size: 14px;
+            line-height: 1;
+            font-weight: 900;
+            letter-spacing: .04em;
+            box-shadow: 0 10px 24px rgba(247, 181, 0, .13);
+        }
+
+        .home-page .program-body {
+            flex: 1;
+        }
+
+        .home-page .program-title {
+            max-width: 250px;
+            margin: 0 0 16px;
+            color: #072b57;
+            font-size: clamp(20px, 1.65vw, 25px);
+            line-height: 1.18;
+            font-weight: 900;
+            letter-spacing: -.025em;
+            text-transform: uppercase;
+        }
+
+        .home-page .program-desc {
+            max-width: 270px;
+            margin: 0;
+            color: #64748b;
+            font-size: 15px;
+            line-height: 1.74;
+            font-weight: 600;
+        }
+
+        .home-page .program-detail {
+            width: fit-content;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 26px;
+            padding: 10px 20px;
+            border-radius: 999px;
+            color: #072b57;
+            background: #ffffff;
+            border: 1px solid #dbe3ee;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, .05);
+            font-size: 13px;
+            line-height: 1;
+            font-weight: 900;
+            text-transform: none;
+            transition: .22s ease;
+        }
+
+        .home-page .program-detail i {
+            color: #f7b500;
+            transition: transform .22s ease;
+        }
+
+        .home-page .program-detail:hover {
+            transform: translateY(-2px);
+            color: #ffffff;
+            background: #f7b500;
+            border-color: #f7b500;
+            box-shadow: 0 16px 30px rgba(247, 181, 0, .24);
+        }
+
+        .home-page .program-detail:hover i {
+            color: #ffffff;
+            transform: translateX(3px);
+        }
+
+        @media (max-width: 1100px) {
+            .home-page .program-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .home-page .program-section {
+                padding: 46px 0 58px;
+            }
+
+            .home-page .program-kicker {
+                padding: 10px 16px;
+                font-size: 11px;
+            }
+
+            .home-page .program-head h2 {
+                font-size: 32px;
+            }
+
+            .home-page .program-head p {
+                font-size: 14px;
+            }
+
+            .home-page .program-grid {
+                grid-template-columns: 1fr !important;
+                gap: 18px !important;
+            }
+
+            .home-page .program-card {
+                min-height: 0;
+                padding: 28px 24px 24px;
+                border-radius: 0 0 24px 24px;
+            }
+
+            .home-page .program-icon {
+                width: 64px;
+                height: 64px;
+            }
+
+            .home-page .program-title,
+            .home-page .program-desc {
+                max-width: none;
+            }
+        }
+    </style>
+@endpush
 
 @section('content')
     <section class="hero">
