@@ -17,7 +17,7 @@ class ListVisionMissions extends ListRecords
             CreateAction::make()
                 ->label('Create Vision & Mission')
                 ->icon('heroicon-o-plus')
-                ->hidden(fn (): bool => VisionMission::count() > 0),
+                ->hidden(fn (): bool => ! (auth()->user()?->canManageContent() ?? false) || VisionMission::count() > 0),
         ];
     }
 }
