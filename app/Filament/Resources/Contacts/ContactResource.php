@@ -50,4 +50,9 @@ class ContactResource extends Resource
             'edit' => EditContact::route('/{record}/edit'),
         ];
     }
+
+    public static function canCreate(): bool
+    {
+        return Contact::query()->doesntExist();
+    }
 }
