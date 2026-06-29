@@ -1,4 +1,13 @@
-/* Final mobile slider ratio override. Loaded last through Vite. */
+/* Final slider override. Loaded last through Vite. */
+html body.home-page section.hero .hero-arrow,
+html body.home-page section.hero .hero-arrow.left,
+html body.home-page section.hero .hero-arrow.right {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
 @media (max-width: 640px) {
     html body.home-page section.hero {
         width: 100% !important;
@@ -24,6 +33,12 @@
     html body.home-page section.hero .hero-content {
         height: 100% !important;
         min-height: 0 !important;
+    }
+
+    html body.home-page section.hero .hero-text {
+        margin-left: 18px !important;
+        padding-top: 4px !important;
+        padding-bottom: 4px !important;
     }
 
     html body.home-page section.hero .hero-title {
