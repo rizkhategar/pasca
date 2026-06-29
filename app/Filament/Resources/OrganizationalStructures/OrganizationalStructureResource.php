@@ -21,7 +21,7 @@ class OrganizationalStructureResource extends Resource
     protected static ?string $navigationLabel = 'Organizational Structure';
     protected static ?string $modelLabel = 'Organizational Structure';
     protected static ?string $pluralModelLabel = 'Organizational Structure';
-    protected static string|UnitEnum|null $navigationGroup = 'Profil';
+    protected static string|UnitEnum|null $navigationGroup = 'Profile';
     protected static ?int $navigationSort = 3;
     public static function form(Schema $schema): Schema { return OrganizationalStructureForm::configure($schema); }
     public static function table(Table $table): Table { return Listing::configure($table); }
