@@ -9,7 +9,7 @@ use App\Filament\Resources\DetailDosens\RelationManagers\ScopusYearlyStatsRelati
 use App\Filament\Resources\DetailDosens\RelationManagers\ServiceYearliesRelationManager;
 use App\Filament\Resources\UndergraduateLecturers\Schemas\UndergraduateLecturerForm;
 use App\Filament\Resources\UndergraduateLecturers\Tables\UndergraduateLecturersTable;
-use App\Models\UndergraduateLecturerDetail;
+use App\Models\UndergraduateLecturer;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -18,7 +18,7 @@ use UnitEnum;
 
 class UndergraduateLecturerResource extends Resource
 {
-    protected static ?string $model = UndergraduateLecturerDetail::class;
+    protected static ?string $model = UndergraduateLecturer::class;
 
     protected static ?string $slug = 'undergraduate-lecturers';
 
