@@ -59,8 +59,11 @@
     <section class="hero">
         @if (isset($sliders) && $sliders->count() > 0)
             @foreach ($sliders as $index => $slider)
+                @php
+                    $sliderImage = '/storage/' . ltrim($slider->normalized_image_path, '/');
+                @endphp
                 <div class="hero-slide {{ $index === 0 ? 'active' : '' }}"
-                    style="background-image: url('{{ route('sliders.image', $slider->id) }}');"
+                    style="background-image: url('{{ $sliderImage }}');"
                     data-duration="{{ $slider->duration_ms ?? 3000 }}">
                 </div>
             @endforeach
