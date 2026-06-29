@@ -3,8 +3,11 @@
 namespace App\Filament\Resources\DetailDosens\Pages;
 
 use App\Filament\Resources\DetailDosens\DetailDosenResource;
-use Filament\Resources\Pages\EditRecord;
+use App\Models\PascaLecturer;
+use App\Models\PostgraduateLecturer;
+use App\Models\PostgraduateLecturerDetail;
 use Filament\Actions;
+use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
 
 class EditDetailDosen extends EditRecord
@@ -19,57 +22,64 @@ class EditDetailDosen extends EditRecord
         ];
     }
 
-    /**
-     * BRAINSTORMING OK: Intersepsi Pemuatan Data (Hydration Hook)
-     * Mengisi kotak form menggunakan data PascaLecturer jika ada.
-     * Jika tidak ada, pinjam data dari sinta_lecturer_details sebagai draf awal.
-     */
     protected function mutateFormDataBeforeFill(array $data): array
     {
-        // Cari apakah dosen ini sudah terdaftar di data kustom utama
-        $pasca = \App\Models\PascaLecturer::find($this->record->sinta_id);
+        $postgraduate = PostgraduateLecturer::query()->where('sinta_id', $this->record->sinta_id)->first();
+        $legacyPasca = PascaLecturer::query()->where('sinta_id', $this->record->sinta_id)->first();
 
-        if ($pasca) {
-            $data['name']          = $pasca->name;
-            $data['institution']   = $pasca->institution;
-            $data['study_program'] = $pasca->study_program;
+        $source = $postgraduate ?? $legacyPasca;
+
+        if ($source) {
+            $data['institution'] = $source->institution;
+            $data['study_program'] = $source->study_program;
         } else {
-            // Fallback awal: pinjam data dari hasil scraping agar admin tidak mengetik dari nol
-            $data['name']          = $this->record->name;
-            $data['institution']   = $this->record->institution;
+            $data['institution'] = $this->record->institution;
             $data['study_program'] = $this->record->study_program;
         }
 
         return $data;
     }
 
-    /**
-     * BRAINSTORMING OK: Intersepsi Penyimpanan Data (Saving Hook)
-     * Mengunci tabel sinta_lecturer_details agar TIDAK BERUBAH,
-     * dan mengalihkan seluruh pembaruan formulir langsung ke tabel pasca_lecturers.
-     */
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        // Simpan atau perbarui data murni ke tabel pasca_lecturers
-        \App\Models\PascaLecturer::updateOrCreate(
-            ['sinta_id' => $record->sinta_id], // Kunci pencarian berdasarkan SINTA ID
+        $postgraduate = PostgraduateLecturer::query()->updateOrCreate(
+            ['sinta_id' => $record->sinta_id],
             [
-                'name'          => $data['name'] ?? null,
-                'institution'   => $data['institution'] ?? null,
+                'name' => $record->lecturer?->name,
+                'institution' => $data['institution'] ?? null,
                 'study_program' => $data['study_program'] ?? null,
+                'profile_photo' => $record->profile_photo,
             ]
         );
 
-        // Catatan: Sinkronisasi tabel pivot 'departement' otomatis berjalan di latar belakang
-        // karena di picu oleh 'saveRelationshipsUsing' yang sudah kita pasang di DetailDosenForm.
+        PostgraduateLecturerDetail::query()->updateOrCreate(
+            ['postgraduate_lecturer_id' => $postgraduate->id],
+            [
+                'sinta_id' => $record->sinta_id,
+                'institution' => $data['institution'] ?? null,
+                'study_program' => $data['study_program'] ?? null,
+                'profile_photo' => $record->profile_photo,
+                'research_interests' => $record->research_interests,
+                'sinta_score_overall' => $record->sinta_score_overall,
+                'sinta_score_3yr' => $record->sinta_score_3yr,
+                'affil_score' => $record->affil_score,
+                'affil_score_3yr' => $record->affil_score_3yr,
+            ]
+        );
 
-        // Kembalikan record lama hasil scraping seutuhnya tanpa memodifikasi kolomnya
+        PascaLecturer::query()->updateOrCreate(
+            ['sinta_id' => $record->sinta_id],
+            [
+                'name' => $record->lecturer?->name,
+                'institution' => $data['institution'] ?? null,
+                'study_program' => $data['study_program'] ?? null,
+                'profile_photo' => $record->profile_photo,
+            ]
+        );
+
         return $record;
     }
 
-    /**
-     * Menghilangkan semua tab relasi khusus di halaman Edit sesuai draf awal
-     */
     public function getRelationManagers(): array
     {
         return [];
