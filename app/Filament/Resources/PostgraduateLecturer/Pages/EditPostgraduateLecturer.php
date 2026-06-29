@@ -16,7 +16,11 @@ class EditPostgraduateLecturer extends EditRecord
     {
         return [
             Actions\ViewAction::make(),
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()
+                ->action(function (): void {
+                    PostgraduateLecturer::where('sinta_id', $this->record->sinta_id)->delete();
+                    $this->redirect(PostgraduateLecturerResource::getUrl('index'));
+                }),
         ];
     }
 
