@@ -6,8 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\PostgraduateLecturer;
 use App\Models\SintaLecturer;
 use App\Models\SintaLecturerDetail;
-use App\Models\UndergraduateLecturer;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 
@@ -16,21 +14,14 @@ class DosenApiV2Controller extends Controller
     /**
      * List all SINTA lecturers.
      *
-     * Returns all lecturers from the `sinta_lecturers` table.
-     *
-     * Registration flags:
-     *
-     * | Field | Description |
-     * | --- | --- |
-     * | `registered_as.postgraduate` | True when the lecturer is registered in `postgraduate_lecturers`. |
-     * | `registered_as.undergraduate` | True when the lecturer is registered in `undergraduate_lecturers`. |
+     * Returns all lecturers from the `sinta_lecturers` master table.
      *
      * @group Lecturer API
      */
     public function index(): JsonResponse
     {
         $data = SintaLecturer::query()
-            ->with(['detail', 'postgraduateLecturer', 'undergraduateLecturer'])
+            ->with(['detail', 'postgraduateLecturer'])
             ->orderBy('name')
             ->get()
             ->map(fn (SintaLecturer $lecturer) => $this->sintaLecturerPayload($lecturer))
@@ -40,52 +31,9 @@ class DosenApiV2Controller extends Controller
     }
 
     /**
-     * List registered lecturers by category.
+     * Show full SINTA detail for one lecturer.
      *
-     * Category available:
-     *
-     * | Category | Description |
-     * | --- | --- |
-     * | `postgraduate` | Shows postgraduate lecturers from `postgraduate_lecturers` and their `postgraduate_lecturer_study_programs`. |
-     * | `undergraduate` | Shows undergraduate lecturers from `undergraduate_lecturers` and their `undergraduate_lecturer_study_programs`. |
-     *
-     * Example: `GET /api/dosen/postgraduate`
-     *
-     * @group Lecturer API
-     *
-     * @urlParam category string required Available values: `postgraduate`, `undergraduate`. Example: postgraduate
-     */
-    public function byCategory(string $category): JsonResponse
-    {
-        $category = $this->category($category);
-        $model = $this->membershipModel($category);
-
-        $data = $model::query()
-            ->with(['sintaLecturer.detail', 'studyPrograms'])
-            ->orderBy('name')
-            ->get()
-            ->map(fn (Model $lecturer) => $this->membershipPayload($lecturer, $category))
-            ->values();
-
-        return $this->ok('Registered lecturers for the selected category.', $data, [
-            'category' => $category,
-            'category_available' => $this->categoryAvailable(),
-            'membership_table' => $this->membershipTable($category),
-            'pivot_table' => $this->pivotTable($category),
-        ]);
-    }
-
-    /**
-     * Show full SINTA detail for a registered lecturer.
-     *
-     * Returns full SINTA detail for one lecturer in the selected category.
-     *
-     * Category available:
-     *
-     * | Category | Description |
-     * | --- | --- |
-     * | `postgraduate` | Shows detail only when the lecturer is registered in `postgraduate_lecturers`. |
-     * | `undergraduate` | Shows detail only when the lecturer is registered in `undergraduate_lecturers`. |
+     * Returns master lecturer data, optional postgraduate registration, SINTA detail, and all available publication/yearly modules.
      *
      * Module included in full detail:
      *
@@ -101,18 +49,25 @@ class DosenApiV2Controller extends Controller
      *
      * @group Lecturer API
      *
-     * @urlParam category string required Available values: `postgraduate`, `undergraduate`. Example: postgraduate
      * @urlParam sinta_id string required SINTA ID. Example: 6954305
      */
-    public function show(string $category, string $sinta_id): JsonResponse
+    public function show(string $sinta_id): JsonResponse
     {
-        $category = $this->category($category);
-        $membership = $this->membership($category, $sinta_id, $this->allRelations());
-        $detail = $membership->sintaDetail;
+        $lecturer = SintaLecturer::query()
+            ->with([
+                'postgraduateLecturer.studyPrograms',
+                'detail' => fn ($query) => $query->with($this->allRelations()),
+            ])
+            ->where('sinta_id', $sinta_id)
+            ->firstOrFail();
 
-        return $this->ok('Full SINTA detail for a registered lecturer.', [
-            'category' => $category,
-            'membership' => $this->membershipPayload($membership, $category),
+        $detail = $lecturer->detail;
+
+        return $this->ok('Full SINTA detail for one lecturer.', [
+            'sinta_lecturer' => $this->sintaLecturerPayload($lecturer),
+            'postgraduate_membership' => $lecturer->postgraduateLecturer
+                ? $this->postgraduateMembershipPayload($lecturer->postgraduateLecturer)
+                : null,
             'sinta_lecturer_details' => $detail ? $this->lecturerDetailPayload($detail) : null,
             'garuda' => $detail ? $this->moduleData($detail, 'garuda') : $this->emptyModule(),
             'scopus' => $detail ? $this->moduleData($detail, 'scopus') : $this->emptyModule(),
@@ -121,9 +76,7 @@ class DosenApiV2Controller extends Controller
             'research' => $detail ? $this->moduleData($detail, 'research') : $this->emptyModule(),
             'service' => $detail ? $this->moduleData($detail, 'service') : $this->emptyModule(),
         ], [
-            'category' => $category,
             'sinta_id' => $sinta_id,
-            'category_available' => $this->categoryAvailable(),
             'module_available' => $this->moduleAvailable(),
         ]);
     }
@@ -132,13 +85,6 @@ class DosenApiV2Controller extends Controller
      * Show selected SINTA data module.
      *
      * Returns one selected module. Without `{mode}`, the response returns both `index` and `yearly` keys when available.
-     *
-     * Category available:
-     *
-     * | Category | Description |
-     * | --- | --- |
-     * | `postgraduate` | Shows module data only for lecturers registered in `postgraduate_lecturers`. |
-     * | `undergraduate` | Shows module data only for lecturers registered in `undergraduate_lecturers`. |
      *
      * Module available:
      *
@@ -154,26 +100,18 @@ class DosenApiV2Controller extends Controller
      *
      * @group Lecturer API
      *
-     * @urlParam category string required Available values: `postgraduate`, `undergraduate`. Example: postgraduate
      * @urlParam sinta_id string required SINTA ID. Example: 6954305
      * @urlParam module string required Available values: `garuda`, `scopus`, `scholar`, `book`, `research`, `service`, `lecturer-details`. Example: garuda
      */
-    public function module(string $category, string $sinta_id, string $module): JsonResponse
+    public function module(string $sinta_id, string $module): JsonResponse
     {
-        return $this->moduleMode($category, $sinta_id, $module, null);
+        return $this->moduleMode($sinta_id, $module, null);
     }
 
     /**
      * Show selected SINTA data module by mode.
      *
      * Use `index` for list/table data only and `yearly` for yearly statistics only.
-     *
-     * Category available:
-     *
-     * | Category | Description |
-     * | --- | --- |
-     * | `postgraduate` | Shows selected data only for lecturers registered in `postgraduate_lecturers`. |
-     * | `undergraduate` | Shows selected data only for lecturers registered in `undergraduate_lecturers`. |
      *
      * Module available:
      *
@@ -196,31 +134,32 @@ class DosenApiV2Controller extends Controller
      *
      * @group Lecturer API
      *
-     * @urlParam category string required Available values: `postgraduate`, `undergraduate`. Example: postgraduate
      * @urlParam sinta_id string required SINTA ID. Example: 6954305
      * @urlParam module string required Available values: `garuda`, `scopus`, `scholar`, `book`, `research`, `service`, `lecturer-details`. Example: garuda
      * @urlParam mode string required Available values: `index`, `yearly`. Example: yearly
      */
-    public function moduleMode(string $category, string $sinta_id, string $module, ?string $mode = null): JsonResponse
+    public function moduleMode(string $sinta_id, string $module, ?string $mode = null): JsonResponse
     {
-        $category = $this->category($category);
         $module = $this->moduleName($module);
         $mode = $mode ? $this->mode($mode) : null;
-        $membership = $this->membership($category, $sinta_id, $this->moduleRelations($module));
-        $detail = $membership->sintaDetail;
+
+        $lecturer = SintaLecturer::query()
+            ->with(['detail' => fn ($query) => $query->with($this->moduleRelations($module))])
+            ->where('sinta_id', $sinta_id)
+            ->firstOrFail();
+
+        $detail = $lecturer->detail;
 
         if (! $detail) {
-            abort(404, 'SINTA lecturer detail was not found for this registered lecturer.');
+            abort(404, 'SINTA lecturer detail was not found for this lecturer.');
         }
 
         $payload = $this->moduleData($detail, $module);
 
-        return $this->ok('Selected SINTA module data for a registered lecturer.', $mode ? [$mode => $payload[$mode] ?? []] : $payload, [
-            'category' => $category,
+        return $this->ok('Selected SINTA module data for one lecturer.', $mode ? [$mode => $payload[$mode] ?? []] : $payload, [
             'sinta_id' => $sinta_id,
             'module' => $module,
             'mode' => $mode,
-            'category_available' => $this->categoryAvailable(),
             'module_available' => $this->moduleAvailable(),
             'mode_available' => $this->modeAvailable(),
         ]);
@@ -232,14 +171,6 @@ class DosenApiV2Controller extends Controller
             'meta' => array_merge(['description' => $description], $meta),
             'data' => $data,
         ]);
-    }
-
-    private function category(string $category): string
-    {
-        $category = strtolower(trim($category));
-        abort_unless(in_array($category, ['postgraduate', 'undergraduate'], true), 404, 'Allowed categories are postgraduate and undergraduate.');
-
-        return $category;
     }
 
     private function moduleName(string $module): string
@@ -262,43 +193,6 @@ class DosenApiV2Controller extends Controller
         abort_unless(in_array($mode, ['index', 'yearly'], true), 404, 'Allowed modes are index and yearly.');
 
         return $mode;
-    }
-
-    private function membershipModel(string $category): string
-    {
-        return $category === 'postgraduate' ? PostgraduateLecturer::class : UndergraduateLecturer::class;
-    }
-
-    private function membership(string $category, string $sintaId, array $relations = []): Model
-    {
-        $model = $this->membershipModel($category);
-
-        return $model::query()
-            ->with([
-                'sintaLecturer',
-                'studyPrograms',
-                'sintaDetail' => fn ($query) => $query->with($relations),
-            ])
-            ->where('sinta_id', $sintaId)
-            ->firstOrFail();
-    }
-
-    private function membershipTable(string $category): string
-    {
-        return $category === 'postgraduate' ? 'postgraduate_lecturers' : 'undergraduate_lecturers';
-    }
-
-    private function pivotTable(string $category): string
-    {
-        return $category === 'postgraduate' ? 'postgraduate_lecturer_study_programs' : 'undergraduate_lecturer_study_programs';
-    }
-
-    private function categoryAvailable(): array
-    {
-        return [
-            'postgraduate' => 'Shows postgraduate lecturers.',
-            'undergraduate' => 'Shows undergraduate lecturers.',
-        ];
     }
 
     private function moduleAvailable(): array
@@ -371,17 +265,16 @@ class DosenApiV2Controller extends Controller
         return ['index' => [], 'yearly' => []];
     }
 
-    private function membershipPayload(Model $lecturer, string $category): array
+    private function postgraduateMembershipPayload(PostgraduateLecturer $lecturer): array
     {
         return [
-            'category' => $category,
-            'membership_table' => $this->membershipTable($category),
+            'membership_table' => 'postgraduate_lecturers',
+            'pivot_table' => 'postgraduate_lecturer_study_programs',
             'id' => $lecturer->id,
             'sinta_id' => $lecturer->sinta_id,
-            'name' => $lecturer->name ?? $lecturer->sintaLecturer?->name,
+            'name' => $lecturer->name,
             'institution' => $lecturer->institution,
-            'profile_photo_url' => $this->photoUrl($lecturer->profile_photo ?? $lecturer->sintaDetail?->profile_photo),
-            'sinta_lecturer' => $lecturer->sintaLecturer ? $this->sintaLecturerPayload($lecturer->sintaLecturer, false) : null,
+            'profile_photo_url' => $this->photoUrl($lecturer->profile_photo),
             'study_programs' => collect($lecturer->studyPrograms ?? [])->map(fn ($program) => [
                 'id' => $program->id,
                 'id_unw_program_studi' => $program->id_unw_program_studi,
@@ -394,9 +287,9 @@ class DosenApiV2Controller extends Controller
         ];
     }
 
-    private function sintaLecturerPayload(SintaLecturer $lecturer, bool $withRegistration = true): array
+    private function sintaLecturerPayload(SintaLecturer $lecturer): array
     {
-        $data = [
+        return [
             'sinta_id' => $lecturer->sinta_id,
             'name' => $lecturer->name,
             'department' => $lecturer->department,
@@ -408,16 +301,10 @@ class DosenApiV2Controller extends Controller
             'affiliation_score' => $lecturer->affiliation_score,
             'profile_url' => $lecturer->profile_url,
             'has_sinta_detail' => (bool) $lecturer->detail,
-        ];
-
-        if ($withRegistration) {
-            $data['registered_as'] = [
+            'registered_as' => [
                 'postgraduate' => (bool) $lecturer->postgraduateLecturer,
-                'undergraduate' => (bool) $lecturer->undergraduateLecturer,
-            ];
-        }
-
-        return $data;
+            ],
+        ];
     }
 
     private function lecturerDetailPayload(SintaLecturerDetail $detail): array

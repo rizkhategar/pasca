@@ -10,22 +10,18 @@ Route::prefix('dosen')
         Route::get('/', 'index')
             ->name('index');
 
-        Route::get('/{category}', 'byCategory')
-            ->where('category', 'postgraduate|undergraduate|Postgraduate|Undergraduate')
-            ->name('category.index');
+        Route::get('/{sinta_id}', 'show')
+            ->where('sinta_id', '[0-9]+')
+            ->name('show');
 
-        Route::get('/{category}/{sinta_id}', 'show')
-            ->where('category', 'postgraduate|undergraduate|Postgraduate|Undergraduate')
-            ->name('category.show');
-
-        Route::get('/{category}/{sinta_id}/{module}', 'module')
-            ->where('category', 'postgraduate|undergraduate|Postgraduate|Undergraduate')
+        Route::get('/{sinta_id}/{module}', 'module')
+            ->where('sinta_id', '[0-9]+')
             ->where('module', 'garuda|scopus|scholar|book|books|research|researches|service|services|lecturer-details|lecturer-detail|details|detail')
-            ->name('category.module');
+            ->name('module');
 
-        Route::get('/{category}/{sinta_id}/{module}/{mode}', 'moduleMode')
-            ->where('category', 'postgraduate|undergraduate|Postgraduate|Undergraduate')
+        Route::get('/{sinta_id}/{module}/{mode}', 'moduleMode')
+            ->where('sinta_id', '[0-9]+')
             ->where('module', 'garuda|scopus|scholar|book|books|research|researches|service|services|lecturer-details|lecturer-detail|details|detail')
             ->where('mode', 'index|yearly')
-            ->name('category.module.mode');
+            ->name('module.mode');
     });
