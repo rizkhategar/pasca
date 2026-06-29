@@ -31,7 +31,11 @@ class AdminPanelProvider extends PanelProvider
             \BezhanSalleh\FilamentShield\ShieldPlugin::class,
         ] as $pluginClass) {
             if (class_exists($pluginClass)) {
-                $shieldPlugin = $pluginClass::make();
+                $shieldPlugin = $pluginClass::make()
+                    ->navigationLabel('Roles')
+                    ->navigationGroup('Filament Shield')
+                    ->navigationSort(1)
+                    ->registerNavigation(true);
                 break;
             }
         }
