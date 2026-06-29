@@ -40,7 +40,7 @@ return [
         /*
          * Description rendered on the home page of the API documentation (`/docs/api`).
          */
-        'description' => 'Lecturer SINTA API documentation. Default documentation language is English. Use the `lang=id` query parameter on API endpoints to switch response metadata/descriptions to Bahasa Indonesia. Dokumentasi API Dosen SINTA. Bahasa default adalah English, tetapi response metadata dapat menggunakan Bahasa Indonesia dengan query `?lang=id`.',
+        'description' => 'Lecturer SINTA API documentation. This API provides lecturer data from sinta_lecturers, registered postgraduate and undergraduate lecturer memberships, full SINTA details, and module-specific publication/yearly statistics endpoints.',
     ],
 
     'ui' => [
