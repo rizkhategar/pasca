@@ -61,17 +61,59 @@ class Slider extends Model
         }
 
         $path = trim(str_replace('\\', '/', $value));
+        $path = preg_replace('#^/?storage/app/public/#', '', $path) ?: $path;
+        $path = preg_replace('#^/?app/public/#', '', $path) ?: $path;
         $path = preg_replace('#^/?storage/#', '', $path) ?: $path;
         $path = preg_replace('#^/?public/#', '', $path) ?: $path;
-        $path = preg_replace('#^/?app/public/#', '', $path) ?: $path;
-        $path = preg_replace('#^/?storage/app/public/#', '', $path) ?: $path;
 
         return ltrim($path, '/');
+    }
+
+    public static function resolveImageFilePath(mixed $value): ?string
+    {
+        $path = self::normalizeImagePath($value);
+
+        if (! $path) {
+            return null;
+        }
+
+        $candidates = array_values(array_unique([
+            $path,
+            'sliders/' . basename($path),
+        ]));
+
+        foreach ($candidates as $candidate) {
+            if (Storage::disk('public')->exists($candidate)) {
+                return Storage::disk('public')->path($candidate);
+            }
+
+            $storagePath = storage_path('app/public/' . ltrim($candidate, '/'));
+            if (is_file($storagePath)) {
+                return $storagePath;
+            }
+
+            $publicStoragePath = public_path('storage/' . ltrim($candidate, '/'));
+            if (is_file($publicStoragePath)) {
+                return $publicStoragePath;
+            }
+
+            $publicPath = public_path(ltrim($candidate, '/'));
+            if (is_file($publicPath)) {
+                return $publicPath;
+            }
+        }
+
+        return null;
     }
 
     public function getNormalizedImagePathAttribute(): ?string
     {
         return self::normalizeImagePath($this->image_path);
+    }
+
+    public function getResolvedImageFilePathAttribute(): ?string
+    {
+        return self::resolveImageFilePath($this->image_path);
     }
 
     protected static function booted(): void

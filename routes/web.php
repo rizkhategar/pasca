@@ -20,9 +20,9 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/storage/{path}', function (string $path) {
     $path = normalizePublicStoragePath($path);
-    abort_if(Str::contains($path, ['..', '\\']), 404);
+    abort_if(Str::contains((string) $path, ['..', '\\']), 404);
 
-    if (preg_match('#^about-pascasarjanas/(\d+)/director-image#', $path, $matches)) {
+    if (preg_match('#^about-pascasarjanas/(\d+)/director-image#', (string) $path, $matches)) {
         $record = AboutPostgraduate::findOrFail($matches[1]);
         $imagePath = AboutPostgraduate::normalizeImagePath($record->direktur_image);
 
@@ -35,7 +35,7 @@ Route::get('/storage/{path}', function (string $path) {
         ]);
     }
 
-    if (preg_match('#^about-pascasarjanas/(\d+)/point-icons/(\d+)#', $path, $matches)) {
+    if (preg_match('#^about-pascasarjanas/(\d+)/point-icons/(\d+)#', (string) $path, $matches)) {
         $record = AboutPostgraduate::findOrFail($matches[1]);
         $imagePath = AboutPostgraduate::normalizeImagePath(data_get($record->points ?? [], $matches[2] . '.icon'));
 
@@ -48,16 +48,17 @@ Route::get('/storage/{path}', function (string $path) {
         ]);
     }
 
-    abort_unless($path && Storage::disk('public')->exists($path), 404);
-    return response()->file(Storage::disk('public')->path($path), ['Cache-Control' => 'public, max-age=31536000']);
+    $filePath = Slider::resolveImageFilePath($path);
+    abort_unless($filePath, 404);
+    return response()->file($filePath, ['Cache-Control' => 'public, max-age=31536000']);
 })->where('path', '.*')->name('public-storage.file');
 
 Route::get('/sliders/{slider}/image', function (Slider $slider) {
-    $path = Slider::normalizeImagePath($slider->image_path);
+    $filePath = $slider->resolved_image_file_path;
 
-    abort_unless($path && Storage::disk('public')->exists($path), 404);
+    abort_unless($filePath, 404);
 
-    return response()->file(Storage::disk('public')->path($path), [
+    return response()->file($filePath, [
         'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
         'Pragma' => 'no-cache',
         'Expires' => '0',
