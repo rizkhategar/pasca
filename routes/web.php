@@ -16,6 +16,23 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
+Route::get('/slider-image/{id}', function (int $id) {
+    $slider = Slider::query()->findOrFail($id);
+    $path = Slider::normalizeImagePath($slider->image_path);
+
+    abort_unless($path && Storage::disk('public')->exists($path), 404);
+
+    return response()->file(Storage::disk('public')->path($path), [
+        'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+        'Pragma' => 'no-cache',
+        'Expires' => '0',
+    ]);
+})->whereNumber('id')->name('slider.image');
+
+Route::get('/sliders/{id}/image', function (int $id) {
+    return redirect()->route('slider.image', ['id' => $id]);
+})->whereNumber('id')->name('sliders.image');
+
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/storage/{path}', function (string $path) {
@@ -52,18 +69,6 @@ Route::get('/storage/{path}', function (string $path) {
     abort_unless($filePath, 404);
     return response()->file($filePath, ['Cache-Control' => 'public, max-age=31536000']);
 })->where('path', '.*')->name('public-storage.file');
-
-Route::get('/sliders/{slider}/image', function (Slider $slider) {
-    $filePath = $slider->resolved_image_file_path;
-
-    abort_unless($filePath, 404);
-
-    return response()->file($filePath, [
-        'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
-        'Pragma' => 'no-cache',
-        'Expires' => '0',
-    ]);
-})->name('sliders.image');
 
 Route::get('/organization-structures/{organizationStructure}/image', function (OrganizationalStructure $organizationStructure) {
     $path = normalizePublicStoragePath($organizationStructure->image_path);
