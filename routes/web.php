@@ -48,12 +48,12 @@ Route::get('/storage/{path}', function (string $path) {
         ]);
     }
 
-    abort_unless(Storage::disk('public')->exists($path), 404);
+    abort_unless($path && Storage::disk('public')->exists($path), 404);
     return response()->file(Storage::disk('public')->path($path), ['Cache-Control' => 'public, max-age=31536000']);
 })->where('path', '.*')->name('public-storage.file');
 
 Route::get('/sliders/{slider}/image', function (Slider $slider) {
-    $path = normalizePublicStoragePath($slider->image_path);
+    $path = Slider::normalizeImagePath($slider->image_path);
 
     abort_unless($path && Storage::disk('public')->exists($path), 404);
 
@@ -105,16 +105,8 @@ Route::middleware(['web', 'auth'])->group(function () {
 });
 
 if (! function_exists('normalizePublicStoragePath')) {
-    function normalizePublicStoragePath(?string $path): ?string
+    function normalizePublicStoragePath(mixed $path): ?string
     {
-        if (! $path) {
-            return null;
-        }
-
-        $path = trim(str_replace('\\', '/', $path));
-        $path = preg_replace('#^/?storage/#', '', $path) ?: $path;
-        $path = preg_replace('#^/?public/#', '', $path) ?: $path;
-
-        return ltrim($path, '/');
+        return Slider::normalizeImagePath($path);
     }
 }
