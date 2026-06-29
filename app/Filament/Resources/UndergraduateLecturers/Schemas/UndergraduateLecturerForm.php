@@ -18,7 +18,7 @@ class UndergraduateLecturerForm
 
                 Placeholder::make('lecturer_name')
                     ->label('Nama Lengkap')
-                    ->content(fn ($record) => $record?->sintaLecturer?->name ?? $record?->lecturer?->name ?? '-'),
+                    ->content(fn ($record) => $record?->sintaLecturer?->name ?? $record?->name ?? '-'),
 
                 TextInput::make('institution')->label('Institusi')->default(null),
                 TextInput::make('study_program')->label('Program Studi')->default(null),
@@ -29,12 +29,12 @@ class UndergraduateLecturerForm
                     ->searchable()
                     ->multiple()
                     ->afterStateHydrated(function (Select $component, $record) {
-                        if (! $record?->lecturer) {
+                        if (! $record) {
                             return;
                         }
 
                         $component->state(
-                            $record->lecturer
+                            $record
                                 ->studyPrograms()
                                 ->pluck('study_programs.id')
                                 ->map(fn ($id): string => (string) $id)
@@ -42,13 +42,13 @@ class UndergraduateLecturerForm
                         );
                     })
                     ->saveRelationshipsUsing(function ($record, $state) {
-                        if (! $record?->lecturer) {
+                        if (! $record) {
                             return;
                         }
 
                         $ids = collect($state ?? [])->map(fn ($id): string => trim((string) $id))->filter()->unique()->values()->toArray();
                         StudyProgramOptions::ensureStudyPrograms($ids);
-                        $record->lecturer->studyPrograms()->sync($ids);
+                        $record->studyPrograms()->sync($ids);
                     })
                     ->dehydrated(false)
                     ->default(null),
