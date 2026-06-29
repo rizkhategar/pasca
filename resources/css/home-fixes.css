@@ -2,9 +2,10 @@
 .home-page .hero {
     position: relative !important;
     width: 100% !important;
-    height: auto !important;
-    min-height: 0 !important;
-    aspect-ratio: 16 / 9 !important;
+    height: clamp(320px, 33vw, 520px) !important;
+    min-height: 320px !important;
+    max-height: 520px !important;
+    aspect-ratio: auto !important;
     overflow: hidden !important;
     background: var(--primary-dark, #031f42) !important;
 }
@@ -32,7 +33,7 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, rgba(3, 20, 46, .78), rgba(7, 43, 87, .42), rgba(3, 20, 46, .62));
+    background: linear-gradient(90deg, rgba(3, 20, 46, .72), rgba(7, 43, 87, .34), rgba(3, 20, 46, .54));
 }
 
 .home-page .hero > .container {
@@ -62,7 +63,7 @@
 .home-page .hero-title {
     margin: 0 0 clamp(4px, .9vw, 10px) !important;
     color: #fff !important;
-    font-size: clamp(22px, 3.2vw, 46px) !important;
+    font-size: clamp(24px, 3vw, 42px) !important;
     line-height: 1.12 !important;
     font-weight: 800 !important;
     letter-spacing: .02em !important;
@@ -71,9 +72,9 @@
 
 .home-page .hero-subtitle {
     max-width: 520px !important;
-    margin: 0 0 clamp(12px, 2vw, 24px) !important;
+    margin: 0 0 clamp(12px, 2vw, 22px) !important;
     color: #fff !important;
-    font-size: clamp(13px, 1.55vw, 20px) !important;
+    font-size: clamp(14px, 1.35vw, 19px) !important;
     line-height: 1.45 !important;
     font-weight: 500 !important;
 }
@@ -82,13 +83,13 @@
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    min-width: clamp(170px, 22vw, 260px) !important;
-    height: clamp(40px, 4.3vw, 56px) !important;
+    min-width: clamp(170px, 20vw, 250px) !important;
+    height: clamp(40px, 4vw, 54px) !important;
     padding: 0 clamp(16px, 2.2vw, 30px) !important;
     border-radius: 7px !important;
     background: var(--yellow, #f7b500) !important;
     color: #fff !important;
-    font-size: clamp(12px, 1.25vw, 18px) !important;
+    font-size: clamp(12px, 1.15vw, 17px) !important;
     font-weight: 800 !important;
     text-transform: uppercase !important;
     box-shadow: 0 8px 18px rgba(247, 181, 0, .28) !important;
@@ -98,13 +99,13 @@
     position: absolute !important;
     top: 50% !important;
     transform: translateY(-50%) !important;
-    width: clamp(34px, 4vw, 48px) !important;
-    height: clamp(34px, 4vw, 48px) !important;
+    width: clamp(34px, 3.6vw, 46px) !important;
+    height: clamp(34px, 3.6vw, 46px) !important;
     border: 0 !important;
     border-radius: 50% !important;
     background: rgba(255, 255, 255, .92) !important;
     color: var(--primary, #072b57) !important;
-    font-size: clamp(20px, 2.4vw, 28px) !important;
+    font-size: clamp(20px, 2.3vw, 27px) !important;
     font-weight: 700 !important;
     z-index: 8 !important;
     display: flex !important;
@@ -113,11 +114,11 @@
 }
 
 .home-page .hero-arrow.left {
-    left: clamp(14px, 4vw, 76px) !important;
+    left: clamp(18px, 6vw, 92px) !important;
 }
 
 .home-page .hero-arrow.right {
-    right: clamp(14px, 4vw, 76px) !important;
+    right: clamp(18px, 6vw, 92px) !important;
 }
 
 .home-page .hero-dots {
@@ -125,7 +126,7 @@
     left: 50% !important;
     right: auto !important;
     top: auto !important;
-    bottom: clamp(10px, 2vw, 24px) !important;
+    bottom: 18px !important;
     width: auto !important;
     height: auto !important;
     display: flex !important;
@@ -139,8 +140,8 @@
 }
 
 .home-page .hero-dot {
-    width: clamp(9px, 1.2vw, 14px) !important;
-    height: clamp(9px, 1.2vw, 14px) !important;
+    width: 12px !important;
+    height: 12px !important;
     border: 0 !important;
     border-radius: 50% !important;
     background: #e5e7eb !important;
@@ -492,7 +493,9 @@
 
 @media (max-width: 640px) {
     .home-page .hero {
-        aspect-ratio: 16 / 9 !important;
+        height: clamp(210px, 56.25vw, 300px) !important;
+        min-height: 210px !important;
+        max-height: 300px !important;
     }
 
     .home-page .hero-text {
