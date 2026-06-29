@@ -5,7 +5,6 @@
                 fn($slider) => [
                     'title' => $slider->title,
                     'subtitle' => $slider->subtitle,
-                    'image' => route('sliders.image', $slider) . '?v=' . optional($slider->updated_at)->timestamp,
                     'duration' => (int) ($slider->duration_ms ?? 3000),
                 ],
             )
