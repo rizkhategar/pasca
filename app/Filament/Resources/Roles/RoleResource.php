@@ -22,6 +22,11 @@ class RoleResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'Filament Shield';
     protected static ?int $navigationSort = 1;
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->canManageAccounts() ?? false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema;
