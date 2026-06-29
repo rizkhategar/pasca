@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\ShieldRoles;
 
-use App\Filament\Resources\ShieldRoles\Pages\ListShieldRoles;
+use App\Filament\Resources\ShieldRoles\Pages\IndexShieldRoles;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -58,7 +58,7 @@ class ShieldRoleResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ListShieldRoles::route('/'),
+            'index' => IndexShieldRoles::route('/'),
         ];
     }
 
