@@ -7,6 +7,202 @@
 @section('title', 'Daftar Dosen & Riset - Pascasarjana UNW')
 @section('body_class', 'research-list-page news-page')
 
+@push('styles')
+    <style>
+        .research-list-page #dosenGrid.lecturer-list {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 1rem !important;
+            align-items: stretch !important;
+        }
+
+        .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card {
+            display: grid !important;
+            grid-template-columns: 150px minmax(0, 1fr) !important;
+            grid-template-areas: "photo info" !important;
+            align-items: stretch !important;
+            gap: 0 !important;
+            width: 100% !important;
+            min-height: 175px !important;
+            overflow: hidden !important;
+            text-decoration: none !important;
+            flex-direction: unset !important;
+        }
+
+        .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card > .lecturer-card-photo {
+            grid-area: photo !important;
+            position: relative !important;
+            width: 150px !important;
+            max-width: 150px !important;
+            height: 100% !important;
+            min-height: 175px !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            flex: 0 0 150px !important;
+        }
+
+        .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card > .lecturer-card-photo img {
+            width: 100% !important;
+            height: 100% !important;
+            min-height: 175px !important;
+            object-fit: cover !important;
+            object-position: center top !important;
+            display: block !important;
+        }
+
+        .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card > .lecturer-card-info {
+            grid-area: info !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            width: auto !important;
+            min-width: 0 !important;
+            padding: .95rem 1rem !important;
+        }
+
+        .research-list-page .lecturer-card-main-info {
+            min-width: 0;
+        }
+
+        .research-list-page .lecturer-card-title-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: .65rem;
+            margin-bottom: .5rem;
+        }
+
+        .research-list-page .lecturer-card-title-row .news-page-title {
+            margin: 0;
+            font-size: 1rem;
+            line-height: 1.25;
+        }
+
+        .research-list-page .lecturer-sinta-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            flex: 0 0 auto;
+            border-radius: 999px;
+            padding: .3rem .55rem;
+            background: rgba(37, 99, 235, .08);
+            color: #1d4ed8;
+            font-size: .72rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .research-list-page .lecturer-card-info .news-page-excerpt {
+            margin-bottom: .7rem;
+            font-size: .86rem;
+            line-height: 1.45;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .research-list-page .lecturer-card-info .lecturer-stats {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: .55rem !important;
+            margin-top: .55rem;
+        }
+
+        .research-list-page .lecturer-card-info .lecturer-stats .stat-box {
+            padding: .55rem .45rem !important;
+            min-height: auto !important;
+        }
+
+        .research-list-page .lecturer-card-info .lecturer-stats .stat-number {
+            font-size: .95rem !important;
+            line-height: 1.2 !important;
+        }
+
+        .research-list-page .lecturer-card-info .lecturer-stats .stat-desc {
+            font-size: .7rem !important;
+        }
+
+        .research-list-page .lecturer-card-info .news-page-footer {
+            margin-top: .7rem;
+            padding-top: .7rem;
+            border-top: 1px solid rgba(15, 23, 42, .08);
+        }
+
+        .research-list-page .lecturer-card-info .news-page-date,
+        .research-list-page .lecturer-card-info .read-more {
+            font-size: .78rem;
+        }
+
+        @media (max-width: 1100px) {
+            .research-list-page #dosenGrid.lecturer-list {
+                grid-template-columns: 1fr !important;
+            }
+
+            .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card {
+                grid-template-columns: 190px minmax(0, 1fr) !important;
+                min-height: 200px !important;
+            }
+
+            .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card > .lecturer-card-photo {
+                width: 190px !important;
+                max-width: 190px !important;
+                min-height: 200px !important;
+                flex-basis: 190px !important;
+            }
+
+            .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card > .lecturer-card-photo img {
+                min-height: 200px !important;
+            }
+
+            .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card > .lecturer-card-info {
+                padding: 1.1rem !important;
+            }
+
+            .research-list-page .lecturer-card-info .lecturer-stats {
+                grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .research-list-page #dosenGrid.lecturer-list {
+                grid-template-columns: 1fr !important;
+            }
+
+            .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card {
+                grid-template-columns: 1fr !important;
+                grid-template-areas:
+                    "photo"
+                    "info" !important;
+            }
+
+            .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card > .lecturer-card-photo {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: 240px !important;
+                min-height: 240px !important;
+                flex-basis: auto !important;
+            }
+
+            .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card > .lecturer-card-photo img {
+                min-height: 240px !important;
+            }
+
+            .research-list-page .lecturer-card-title-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .research-list-page .lecturer-sinta-chip {
+                white-space: normal;
+            }
+
+            .research-list-page .lecturer-card-info .lecturer-stats {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+        }
+    </style>
+@endpush
+
 @section('content')
     <section class="rd-hero">
         <div class="rd-hero-dots"></div>
@@ -102,7 +298,7 @@
                     </div>
                 </div>
 
-                <section class="news-page-grid" id="dosenGrid">
+                <section class="lecturer-list" id="dosenGrid">
                     @forelse($dosens as $dosen)
                         @php
                             $safeSintaId = collect(str_split((string) $dosen->sinta_id))
@@ -110,33 +306,53 @@
                                 ->implode('');
                             $customPhotoPath = "sinta-lecturers/{$safeSintaId}_PL.jpg";
                             $scrapedPhotoPath = "sinta-lecturers/{$safeSintaId}.jpg";
-                            $photoUrl = asset('assets/images/default-user.png');
+                            $photoUrl = $dosen->profile_photo ?: asset('assets/images/default-user.png');
 
                             if (\Illuminate\Support\Facades\Storage::disk('public')->exists($customPhotoPath)) {
-                                $photoUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($customPhotoPath);
+                                $photoUrl = url('storage/' . $customPhotoPath);
                             } elseif (\Illuminate\Support\Facades\Storage::disk('public')->exists($scrapedPhotoPath)) {
-                                $photoUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($scrapedPhotoPath);
+                                $photoUrl = url('storage/' . $scrapedPhotoPath);
                             }
                         @endphp
 
-                        <a href="{{ route('riset.detail', $dosen->sinta_id) }}" class="news-page-card lecturer-card">
-                            <div class="news-page-thumb lecturer-thumb">
+                        <a href="{{ route('riset.detail', $dosen->sinta_id) }}" class="news-page-card lecturer-card lecturer-list-card">
+                            <div class="news-page-thumb lecturer-thumb lecturer-card-photo">
                                 <img src="{{ $photoUrl }}" alt="{{ $dosen->nama }}">
-                                <span class="news-page-category">
-                                    <i class="fas fa-id-badge"></i>
-                                    SINTA {{ $dosen->sinta_id }}
-                                </span>
                             </div>
 
-                            <div class="news-page-body">
-                                <h3 class="news-page-title">{{ $dosen->nama }}</h3>
-                                <p class="news-page-excerpt">{{ $dosen->program_studi }}</p>
+                            <div class="news-page-body lecturer-card-info">
+                                <div class="lecturer-card-main-info">
+                                    <div class="lecturer-card-title-row">
+                                        <h3 class="news-page-title">{{ $dosen->nama }}</h3>
+                                        <span class="lecturer-sinta-chip">
+                                            <i class="fas fa-id-badge"></i>
+                                            SINTA {{ $dosen->sinta_id }}
+                                        </span>
+                                    </div>
 
-                                <div class="stats-grid lecturer-stats">
-                                    <div class="stat-box"><div class="stat-number">{{ number_format($dosen->sinta_score_overall ?? 0) }}</div><div class="stat-desc">Overall</div></div>
-                                    <div class="stat-box"><div class="stat-number">{{ number_format($dosen->sinta_score_3yr ?? 0) }}</div><div class="stat-desc">3 Year</div></div>
-                                    <div class="stat-box"><div class="stat-number">{{ number_format($dosen->affil_score ?? 0) }}</div><div class="stat-desc">Affil</div></div>
-                                    <div class="stat-box"><div class="stat-number">{{ number_format($dosen->affil_score_3yr ?? 0) }}</div><div class="stat-desc">Affil 3Yr</div></div>
+                                    <p class="news-page-excerpt">{{ $dosen->program_studi }}</p>
+
+                                    <div class="stats-grid lecturer-stats">
+                                        <div class="stat-box">
+                                            <div class="stat-number">{{ number_format($dosen->sinta_score_overall ?? 0) }}</div>
+                                            <div class="stat-desc">Overall</div>
+                                        </div>
+
+                                        <div class="stat-box">
+                                            <div class="stat-number">{{ number_format($dosen->sinta_score_3yr ?? 0) }}</div>
+                                            <div class="stat-desc">3 Year</div>
+                                        </div>
+
+                                        <div class="stat-box">
+                                            <div class="stat-number">{{ number_format($dosen->affil_score ?? 0) }}</div>
+                                            <div class="stat-desc">Affil</div>
+                                        </div>
+
+                                        <div class="stat-box">
+                                            <div class="stat-number">{{ number_format($dosen->affil_score_3yr ?? 0) }}</div>
+                                            <div class="stat-desc">Affil 3Yr</div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="news-page-footer">

@@ -40,11 +40,11 @@ return [
         /*
          * Description rendered on the home page of the API documentation (`/docs/api`).
          */
-        'description' => '',
+        'description' => 'Lecturer SINTA API documentation. This API provides lecturer data from sinta_lecturers, registered postgraduate and undergraduate lecturer memberships, full SINTA details, and module-specific publication/yearly statistics endpoints.',
     ],
 
     'ui' => [
-        'title' => null,
+        'title' => 'Lecturer SINTA API Docs',
     ],
 
     'renderer' => 'elements',

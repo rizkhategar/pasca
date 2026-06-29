@@ -2,12 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PostgraduateLecturer;
-use App\Models\PostgraduateLecturerStudyProgram;
 use App\Models\SintaBookPublication;
 use App\Models\SintaGarudaPublication;
 use App\Models\SintaGarudaYearlyStat;
-use App\Models\SintaLecturer;
 use App\Models\SintaLecturerDetail;
 use App\Models\SintaResearch;
 use App\Models\SintaResearchYearly;
@@ -18,8 +15,9 @@ use App\Models\SintaScopusYearlyStat;
 use App\Models\SintaService;
 use App\Models\SintaServiceYearly;
 use App\Models\StudyProgram;
+use App\Models\UndergraduateLecturer;
+use App\Models\UndergraduateLecturerStudyProgram;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -27,7 +25,7 @@ use Illuminate\Support\Facades\Storage;
 use Rap2hpoutre\FastExcel\FastExcel;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-class ScrapController extends Controller
+class UndergraduateScrapController extends Controller
 {
     private string $photoStorageDirectory = 'sinta-lecturers';
 
@@ -66,7 +64,7 @@ class ScrapController extends Controller
             return "<span class='text-success-400'>[CLEANUP]</span> File {$fileName} berhasil dihapus dari scripts/output.\n";
         }
 
-        Log::warning("Gagal menghapus file import Excel: {$filePath}");
+        Log::warning("Gagal menghapus file import Excel undergraduate: {$filePath}");
 
         return "<span class='text-warning-500'>[CLEANUP - WARN]</span> File {$fileName} sudah berhasil diimport, tetapi gagal dihapus. Cek permission file/folder scripts/output.\n";
     }
@@ -91,293 +89,6 @@ class ScrapController extends Controller
         return $photoPath;
     }
 
-    public function index()
-    {
-        try {
-            $response = Http::get('http://127.0.0.1:8000/api/baca-dosen');
-            $dosenList = $response->successful() ? $response->json() : [];
-        } catch (\Exception $e) {
-            $dosenList = [];
-            Log::error('Gagal mengambil data dosen dari API Python: ' . $e->getMessage());
-        }
-
-        return view('filament.resources.detail-dosens.pages.import-detail-dosen', compact('dosenList'));
-    }
-
-    public function perbaruiDosen(): StreamedResponse
-    {
-        return new StreamedResponse(function () {
-            set_time_limit(0);
-            ignore_user_abort(true);
-
-            $baseUrl = env('PYTHON_SCRAPER_URL', 'http://127.0.0.1:8000');
-            $streamUrl = $baseUrl . '/api/scrape-dosen';
-            $ch = curl_init();
-
-            curl_setopt($ch, CURLOPT_URL, $streamUrl);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, '');
-            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
-            curl_setopt($ch, CURLOPT_BUFFERSIZE, 256);
-            curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $chunk) {
-                foreach (explode("\n", $chunk) as $line) {
-                    $line = trim($line);
-                    if ($line === '') {
-                        continue;
-                    }
-
-                    $lineText = str_starts_with($line, 'data: ') ? substr($line, 6) : $line;
-                    $this->stream(['output' => mb_convert_encoding($lineText, 'UTF-8', 'UTF-8') . "\n"]);
-                }
-
-                return strlen($chunk);
-            });
-
-            $success = curl_exec($ch);
-
-            if (! $success) {
-                $this->stream(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> Gagal terhubung ke Docker Python Scraper. URL: {$streamUrl}. Error: " . curl_error($ch) . "\n"]);
-            }
-
-            curl_close($ch);
-
-            if ($success) {
-                $this->downloadAndImportMasterLecturers($baseUrl);
-            }
-
-            $this->stream(['done' => true]);
-        }, 200, [
-            'Cache-Control' => 'no-cache',
-            'Content-Type' => 'text/event-stream',
-            'X-Accel-Buffering' => 'no',
-        ]);
-    }
-
-    private function downloadAndImportMasterLecturers(string $baseUrl): void
-    {
-        $downloadUrl = $baseUrl . '/api/download-excel-dosen';
-        $this->stream(['output' => "\n[LARAVEL] Menghubungi API Docker untuk mengunduh berkas Excel master...\n"]);
-        $fileResponse = Http::get($downloadUrl);
-
-        if (! $fileResponse->successful() || isset($fileResponse->json()['error'])) {
-            $this->stream(['output' => "\n<span class='text-warning-500'>[WARN] File excel dosen gagal diunduh atau belum tercipta di container Docker.</span>\n----------------------------------------\n"]);
-            return;
-        }
-
-        $excelPath = base_path('scripts/output/dosen_universitas_ngudi_waluyo.xlsx');
-
-        if (! file_exists(dirname($excelPath))) {
-            mkdir(dirname($excelPath), 0777, true);
-        }
-
-        file_put_contents($excelPath, $fileResponse->body());
-        $this->stream(['output' => "<span class='text-success-400 font-bold'>[OK]</span> Berkas Excel berhasil diunduh. Memulai migrasi data ke tabel sinta_lecturers...\n"]);
-
-        try {
-            $rows = (new FastExcel())->import($excelPath);
-            $insertedCount = 0;
-            DB::beginTransaction();
-
-            foreach ($rows as $row) {
-                $r = $this->normalizeRow($row);
-                $sintaId = $this->cleanSintaId($r['sinta id'] ?? null);
-
-                if (! $sintaId || (empty($r['nama']) && empty($r['name']))) {
-                    continue;
-                }
-
-                SintaLecturer::updateOrCreate(
-                    ['sinta_id' => $sintaId],
-                    [
-                        'name' => $r['nama'] ?? $r['name'],
-                        'department' => $r['departemen'] ?? $r['department'] ?? null,
-                        'scopus_h_index' => $r['scopus h-index'] ?? null,
-                        'google_scholar_h_index' => $r['google scholar h-index'] ?? null,
-                        'sinta_score_3yr' => isset($r['sinta score 3yr']) ? (int) str_replace('.', '', $r['sinta score 3yr']) : null,
-                        'sinta_score' => isset($r['sinta score']) ? (int) str_replace('.', '', $r['sinta score']) : null,
-                        'affiliation_score_3yr' => isset($r['affiliation score 3yr']) ? (int) str_replace('.', '', $r['affiliation score 3yr']) : null,
-                        'affiliation_score' => isset($r['affiliation score']) ? (int) str_replace('.', '', $r['affiliation score']) : null,
-                        'profile_url' => $r['profile url'] ?? $r['profile_url'] ?? null,
-                    ]
-                );
-
-                $insertedCount++;
-            }
-
-            DB::commit();
-            $this->stream(['output' => "<span class='text-success-400 font-bold'>[SUKSES] Auto-Import Selesai!</span> Berhasil memperbarui {$insertedCount} dosen ke tabel database sinta_lecturers.\n"]);
-            $this->stream(['output' => $this->deleteImportedExcelFile($excelPath) . "----------------------------------------\n"]);
-        } catch (\Throwable $importError) {
-            if (DB::transactionLevel() > 0) {
-                DB::rollBack();
-            }
-
-            $this->stream(['output' => "\n<span class='text-danger-500 font-bold'>[DATABASE ERROR]</span> Gagal menyimpan data: " . addslashes($importError->getMessage()) . "\n----------------------------------------\n"]);
-        }
-    }
-
-    public function tambahDosenManual(Request $request)
-    {
-        $request->validate([
-            'sinta_id' => 'required|unique:sinta_lecturers,sinta_id',
-            'nama' => 'required|string|max:255',
-        ]);
-
-        SintaLecturer::create([
-            'sinta_id' => $this->cleanSintaId($request->sinta_id),
-            'name' => $request->nama,
-            'department' => 'Manual Registration',
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Dosen baru berhasil didaftarkan ke dalam database master!',
-        ]);
-    }
-
-    public function syncStudyPrograms(): StreamedResponse
-    {
-        return new StreamedResponse(function () {
-            set_time_limit(0);
-            ignore_user_abort(true);
-            $this->stream(['output' => "Menghubungi API UNW program studi...\n"]);
-
-            try {
-                $response = Http::withoutVerifying()
-                    ->timeout(30)
-                    ->get('https://panel-web.unw.ac.id/api/unw-program-studi');
-
-                if (! $response->successful()) {
-                    $this->stream(['output' => "<span class='text-danger-500'>[ERROR]</span> API program studi gagal diakses. Status HTTP: " . $response->status() . "\n"]);
-                    $this->stream(['done' => true]);
-                    return;
-                }
-
-                $items = $response->json('data', []);
-                $syncedCount = 0;
-                DB::beginTransaction();
-
-                foreach ($items as $item) {
-                    $apiId = data_get($item, 'id');
-                    if (! $apiId) {
-                        continue;
-                    }
-
-                    StudyProgram::updateOrCreate(
-                        ['id_unw_program_studi' => (int) $apiId],
-                        [
-                            'nama' => data_get($item, 'nama'),
-                            'slug' => data_get($item, 'slug'),
-                            'page_slug' => data_get($item, 'page_slug'),
-                            'jenjang' => data_get($item, 'jenjang'),
-                            'jenjang_nama_singkat' => data_get($item, 'jenjang_nama_singkat'),
-                            'unw_fakultas_id' => data_get($item, 'unwFakultas.id'),
-                            'unw_fakultas_nama' => trim((string) data_get($item, 'unwFakultas.nama')),
-                            'unw_fakultas_page_slug' => data_get($item, 'unwFakultas.page_slug'),
-                            'api_created_at' => data_get($item, 'createdAt'),
-                            'api_updated_at' => data_get($item, 'updatedAt'),
-                            'created' => data_get($item, 'created'),
-                            'updated' => data_get($item, 'updated'),
-                        ]
-                    );
-
-                    $syncedCount++;
-                }
-
-                DB::commit();
-                Cache::forget('study_programs_select_import');
-                Cache::forget('academic_programs_nav');
-                $this->stream(['output' => "<span class='text-success-400'>[OK]</span> Berhasil menyinkronkan {$syncedCount} program studi ke tabel study_programs.\n"]);
-            } catch (\Throwable $e) {
-                if (DB::transactionLevel() > 0) {
-                    DB::rollBack();
-                }
-
-                Log::error('Gagal sinkronisasi program studi: ' . $e->getMessage());
-                $this->stream(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> " . addslashes($e->getMessage()) . "\n"]);
-            }
-
-            $this->stream(['done' => true]);
-        }, 200, [
-            'Cache-Control' => 'no-cache',
-            'Content-Type' => 'text/event-stream',
-            'X-Accel-Buffering' => 'no',
-        ]);
-    }
-
-    public function ambilDetail($sinta_id): StreamedResponse
-    {
-        $sintaId = $this->cleanSintaId($sinta_id);
-
-        return new StreamedResponse(function () use ($sintaId) {
-            set_time_limit(0);
-            ignore_user_abort(true);
-            $baseUrl = env('PYTHON_SCRAPER_URL', 'http://127.0.0.1:8000');
-            $streamUrl = $baseUrl . "/api/scrape-detail/{$sintaId}";
-            $ch = curl_init();
-
-            curl_setopt($ch, CURLOPT_URL, $streamUrl);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, '');
-            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
-            curl_setopt($ch, CURLOPT_BUFFERSIZE, 256);
-            curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $chunk) {
-                foreach (explode("\n", $chunk) as $line) {
-                    $line = trim($line);
-                    if ($line === '') {
-                        continue;
-                    }
-
-                    $lineText = str_starts_with($line, 'data: ') ? substr($line, 6) : $line;
-                    $this->stream(['output' => mb_convert_encoding($lineText, 'UTF-8', 'UTF-8') . "\n"]);
-                }
-
-                return strlen($chunk);
-            });
-
-            $success = curl_exec($ch);
-
-            if (! $success) {
-                $this->stream(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> Gagal terhubung ke Docker Python Scraper. URL: {$streamUrl}. Error: " . curl_error($ch) . "\n"]);
-            }
-
-            curl_close($ch);
-
-            if ($success) {
-                $this->downloadMergedDetailExcel($baseUrl, $sintaId);
-            }
-
-            $this->stream(['done' => true]);
-        }, 200, [
-            'Cache-Control' => 'no-cache',
-            'Content-Type' => 'text/event-stream',
-            'X-Accel-Buffering' => 'no',
-        ]);
-    }
-
-    private function downloadMergedDetailExcel(string $baseUrl, string $sintaId): void
-    {
-        $downloadUrl = $baseUrl . "/api/download-excel-detail/{$sintaId}";
-        $this->stream(['output' => "\n[LARAVEL] Menghubungi API Docker untuk menarik file excel gabungan (merged_data)...\n"]);
-        $fileResponse = Http::get($downloadUrl);
-
-        if (! $fileResponse->successful() || isset($fileResponse->json()['error'])) {
-            $this->stream(['output' => "\n<span class='text-danger-500'>[ERROR]</span> Berkas merged_data_{$sintaId}.xlsx tidak ditemukan/gagal diunduh dari API Docker.\n----------------------------------------\n"]);
-            return;
-        }
-
-        $excelPath = base_path("scripts/output/merged_data_{$sintaId}.xlsx");
-
-        if (! file_exists(dirname($excelPath))) {
-            mkdir(dirname($excelPath), 0777, true);
-        }
-
-        file_put_contents($excelPath, $fileResponse->body());
-        $this->stream(['output' => "<span class='text-success-400 font-bold'>[OK]</span> Berkas merged_data_{$sintaId}.xlsx sukses diunduh ke laptop. Memulai sinkronisasi Database...\n"]);
-    }
-
     public function importData(Request $request, $sinta_id): StreamedResponse
     {
         $studyProgramIds = $request->query('jurusan', $request->query('program_studi'));
@@ -395,7 +106,7 @@ class ScrapController extends Controller
             }
 
             try {
-                $this->stream(['output' => "Membaca file Excel: merged_data_{$sintaId}.xlsx...\n"]);
+                $this->stream(['output' => "Membaca file Excel: merged_data_{$sintaId}.xlsx untuk Undergraduate...\n"]);
                 $sheets = (new FastExcel())->importSheets($filePath);
                 $expectedSheets = [
                     0 => 'DATA_DOSEN',
@@ -516,7 +227,7 @@ class ScrapController extends Controller
                     $this->stream(['output' => $insertedCount > 0 ? "<span class='text-success-400'>[OK] Berhasil menyimpan {$insertedCount} baris ke database.</span>\n" : "<span class='text-gray-400'>--> Tidak ada data valid yang diproses.</span>\n"]);
                 }
 
-                $this->stream(['output' => "----------------------------------------\n<span class='text-success-400 font-bold'>[SUKSES IMPORT]</span> Seluruh sheet selesai diimpor!\n"]);
+                $this->stream(['output' => "----------------------------------------\n<span class='text-success-400 font-bold'>[SUKSES IMPORT UNDERGRADUATE]</span> Seluruh sheet selesai diimpor dan dosen didaftarkan ke Undergraduate!\n"]);
                 $this->stream(['output' => $this->deleteImportedExcelFile($filePath)]);
                 $this->stream(['done' => true]);
             } catch (\Throwable $e) {
@@ -566,7 +277,7 @@ class ScrapController extends Controller
             'affil_score_3yr' => isset($r['affil score 3yr']) ? (int) str_replace('.', '', $r['affil score 3yr']) : 0,
         ]);
 
-        $postgraduateLecturer = PostgraduateLecturer::firstOrCreate(
+        $undergraduateLecturer = UndergraduateLecturer::firstOrCreate(
             ['sinta_id' => $sintaId],
             [
                 'name' => $r['nama'] ?? $r['name'] ?? null,
@@ -583,19 +294,29 @@ class ScrapController extends Controller
                 ->values();
 
             $validStudyProgramIds = StudyProgram::query()
-                ->whereIn('id', $selectedStudyProgramIds)
-                ->orWhereIn('id_unw_program_studi', $selectedStudyProgramIds)
+                ->where(function ($query) {
+                    $query->whereNull('jenjang')
+                        ->orWhere('jenjang', 'not like', '%Magister%');
+                })
+                ->where(function ($query) {
+                    $query->whereNull('jenjang_nama_singkat')
+                        ->orWhere('jenjang_nama_singkat', '!=', 'S2');
+                })
+                ->where(function ($query) use ($selectedStudyProgramIds) {
+                    $query->whereIn('id', $selectedStudyProgramIds)
+                        ->orWhereIn('id_unw_program_studi', $selectedStudyProgramIds);
+                })
                 ->pluck('id')
                 ->map(fn ($studyProgramId) => (int) $studyProgramId)
                 ->unique()
                 ->values()
                 ->toArray();
 
-            PostgraduateLecturerStudyProgram::where('postgraduate_lecturer_id', $postgraduateLecturer->id)->delete();
+            UndergraduateLecturerStudyProgram::where('undergraduate_lecturer_id', $undergraduateLecturer->id)->delete();
 
             foreach ($validStudyProgramIds as $studyProgramId) {
-                PostgraduateLecturerStudyProgram::create([
-                    'postgraduate_lecturer_id' => $postgraduateLecturer->id,
+                UndergraduateLecturerStudyProgram::create([
+                    'undergraduate_lecturer_id' => $undergraduateLecturer->id,
                     'study_program_id' => $studyProgramId,
                 ]);
             }

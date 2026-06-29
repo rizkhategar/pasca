@@ -2,45 +2,40 @@
 
 namespace App\Http\Controllers;
 
-// Menggunakan model scraping sebagai query dasar agar relasi riset tetap terikat utuh
 use App\Models\SintaLecturerDetail;
+use App\Models\StudyProgram;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class RisetController extends Controller
 {
     public function listDosen(Request $request)
     {
-        // Ambil data navigasi untuk filter jurusan
-        $academicProgramsNav = \App\Http\Controllers\AcademicController::getNavigationData();
+        $academicProgramsNav = AcademicController::getNavigationData();
 
-        // Query data dosen dengan mengikutsertakan relasi PascaLecturer (Eager Loading)
-        $query = SintaLecturerDetail::with('pascaLecturer');
+        $query = SintaLecturerDetail::with('postgraduateLecturer.studyPrograms')
+            ->whereHas('postgraduateLecturer');
 
-        // Logika Pencarian Nama / SINTA ID Lintas Tabel (SINTA & Pasca)
         if ($request->has('search') && $request->search != '') {
             $query->where(function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->search . '%')
-                    ->orWhere('sinta_id', 'like', '%' . $request->search . '%')
-                    ->orWhereHas('pascaLecturer', function ($sub) use ($request) {
+                $q->where('sinta_id', 'like', '%' . $request->search . '%')
+                    ->orWhereHas('lecturer', function ($sub) use ($request) {
+                        $sub->where('name', 'like', '%' . $request->search . '%');
+                    })
+                    ->orWhereHas('postgraduateLecturer', function ($sub) use ($request) {
                         $sub->where('name', 'like', '%' . $request->search . '%');
                     });
             });
         }
 
-        // Logika Filter Jurusan Berdasarkan Tabel Pivot Baru 'departement'
         if ($request->has('jurusan') && $request->jurusan != '') {
-            $query->whereIn('sinta_id', function ($subQuery) use ($request) {
-                $subQuery->select('sinta_id')
-                    ->from('departement')
-                    ->where('id_departement', $request->jurusan);
+            $query->whereHas('postgraduateLecturer.studyPrograms', function ($subQuery) use ($request) {
+                $subQuery->where('study_programs.id', $request->jurusan)
+                    ->orWhere('study_programs.id_unw_program_studi', $request->jurusan);
             });
         }
 
-        // Pagination data dosen (Tepat 10 data per lembar halaman)
         $dosens = $query->paginate(10)->through(function ($dosen) {
             return $this->transformToIndonesianAttributes($dosen);
         });
@@ -51,7 +46,7 @@ class RisetController extends Controller
     public function detailDosen($sinta_id)
     {
         $dosen = SintaLecturerDetail::with([
-            'pascaLecturer', // Ikut sertakan data kustom admin
+            'postgraduateLecturer.studyPrograms',
             'scopusPublications',
             'scopusYearlyStats',
             'scholarPublications',
@@ -62,82 +57,136 @@ class RisetController extends Controller
             'researches',
             'researchYearlies',
             'services',
-            'serviceYearlies'
-        ])->findOrFail($sinta_id);
+            'serviceYearlies',
+        ])
+            ->whereHas('postgraduateLecturer')
+            ->where('sinta_id', $sinta_id)
+            ->firstOrFail();
 
         $dosen = $this->transformToIndonesianAttributes($dosen);
 
         return view('research.detail', compact('dosen'));
     }
 
-    /**
-     * Helper Jembatan Kompatibilitas Data & Mekanisme Fallback (Scrap vs Pasca)
-     */
     private function transformToIndonesianAttributes($dosen)
     {
-        if (!$dosen) return $dosen;
+        if (! $dosen) {
+            return $dosen;
+        }
 
-        // 1. MEKANISME FALLBACK PROFIL: Jika ada data PascaLecturer, pakai data tersebut. Jika tidak, pakai data SINTA.
-        $dosen->nama = $dosen->pascaLecturer->name ?? $dosen->name;
+        $dosen->nama = $dosen->postgraduateLecturer->name ?? $dosen->name;
         $dosen->profile_photo = $this->resolveLecturerPhotoPath($dosen);
 
-        // 2. TRANSLASI ID PIVOT JURUSAN KE TEKS DISPLAY
-        $jurusans = Cache::remember('academic_programs_select_import', now()->addHours(12), function () {
-            $response = Http::withoutVerifying()->get('https://panel-web.unw.ac.id/api/unw-program-studi');
-            if (!$response->successful()) return [];
-            return collect($response->json('data', []))
-                ->filter(fn($item) => isset($item['id'], $item['nama'], $item['unwFakultas']['nama']) && trim($item['unwFakultas']['nama']) === 'Pascasarjana')
-                ->mapWithKeys(fn($item) => [
-                    $item['id'] => trim(($item['jenjang'] ?? '') . ' ' . ($item['nama'] ?? ''))
-                ])->toArray();
+        $studyProgramMap = Cache::remember('study_programs_select_import', now()->addHours(12), function () {
+            return StudyProgram::query()
+                ->where('unw_fakultas_nama', 'Pascasarjana')
+                ->orderBy('jenjang')
+                ->orderBy('nama')
+                ->get()
+                ->mapWithKeys(fn (StudyProgram $program) => [
+                    (string) $program->id => $program->display_name,
+                ])
+                ->toArray();
         });
 
-        $associatedIds = DB::table('departement')
-            ->where('sinta_id', $dosen->sinta_id)
-            ->pluck('id_departement')
-            ->toArray();
+        $associatedIds = $dosen->postgraduateLecturer?->studyPrograms
+            ? $dosen->postgraduateLecturer->studyPrograms->pluck('id')->toArray()
+            : [];
 
-        if (!empty($associatedIds)) {
-            $mappedNames = array_map(fn($id) => $jurusans[$id] ?? $id, $associatedIds);
+        if (! empty($associatedIds)) {
+            $mappedNames = array_map(fn ($id) => $studyProgramMap[(string) $id] ?? $id, $associatedIds);
             $dosen->program_studi = implode(', ', $mappedNames);
         } else {
-            // Jika pivot kosong, fallback ke teks prodi bawaan
-            $dosen->program_studi = $dosen->pascaLecturer->study_program ?? $dosen->study_program ?? '-';
+            $dosen->program_studi = $dosen->study_program ?? '-';
         }
 
-        // --- Sinkronisasi Variabel Bahasa Indonesia Untuk Relasi Riset ---
         if ($dosen->relationLoaded('scopusPublications')) {
-            foreach ($dosen->scopusPublications as $item) { $item->judul = $item->title; $item->tahun = $item->year; }
+            foreach ($dosen->scopusPublications as $item) {
+                $item->judul = $item->title;
+                $item->tahun = $item->year;
+                $item->url_artikel = $item->article_url;
+                $item->url_journal = $item->journal_url;
+            }
         }
+
         if ($dosen->relationLoaded('scholarPublications')) {
-            foreach ($dosen->scholarPublications as $item) { $item->judul = $item->title; $item->tahun = $item->year; }
+            foreach ($dosen->scholarPublications as $item) {
+                $item->judul = $item->title;
+                $item->tahun = $item->year;
+                $item->url_scholar = $item->scholar_url;
+            }
         }
+
         if ($dosen->relationLoaded('garudaPublications')) {
-            foreach ($dosen->garudaPublications as $item) { $item->judul = $item->title; $item->tahun = $item->year; }
+            foreach ($dosen->garudaPublications as $item) {
+                $item->judul = $item->title;
+                $item->tahun = $item->year;
+                $item->url_artikel = $item->article_url;
+                $item->url_journal = $item->journal_url;
+            }
         }
+
         if ($dosen->relationLoaded('books')) {
-            foreach ($dosen->books as $item) { $item->judul = $item->title; $item->kategori = $item->category; $item->penerbit = $item->publisher; $item->tahun = $item->year; }
+            foreach ($dosen->books as $item) {
+                $item->judul = $item->title;
+                $item->kategori = $item->category;
+                $item->penerbit = $item->publisher;
+                $item->tahun = $item->year;
+            }
         }
+
         if ($dosen->relationLoaded('researches')) {
-            foreach ($dosen->researches as $item) { $item->judul = $item->title; $item->skema = $item->scheme; $item->tahun = $item->year; $item->dana = $item->funding; }
+            foreach ($dosen->researches as $item) {
+                $item->judul = $item->title;
+                $item->skema = $item->scheme;
+                $item->tahun = $item->year;
+                $item->dana = $item->funding;
+                $item->personils = $item->personnel;
+            }
         }
+
         if ($dosen->relationLoaded('services')) {
-            foreach ($dosen->services as $item) { $item->judul = $item->title; $item->skema = $item->scheme; $item->tahun = $item->year; $item->dana = $item->funding; }
+            foreach ($dosen->services as $item) {
+                $item->judul = $item->title;
+                $item->skema = $item->scheme;
+                $item->tahun = $item->year;
+                $item->dana = $item->funding;
+                $item->personils = $item->personnel;
+            }
         }
+
         if ($dosen->relationLoaded('researchYearlies')) {
-            foreach ($dosen->researchYearlies as $item) { $item->tahun = $item->year; $item->jumlah = $item->count; }
+            foreach ($dosen->researchYearlies as $item) {
+                $item->tahun = $item->year;
+                $item->jumlah = $item->count;
+            }
         }
+
         if ($dosen->relationLoaded('serviceYearlies')) {
-            foreach ($dosen->serviceYearlies as $item) { $item->tahun = $item->year; $item->jumlah = $item->count; }
+            foreach ($dosen->serviceYearlies as $item) {
+                $item->tahun = $item->year;
+                $item->jumlah = $item->count;
+            }
         }
+
         if ($dosen->relationLoaded('scopusYearlyStats')) {
-            foreach ($dosen->scopusYearlyStats as $item) { $item->tahun = $item->year; $item->jumlah = $item->count; }
+            foreach ($dosen->scopusYearlyStats as $item) {
+                $item->tahun = $item->year;
+                $item->jumlah = $item->count;
+            }
         }
+
         if ($dosen->relationLoaded('garudaYearlyStats')) {
-            foreach ($dosen->garudaYearlyStats as $item) { $item->tahun = $item->year; }
+            foreach ($dosen->garudaYearlyStats as $item) {
+                $item->tahun = $item->year;
+                $item->jumlah = $item->articles;
+            }
         }
+
         if ($dosen->relationLoaded('scholarYearlyStats')) {
-            foreach ($dosen->scholarYearlyStats as $item) { $item->tahun = $item->year; }
+            foreach ($dosen->scholarYearlyStats as $item) {
+                $item->tahun = $item->year;
+            }
         }
 
         return $dosen;
@@ -155,14 +204,14 @@ class RisetController extends Controller
         $scrapedPath = "sinta-lecturers/{$safeSintaId}.jpg";
 
         if (Storage::disk('public')->exists($customPath)) {
-            return '../../storage/' . $customPath;
+            return url('storage/' . $customPath);
         }
 
         if (Storage::disk('public')->exists($scrapedPath)) {
-            return '../../storage/' . $scrapedPath;
+            return url('storage/' . $scrapedPath);
         }
 
-        $storedPath = $dosen->pascaLecturer->profile_photo ?? $dosen->profile_photo ?? null;
+        $storedPath = $dosen->postgraduateLecturer->profile_photo ?? $dosen->profile_photo ?? null;
 
         if (! $storedPath) {
             return null;
@@ -178,6 +227,6 @@ class RisetController extends Controller
             $storedPath = 'sinta-lecturers/' . $storedPath;
         }
 
-        return Storage::disk('public')->exists($storedPath) ? '../../storage/' . $storedPath : null;
+        return Storage::disk('public')->exists($storedPath) ? url('storage/' . $storedPath) : null;
     }
 }

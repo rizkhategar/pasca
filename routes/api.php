@@ -1,12 +1,31 @@
 <?php
 
+use App\Http\Controllers\Api\DosenApiV2Controller;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\DosenApiController;
 
+Route::prefix('dosen')
+    ->name('api.dosen.')
+    ->controller(DosenApiV2Controller::class)
+    ->group(function () {
+        Route::get('/', 'index')
+            ->name('index');
 
-Route::get('/data-sinta', [DosenApiController::class, 'index'])
-     ->name('api.dosen.index');
+        Route::get('/{category}', 'byCategory')
+            ->where('category', 'postgraduate|undergraduate|Postgraduate|Undergraduate')
+            ->name('category.index');
 
-// GET /api/data-sinta/{sinta_id} -> Dapatkan detail matriks & grafik SINTA dosen spesifik
-Route::get('/data-sinta/{sinta_id}/{type?}', [DosenApiController::class, 'show'])
-     ->name('api.dosen.show');
+        Route::get('/{category}/{sinta_id}', 'show')
+            ->where('category', 'postgraduate|undergraduate|Postgraduate|Undergraduate')
+            ->name('category.show');
+
+        Route::get('/{category}/{sinta_id}/{module}', 'module')
+            ->where('category', 'postgraduate|undergraduate|Postgraduate|Undergraduate')
+            ->where('module', 'garuda|scopus|scholar|book|books|research|researches|service|services|lecturer-details|lecturer-detail|details|detail')
+            ->name('category.module');
+
+        Route::get('/{category}/{sinta_id}/{module}/{mode}', 'moduleMode')
+            ->where('category', 'postgraduate|undergraduate|Postgraduate|Undergraduate')
+            ->where('module', 'garuda|scopus|scholar|book|books|research|researches|service|services|lecturer-details|lecturer-detail|details|detail')
+            ->where('mode', 'index|yearly')
+            ->name('category.module.mode');
+    });
