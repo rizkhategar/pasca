@@ -14,7 +14,7 @@ class ListSintaLecturers extends ListRecords
     {
         return [
             Actions\Action::make('openImportPage')
-                ->label('Ambil Data Dosen SINTA')
+                ->label('Import / Sync SINTA Lecturers')
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('warning')
                 ->url(SintaLecturerResource::getUrl('import')),
