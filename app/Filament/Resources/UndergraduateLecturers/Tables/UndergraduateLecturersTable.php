@@ -26,9 +26,6 @@ class UndergraduateLecturersTable
                     ->label('Program Studi Terhubung')
                     ->getStateUsing(fn ($record): string => self::resolveStudyProgramNames($record))
                     ->wrap(),
-                TextColumn::make('research_interests')->label('Bidang Minat')->searchable(),
-                TextColumn::make('sinta_score_overall')->label('SINTA Score Overall')->numeric()->sortable(),
-                TextColumn::make('sinta_score_3yr')->label('SINTA Score 3Yr')->numeric()->sortable(),
             ])
             ->actions([
                 ViewAction::make()->url(fn ($record) => UndergraduateLecturerResource::getUrl('view', ['record' => $record])),
@@ -44,10 +41,10 @@ class UndergraduateLecturersTable
 
     private static function resolveStudyProgramNames($record): string
     {
-        $ids = $record->lecturer?->studyPrograms()
+        $ids = $record->studyPrograms()
             ->pluck('study_programs.id')
             ->map(fn ($id): string => (string) $id)
-            ->toArray() ?? [];
+            ->toArray();
 
         if (empty($ids)) {
             return '-';
