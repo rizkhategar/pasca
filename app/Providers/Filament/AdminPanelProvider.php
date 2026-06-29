@@ -24,6 +24,18 @@ class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
+        $shieldPlugin = null;
+
+        foreach ([
+            \BezhanSalleh\FilamentShield\FilamentShieldPlugin::class,
+            \BezhanSalleh\FilamentShield\ShieldPlugin::class,
+        ] as $pluginClass) {
+            if (class_exists($pluginClass)) {
+                $shieldPlugin = $pluginClass::make();
+                break;
+            }
+        }
+
         return $panel
             ->default()
             ->id('admin')
@@ -34,6 +46,9 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+            ->plugins(array_filter([
+                $shieldPlugin,
+            ]))
             ->navigationGroups([
                 NavigationGroup::make()
                     ->label('Home')
