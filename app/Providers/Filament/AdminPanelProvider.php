@@ -44,15 +44,15 @@ class AdminPanelProvider extends PanelProvider
                     ->collapsed(false),
 
                 NavigationGroup::make()
-                    ->label('Academic')
+                    ->label('SINTA Integration')
                     ->collapsed(false),
 
                 NavigationGroup::make()
-                    ->label('Contact')
+                    ->label('Contacts')
                     ->collapsed(false),
 
                 NavigationGroup::make()
-                    ->label('Account')
+                    ->label('Users')
                     ->collapsed(false),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
