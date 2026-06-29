@@ -11,6 +11,7 @@ use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class OrganizationalStructureResource extends Resource
@@ -26,5 +27,8 @@ class OrganizationalStructureResource extends Resource
     public static function form(Schema $schema): Schema { return OrganizationalStructureForm::configure($schema); }
     public static function table(Table $table): Table { return Listing::configure($table); }
     public static function getPages(): array { return ['index' => ListOrganizationalStructures::route('/'), 'create' => AddStructure::route('/create'), 'edit' => ModifyStructure::route('/{record}/edit')]; }
-    public static function canCreate(): bool { return OrganizationalStructure::query()->count() === 0; }
+    public static function canViewAny(): bool { return auth()->user()?->canManageContent() ?? false; }
+    public static function canCreate(): bool { return (auth()->user()?->canManageContent() ?? false) && OrganizationalStructure::query()->count() === 0; }
+    public static function canEdit(Model $record): bool { return auth()->user()?->canManageContent() ?? false; }
+    public static function canDelete(Model $record): bool { return auth()->user()?->canManageContent() ?? false; }
 }
