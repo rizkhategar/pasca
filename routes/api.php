@@ -1,11 +1,11 @@
 <?php
 
-use App\Http\Controllers\Api\DosenApiController;
+use App\Http\Controllers\Api\DosenApiV2Controller;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('dosen')
     ->name('api.dosen.')
-    ->controller(DosenApiController::class)
+    ->controller(DosenApiV2Controller::class)
     ->group(function () {
         Route::get('/', 'index')
             ->name('index');
