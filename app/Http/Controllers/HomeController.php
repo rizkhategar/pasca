@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Slider;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class HomeController extends Controller
@@ -16,17 +15,7 @@ class HomeController extends Controller
             ->orderBy('sort_order')
             ->oldest('id')
             ->get()
-            ->filter(function (Slider $slider): bool {
-                $path = Slider::normalizeImagePath($slider->image_path);
-
-                if (! $path || ! Storage::disk('public')->exists($path)) {
-                    return false;
-                }
-
-                $slider->image_path = $path;
-
-                return true;
-            })
+            ->filter(fn (Slider $slider): bool => (bool) $slider->resolved_image_file_path)
             ->values();
 
         return view('home', compact('sliders'));
