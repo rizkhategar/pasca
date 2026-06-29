@@ -8,4 +8,9 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateManageAccount extends CreateRecord
 {
     protected static string $resource = ManageAccountResource::class;
+
+    protected function afterCreate(): void
+    {
+        $this->record->syncRoles([$this->record->role]);
+    }
 }
