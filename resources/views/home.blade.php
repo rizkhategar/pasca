@@ -45,7 +45,7 @@
             'slug' => $resolveProgramSlug(['s2-hukum', 'magister-hukum']),
             'desc' => 'Program lanjutan untuk penguatan kompetensi hukum, tata kelola, dan penyelesaian persoalan hukum modern.',
             'tag' => 'Legal Governance',
-            'icon' => 'M12 2a1 1 0 0 1 1 1v2h5a1 1 0 1 1 0 2h-1l2.5 5a3.5 3.5 0 0 1-7 0L15 7h-2v11h4a1 1 0 1 1 0 2H7a1 1 0 1 1 0-2h4V7H9l2.5 5a3.5 3.5 0 0 1-7 0L7 7H6a1 1 0 1 1 0-2h5V3a1 1 0 0 1 1-1Zm-4 6-1.6 3h3.2L8 8Zm8 0-1.6 3h3.2L16 8Z',
+            'icon' => 'M12 2a1 1 0 0 1 1 1v2h5a1 1 0 1 1 0 2h-1l2.5 5a3.5 3.5 0 0 1-7 0L15 7h-2v11h4a1 1 0 1 1 0 2H7a1 1 0 1 1 0-2h4V7H9l2.5 5a3.5 0 0 1-7 0L7 7H6a1 1 0 1 1 0-2h5V3a1 1 0 0 1 1-1Zm-4 6-1.6 3h3.2L8 8Zm8 0-1.6 3h3.2L16 8Z',
         ],
     ];
 @endphp
@@ -60,11 +60,11 @@
         .home-page .program-section {
             position: relative;
             overflow: hidden;
-            padding: clamp(54px, 6vw, 78px) 0 clamp(64px, 7vw, 96px);
+            padding: 48px 0 66px;
             background:
-                radial-gradient(circle at 12% 10%, rgba(45, 156, 219, .14), transparent 28%),
-                radial-gradient(circle at 88% 12%, rgba(247, 181, 0, .22), transparent 25%),
-                linear-gradient(180deg, #f8fcff 0%, #f3f8fa 52%, #eef5f6 100%);
+                radial-gradient(circle at 12% 9%, rgba(45, 156, 219, .13), transparent 26%),
+                radial-gradient(circle at 88% 13%, rgba(247, 181, 0, .18), transparent 26%),
+                linear-gradient(180deg, #f8fcff 0%, #f4f8fa 52%, #edf5f6 100%);
         }
 
         .home-page .program-section::before {
@@ -82,23 +82,24 @@
             content: "";
             position: absolute;
             left: 50%;
-            bottom: -170px;
-            width: min(760px, 82vw);
-            height: 300px;
+            bottom: -150px;
+            width: min(720px, 78vw);
+            height: 250px;
             transform: translateX(-50%);
             border-radius: 999px;
-            background: radial-gradient(circle, rgba(7, 43, 87, .12), transparent 70%);
+            background: radial-gradient(circle, rgba(7, 43, 87, .10), transparent 68%);
             pointer-events: none;
         }
 
         .home-page .program-section .container {
             position: relative;
             z-index: 2;
+            width: min(1370px, 86vw) !important;
         }
 
         .home-page .program-head {
             max-width: 780px;
-            margin: 0 auto clamp(34px, 4vw, 54px);
+            margin: 0 auto 48px;
             text-align: center;
         }
 
@@ -113,7 +114,7 @@
             background: rgba(255, 255, 255, .92);
             border: 1px solid rgba(7, 43, 87, .10);
             color: #072b57;
-            box-shadow: 0 16px 38px rgba(15, 23, 42, .07);
+            box-shadow: 0 12px 30px rgba(15, 23, 42, .06);
             font-size: 13px;
             line-height: 1;
             font-weight: 900;
@@ -128,7 +129,7 @@
         .home-page .program-head h2 {
             margin: 0 0 16px;
             color: #072b57;
-            font-size: clamp(34px, 4vw, 52px);
+            font-size: clamp(36px, 3.45vw, 52px);
             line-height: 1.05;
             font-weight: 900;
             letter-spacing: -.045em;
@@ -136,11 +137,11 @@
         }
 
         .home-page .program-head p {
-            max-width: 720px;
+            max-width: 730px;
             margin: 0 auto;
             color: #64748b;
-            font-size: clamp(15px, 1.45vw, 19px);
-            line-height: 1.75;
+            font-size: clamp(16px, 1.28vw, 19px);
+            line-height: 1.78;
             font-weight: 600;
         }
 
@@ -149,29 +150,27 @@
             grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
             gap: 28px !important;
             align-items: stretch;
-            perspective: 1200px;
         }
 
         .home-page .program-card {
             position: relative;
             isolation: isolate;
             overflow: hidden;
-            min-height: 310px;
+            min-height: 405px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 34px 28px 28px;
-            border-radius: 0 0 26px 26px;
+            padding: 30px 28px 26px;
+            border-radius: 0 0 28px 28px;
             border: 1px solid rgba(226, 232, 240, .95);
             background: rgba(255, 255, 255, .92);
-            box-shadow: 0 22px 52px rgba(15, 23, 42, .08);
-            transform: translateY(0) rotateX(0deg) rotateY(0deg) scale(1);
-            transform-style: preserve-3d;
+            box-shadow: 0 20px 48px rgba(15, 23, 42, .075);
+            transform: translateY(0);
             transition:
-                transform .45s cubic-bezier(.2, .9, .22, 1),
-                box-shadow .45s ease,
-                border-color .35s ease,
-                background .35s ease;
+                transform .28s ease,
+                box-shadow .28s ease,
+                border-color .28s ease,
+                background .28s ease;
             will-change: transform;
         }
 
@@ -181,22 +180,22 @@
             inset: 0;
             z-index: -2;
             background:
-                radial-gradient(circle at 100% 0%, rgba(247, 181, 0, .18) 0 0, transparent 32%),
-                linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(255, 255, 255, .86));
-            transition: opacity .35s ease, transform .45s ease;
+                radial-gradient(circle at 100% 0%, rgba(247, 181, 0, .16) 0 0, transparent 31%),
+                linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(255, 255, 255, .88));
+            transition: transform .28s ease;
         }
 
         .home-page .program-card::after {
             content: "";
             position: absolute;
-            top: -74px;
+            top: -72px;
             right: -54px;
-            width: 174px;
-            height: 174px;
+            width: 168px;
+            height: 168px;
             z-index: -1;
             border-radius: 999px;
-            background: rgba(247, 181, 0, .13);
-            transition: transform .45s cubic-bezier(.2, .9, .22, 1), background .35s ease, filter .35s ease;
+            background: rgba(247, 181, 0, .12);
+            transition: transform .28s ease, background .28s ease;
         }
 
         .home-page .program-card-glow {
@@ -208,9 +207,9 @@
             border-radius: inherit;
             pointer-events: none;
             opacity: 0;
-            transform: translateX(-125%) skewX(-18deg);
-            background: linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, .16) 38%, rgba(255, 255, 255, .72) 50%, rgba(247, 181, 0, .20) 58%, transparent 72%);
-            transition: transform .75s ease, opacity .3s ease;
+            transform: translateX(-120%) skewX(-18deg);
+            background: linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, .15) 38%, rgba(255, 255, 255, .62) 50%, rgba(247, 181, 0, .16) 58%, transparent 72%);
+            transition: transform .62s ease, opacity .24s ease;
         }
 
         .home-page .program-tag {
@@ -218,25 +217,24 @@
         }
 
         .home-page .program-card:hover {
-            transform: translateY(-16px) rotateX(2deg) rotateY(-2deg) scale(1.018);
-            border-color: rgba(247, 181, 0, .62);
+            transform: translateY(-8px);
+            border-color: rgba(247, 181, 0, .48);
             background: rgba(255, 255, 255, .98);
-            box-shadow: 0 34px 76px rgba(7, 43, 87, .18), 0 0 0 7px rgba(247, 181, 0, .08);
+            box-shadow: 0 28px 64px rgba(7, 43, 87, .14), 0 0 0 5px rgba(247, 181, 0, .06);
         }
 
         .home-page .program-card:hover::before {
-            transform: scale(1.04);
+            transform: scale(1.02);
         }
 
         .home-page .program-card:hover::after {
-            transform: scale(1.22) translate(-8px, 10px);
-            background: rgba(247, 181, 0, .24);
-            filter: blur(.2px);
+            transform: scale(1.12) translate(-5px, 6px);
+            background: rgba(247, 181, 0, .19);
         }
 
         .home-page .program-card:hover .program-card-glow {
             opacity: 1;
-            transform: translateX(125%) skewX(-18deg);
+            transform: translateX(120%) skewX(-18deg);
         }
 
         .home-page .program-top {
@@ -244,39 +242,38 @@
             align-items: flex-start;
             justify-content: space-between;
             gap: 16px;
-            margin-bottom: 22px;
+            margin-bottom: 24px;
         }
 
         .home-page .program-icon {
-            width: 74px;
-            height: 74px;
+            width: 70px;
+            height: 70px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             border-radius: 20px;
             color: #ffffff;
             background: linear-gradient(135deg, #003f78 0%, #075895 100%);
-            box-shadow: 0 18px 32px rgba(7, 43, 87, .20);
-            transform: translateZ(0) rotate(0deg);
-            transition: transform .35s ease, box-shadow .35s ease, background .35s ease;
+            box-shadow: 0 16px 30px rgba(7, 43, 87, .18);
+            transition: transform .26s ease, box-shadow .26s ease, background .26s ease;
         }
 
         .home-page .program-icon svg {
-            width: 36px;
-            height: 36px;
+            width: 34px;
+            height: 34px;
             fill: currentColor;
             transform-origin: center;
-            transition: transform .35s ease;
+            transition: transform .26s ease;
         }
 
         .home-page .program-card:hover .program-icon {
-            animation: programIconPop .68s cubic-bezier(.2, .9, .22, 1) both;
-            background: linear-gradient(135deg, #f7b500 0%, #ffcc35 100%);
-            box-shadow: 0 22px 40px rgba(247, 181, 0, .34);
+            transform: translateY(-5px);
+            background: linear-gradient(135deg, #004a85 0%, #0868ad 100%);
+            box-shadow: 0 22px 38px rgba(7, 43, 87, .24);
         }
 
         .home-page .program-card:hover .program-icon svg {
-            animation: programIconWiggle .72s ease both;
+            transform: scale(1.07) rotate(-3deg);
         }
 
         .home-page .program-number {
@@ -293,14 +290,14 @@
             line-height: 1;
             font-weight: 900;
             letter-spacing: .04em;
-            box-shadow: 0 10px 24px rgba(247, 181, 0, .13);
-            transition: transform .35s ease, box-shadow .35s ease, background .35s ease;
+            box-shadow: 0 10px 22px rgba(247, 181, 0, .12);
+            transition: transform .26s ease, box-shadow .26s ease, background .26s ease;
         }
 
         .home-page .program-card:hover .program-number {
-            animation: programNumberPulse 1.15s ease-in-out infinite;
+            transform: translateY(-4px);
             background: #ffe08a;
-            box-shadow: 0 0 0 7px rgba(247, 181, 0, .13), 0 16px 28px rgba(247, 181, 0, .22);
+            box-shadow: 0 0 0 6px rgba(247, 181, 0, .11), 0 14px 26px rgba(247, 181, 0, .18);
         }
 
         .home-page .program-body {
@@ -310,35 +307,35 @@
         }
 
         .home-page .program-title {
-            max-width: 250px;
+            max-width: 255px;
             margin: 0 0 16px;
             color: #072b57;
-            font-size: clamp(20px, 1.65vw, 25px);
-            line-height: 1.18;
+            font-size: clamp(21px, 1.45vw, 25px);
+            line-height: 1.17;
             font-weight: 900;
             letter-spacing: -.025em;
             text-transform: uppercase;
-            transition: transform .32s ease, color .32s ease;
+            transition: color .24s ease, transform .24s ease;
         }
 
         .home-page .program-desc {
-            max-width: 270px;
+            max-width: 275px;
             margin: 0;
             color: #64748b;
             font-size: 15px;
-            line-height: 1.74;
+            line-height: 1.72;
             font-weight: 600;
-            transition: transform .32s ease, color .32s ease;
+            transition: color .24s ease, transform .24s ease;
         }
 
         .home-page .program-card:hover .program-title {
             color: #075895;
-            transform: translateX(5px);
+            transform: translateX(3px);
         }
 
         .home-page .program-card:hover .program-desc {
             color: #475569;
-            transform: translateX(5px);
+            transform: translateX(3px);
         }
 
         .home-page .program-detail {
@@ -350,18 +347,19 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-            margin-top: 26px;
-            padding: 10px 20px;
+            min-height: 40px;
+            margin-top: 24px;
+            padding: 0 18px;
             border-radius: 999px;
             color: #072b57;
             background: #ffffff;
             border: 1px solid #dbe3ee;
-            box-shadow: 0 10px 24px rgba(15, 23, 42, .05);
+            box-shadow: 0 9px 22px rgba(15, 23, 42, .045);
             font-size: 13px;
             line-height: 1;
             font-weight: 900;
             text-transform: none;
-            transition: transform .28s ease, color .28s ease, background .28s ease, border-color .28s ease, box-shadow .28s ease;
+            transition: transform .24s ease, color .24s ease, background .24s ease, border-color .24s ease, box-shadow .24s ease;
         }
 
         .home-page .program-detail::before {
@@ -372,9 +370,9 @@
             left: -45%;
             width: 34%;
             transform: skewX(-18deg);
-            background: rgba(255, 255, 255, .45);
+            background: rgba(255, 255, 255, .42);
             opacity: 0;
-            transition: left .5s ease, opacity .25s ease;
+            transition: left .45s ease, opacity .22s ease;
         }
 
         .home-page .program-detail span,
@@ -385,46 +383,32 @@
 
         .home-page .program-detail i {
             color: #f7b500;
-            transition: transform .28s ease, color .28s ease;
+            transition: transform .24s ease, color .24s ease;
         }
 
         .home-page .program-detail:hover {
-            transform: translateY(-3px) scale(1.04);
+            transform: translateY(-2px);
             color: #ffffff;
             background: #f7b500;
             border-color: #f7b500;
-            box-shadow: 0 16px 30px rgba(247, 181, 0, .28);
+            box-shadow: 0 14px 28px rgba(247, 181, 0, .24);
         }
 
         .home-page .program-detail:hover::before {
-            left: 118%;
+            left: 116%;
             opacity: 1;
         }
 
         .home-page .program-detail:hover i {
             color: #ffffff;
-            transform: translateX(5px);
+            transform: translateX(4px);
         }
 
-        @keyframes programIconPop {
-            0% { transform: translateY(0) rotate(0deg) scale(1); }
-            45% { transform: translateY(-7px) rotate(-5deg) scale(1.08); }
-            100% { transform: translateY(-3px) rotate(0deg) scale(1.04); }
-        }
+        @media (max-width: 1180px) {
+            .home-page .program-section .container {
+                width: min(1120px, 92%) !important;
+            }
 
-        @keyframes programIconWiggle {
-            0% { transform: rotate(0deg) scale(1); }
-            28% { transform: rotate(-8deg) scale(1.04); }
-            58% { transform: rotate(7deg) scale(1.04); }
-            100% { transform: rotate(0deg) scale(1.02); }
-        }
-
-        @keyframes programNumberPulse {
-            0%, 100% { transform: translateY(-3px) scale(1.04); }
-            50% { transform: translateY(-7px) scale(1.12); }
-        }
-
-        @media (max-width: 1100px) {
             .home-page .program-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
             }
@@ -432,7 +416,11 @@
 
         @media (max-width: 640px) {
             .home-page .program-section {
-                padding: 46px 0 58px;
+                padding: 44px 0 56px;
+            }
+
+            .home-page .program-section .container {
+                width: min(100% - 28px, 1120px) !important;
             }
 
             .home-page .program-kicker {
@@ -440,12 +428,17 @@
                 font-size: 11px;
             }
 
+            .home-page .program-head {
+                margin-bottom: 30px;
+            }
+
             .home-page .program-head h2 {
-                font-size: 32px;
+                font-size: 30px;
             }
 
             .home-page .program-head p {
                 font-size: 14px;
+                line-height: 1.7;
             }
 
             .home-page .program-grid {
@@ -455,13 +448,18 @@
 
             .home-page .program-card {
                 min-height: 0;
-                padding: 28px 24px 24px;
+                padding: 26px 22px 24px;
                 border-radius: 0 0 24px 24px;
             }
 
             .home-page .program-icon {
-                width: 64px;
-                height: 64px;
+                width: 62px;
+                height: 62px;
+            }
+
+            .home-page .program-icon svg {
+                width: 30px;
+                height: 30px;
             }
 
             .home-page .program-title,
