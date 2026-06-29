@@ -11,18 +11,15 @@ class CreateSlider extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['image_path'] = $this->extractUploadedPath($data['image_path_upload'] ?? null)
-            ?? ($data['image_path'] ?? null);
-
-        unset($data['image_path_upload'], $data['current_image_preview']);
+        $data['image_path'] = $this->extractUploadedPath($data['image_path'] ?? null);
 
         return $data;
     }
 
     private function extractUploadedPath(mixed $value): ?string
     {
-        if (is_string($value) && $value !== '') {
-            return $value;
+        if (is_string($value) && trim($value) !== '') {
+            return trim($value);
         }
 
         if (is_array($value)) {

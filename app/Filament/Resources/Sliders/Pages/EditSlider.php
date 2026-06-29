@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\Sliders\Pages;
 
 use App\Filament\Resources\Sliders\SliderResource;
-use App\Support\FilamentImageUpload;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Storage;
@@ -16,31 +15,28 @@ class EditSlider extends EditRecord
     {
         return [
             DeleteAction::make()
-                ->before(fn () => FilamentImageUpload::deleteFromPublicDisk($this->record->image_path)),
+                ->before(function (): void {
+                    $path = $this->normalizePublicPath($this->record->image_path);
+
+                    if ($path && Storage::disk('public')->exists($path)) {
+                        Storage::disk('public')->delete($path);
+                    }
+                }),
         ];
     }
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        $uploadedImage = $this->extractUploadedPath($data['image_path_upload'] ?? null);
-        $oldImage = $data['image_path'] ?? $this->record->image_path ?? null;
-
-        if ($uploadedImage) {
-            $this->deleteOldPublicFile($oldImage, $uploadedImage);
-            $data['image_path'] = $uploadedImage;
-        } else {
-            $data['image_path'] = $oldImage;
-        }
-
-        unset($data['image_path_upload'], $data['current_image_preview']);
+        $data['image_path'] = $this->extractUploadedPath($data['image_path'] ?? null)
+            ?? $this->record->image_path;
 
         return $data;
     }
 
     private function extractUploadedPath(mixed $value): ?string
     {
-        if (is_string($value) && $value !== '') {
-            return $value;
+        if (is_string($value) && trim($value) !== '') {
+            return trim($value);
         }
 
         if (is_array($value)) {
@@ -56,14 +52,16 @@ class EditSlider extends EditRecord
         return null;
     }
 
-    private function deleteOldPublicFile(?string $oldPath, ?string $newPath): void
+    private function normalizePublicPath(?string $path): ?string
     {
-        if (! $oldPath || ! $newPath || $oldPath === $newPath) {
-            return;
+        if (! $path) {
+            return null;
         }
 
-        if (Storage::disk('public')->exists($oldPath)) {
-            Storage::disk('public')->delete($oldPath);
-        }
+        $path = trim(str_replace('\\', '/', $path));
+        $path = preg_replace('#^/?storage/#', '', $path) ?: $path;
+        $path = preg_replace('#^/?public/#', '', $path) ?: $path;
+
+        return ltrim($path, '/');
     }
 }

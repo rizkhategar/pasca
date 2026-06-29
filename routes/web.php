@@ -19,7 +19,7 @@ use Illuminate\Support\Str;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/storage/{path}', function (string $path) {
-    $path = ltrim($path, '/');
+    $path = normalizePublicStoragePath($path);
     abort_if(Str::contains($path, ['..', '\\']), 404);
 
     if (preg_match('#^about-pascasarjanas/(\d+)/director-image#', $path, $matches)) {
@@ -53,23 +53,33 @@ Route::get('/storage/{path}', function (string $path) {
 })->where('path', '.*')->name('public-storage.file');
 
 Route::get('/sliders/{slider}/image', function (Slider $slider) {
-    abort_unless($slider->image_path && Storage::disk('public')->exists($slider->image_path), 404);
-    return response()->file(Storage::disk('public')->path($slider->image_path), ['Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0', 'Pragma' => 'no-cache', 'Expires' => '0']);
+    $path = normalizePublicStoragePath($slider->image_path);
+
+    abort_unless($path && Storage::disk('public')->exists($path), 404);
+
+    return response()->file(Storage::disk('public')->path($path), [
+        'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+        'Pragma' => 'no-cache',
+        'Expires' => '0',
+    ]);
 })->name('sliders.image');
 
 Route::get('/organization-structures/{organizationStructure}/image', function (OrganizationalStructure $organizationStructure) {
-    abort_unless($organizationStructure->image_path && Storage::disk('public')->exists($organizationStructure->image_path), 404);
-    return response()->file(Storage::disk('public')->path($organizationStructure->image_path), ['Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0', 'Pragma' => 'no-cache', 'Expires' => '0']);
+    $path = normalizePublicStoragePath($organizationStructure->image_path);
+
+    abort_unless($path && Storage::disk('public')->exists($path), 404);
+
+    return response()->file(Storage::disk('public')->path($path), ['Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0', 'Pragma' => 'no-cache', 'Expires' => '0']);
 })->name('organization-structures.image');
 
 Route::get('/about-pascasarjanas/{aboutPascasarjana}/director-image', function (AboutPostgraduate $aboutPascasarjana) {
-    $path = $aboutPascasarjana->direktur_image;
+    $path = normalizePublicStoragePath($aboutPascasarjana->direktur_image);
     abort_unless($path && Storage::disk('public')->exists($path), 404);
     return response()->file(Storage::disk('public')->path($path), ['Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0', 'Pragma' => 'no-cache', 'Expires' => '0']);
 })->name('about-pascasarjanas.director-image');
 
 Route::get('/about-pascasarjanas/{aboutPascasarjana}/point-icons/{index}', function (AboutPostgraduate $aboutPascasarjana, int $index) {
-    $path = data_get($aboutPascasarjana->points ?? [], $index . '.icon');
+    $path = normalizePublicStoragePath(data_get($aboutPascasarjana->points ?? [], $index . '.icon'));
     abort_unless($path && Storage::disk('public')->exists($path), 404);
     return response()->file(Storage::disk('public')->path($path), ['Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0', 'Pragma' => 'no-cache', 'Expires' => '0']);
 })->name('about-pascasarjanas.point-icon');
@@ -93,3 +103,18 @@ Route::get('/riset-dosen/detail/{sinta_id}', [RisetController::class, 'detailDos
 Route::middleware(['web', 'auth'])->group(function () {
     Route::post('/admin/scrap/tambah-dosen-manual', [ScrapController::class, 'tambahDosenManual'])->name('scrap.tambahDosenManual');
 });
+
+if (! function_exists('normalizePublicStoragePath')) {
+    function normalizePublicStoragePath(?string $path): ?string
+    {
+        if (! $path) {
+            return null;
+        }
+
+        $path = trim(str_replace('\\', '/', $path));
+        $path = preg_replace('#^/?storage/#', '', $path) ?: $path;
+        $path = preg_replace('#^/?public/#', '', $path) ?: $path;
+
+        return ltrim($path, '/');
+    }
+}
