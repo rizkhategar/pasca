@@ -16,8 +16,7 @@ class ListContacts extends ListRecords
         return [
             CreateAction::make()
                 ->label('Add Contact')
-                ->visible(fn (): bool => Contact::query()->doesntExist())
-                ->url(ContactResource::getUrl('create')),
+                ->visible(fn (): bool => (auth()->user()?->canManageContact() ?? false) && Contact::query()->doesntExist()),
         ];
     }
 }

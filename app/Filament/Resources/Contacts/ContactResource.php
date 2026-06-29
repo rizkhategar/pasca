@@ -12,6 +12,7 @@ use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class ContactResource extends Resource
@@ -51,8 +52,23 @@ class ContactResource extends Resource
         ];
     }
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->canManageContact() ?? false;
+    }
+
     public static function canCreate(): bool
     {
-        return Contact::query()->doesntExist();
+        return (auth()->user()?->canManageContact() ?? false) && Contact::query()->doesntExist();
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return auth()->user()?->canManageContact() ?? false;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return auth()->user()?->canManageContact() ?? false;
     }
 }

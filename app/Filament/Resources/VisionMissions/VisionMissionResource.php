@@ -12,6 +12,7 @@ use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class VisionMissionResource extends Resource
@@ -51,8 +52,23 @@ class VisionMissionResource extends Resource
         ];
     }
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->canManageContent() ?? false;
+    }
+
     public static function canCreate(): bool
     {
-        return VisionMission::count() === 0;
+        return (auth()->user()?->canManageContent() ?? false) && VisionMission::count() === 0;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return auth()->user()?->canManageContent() ?? false;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return auth()->user()?->canManageContent() ?? false;
     }
 }
