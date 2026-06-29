@@ -10,7 +10,6 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
@@ -42,26 +41,7 @@ class UndergraduateLecturerForm
 
                 Select::make('department')
                     ->label('Program Studi Undergraduate')
-                    ->options(function () {
-                        return Cache::remember('study_programs_undergraduate_select_import', now()->addHours(12), function () {
-                            return StudyProgram::query()
-                                ->where(function ($query) {
-                                    $query->whereNull('jenjang')
-                                        ->orWhere('jenjang', 'not like', '%Magister%');
-                                })
-                                ->where(function ($query) {
-                                    $query->whereNull('jenjang_nama_singkat')
-                                        ->orWhere('jenjang_nama_singkat', '!=', 'S2');
-                                })
-                                ->orderBy('jenjang')
-                                ->orderBy('nama')
-                                ->get()
-                                ->mapWithKeys(fn (StudyProgram $program) => [
-                                    $program->id => $program->display_name,
-                                ])
-                                ->toArray();
-                        });
-                    })
+                    ->options(fn (): array => self::getUndergraduateStudyProgramOptions())
                     ->searchable()
                     ->multiple()
                     ->afterStateHydrated(function (Select $component, $record) {
@@ -211,5 +191,25 @@ class UndergraduateLecturerForm
                         FilamentImageUpload::pruneLivewireTemporaryUploads();
                     }),
             ]);
+    }
+
+    private static function getUndergraduateStudyProgramOptions(): array
+    {
+        return StudyProgram::query()
+            ->where(function ($query) {
+                $query->whereNull('jenjang')
+                    ->orWhereRaw('LOWER(TRIM(jenjang)) NOT LIKE ?', ['%magister%']);
+            })
+            ->where(function ($query) {
+                $query->whereNull('jenjang_nama_singkat')
+                    ->orWhereRaw('UPPER(TRIM(jenjang_nama_singkat)) != ?', ['S2']);
+            })
+            ->orderBy('jenjang')
+            ->orderBy('nama')
+            ->get()
+            ->mapWithKeys(fn (StudyProgram $program) => [
+                $program->id => $program->display_name,
+            ])
+            ->toArray();
     }
 }
