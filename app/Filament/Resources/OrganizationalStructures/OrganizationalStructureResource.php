@@ -26,4 +26,5 @@ class OrganizationalStructureResource extends Resource
     public static function form(Schema $schema): Schema { return OrganizationalStructureForm::configure($schema); }
     public static function table(Table $table): Table { return Listing::configure($table); }
     public static function getPages(): array { return ['index' => ListOrganizationalStructures::route('/'), 'create' => AddStructure::route('/create'), 'edit' => ModifyStructure::route('/{record}/edit')]; }
+    public static function canCreate(): bool { return OrganizationalStructure::query()->count() === 0; }
 }
