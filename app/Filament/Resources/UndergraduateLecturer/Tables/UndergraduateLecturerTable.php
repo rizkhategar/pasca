@@ -12,7 +12,6 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Cache;
 
 class UndergraduateLecturerTable
 {
@@ -105,23 +104,21 @@ class UndergraduateLecturerTable
 
     private static function getUndergraduateStudyProgramMap(): array
     {
-        return Cache::remember('study_programs_undergraduate_select_import', now()->addHours(12), function () {
-            return StudyProgram::query()
-                ->where(function ($query) {
-                    $query->whereNull('jenjang')
-                        ->orWhere('jenjang', 'not like', '%Magister%');
-                })
-                ->where(function ($query) {
-                    $query->whereNull('jenjang_nama_singkat')
-                        ->orWhere('jenjang_nama_singkat', '!=', 'S2');
-                })
-                ->orderBy('jenjang')
-                ->orderBy('nama')
-                ->get()
-                ->mapWithKeys(fn (StudyProgram $program) => [
-                    (string) $program->id => $program->display_name,
-                ])
-                ->toArray();
-        });
+        return StudyProgram::query()
+            ->where(function ($query) {
+                $query->whereNull('jenjang')
+                    ->orWhereRaw('LOWER(TRIM(jenjang)) NOT LIKE ?', ['%magister%']);
+            })
+            ->where(function ($query) {
+                $query->whereNull('jenjang_nama_singkat')
+                    ->orWhereRaw('UPPER(TRIM(jenjang_nama_singkat)) != ?', ['S2']);
+            })
+            ->orderBy('jenjang')
+            ->orderBy('nama')
+            ->get()
+            ->mapWithKeys(fn (StudyProgram $program) => [
+                (string) $program->id => $program->display_name,
+            ])
+            ->toArray();
     }
 }
