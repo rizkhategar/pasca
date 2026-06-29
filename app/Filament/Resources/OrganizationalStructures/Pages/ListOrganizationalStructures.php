@@ -16,7 +16,7 @@ class ListOrganizationalStructures extends ListRecords
         return [
             CreateAction::make()
                 ->label('Add Organizational Structure')
-                ->visible(fn (): bool => OrganizationalStructure::query()->count() === 0),
+                ->visible(fn (): bool => (auth()->user()?->canManageContent() ?? false) && OrganizationalStructure::query()->count() === 0),
         ];
     }
 }
