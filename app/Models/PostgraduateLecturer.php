@@ -29,11 +29,6 @@ class PostgraduateLecturer extends Model
         return $this->belongsTo(SintaLecturerDetail::class, 'sinta_id', 'sinta_id');
     }
 
-    public function detail()
-    {
-        return $this->hasOne(PostgraduateLecturerDetail::class);
-    }
-
     public function studyPrograms()
     {
         return $this->belongsToMany(StudyProgram::class, 'postgraduate_lecturer_study_programs')
