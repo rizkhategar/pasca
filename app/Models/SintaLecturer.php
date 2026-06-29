@@ -9,17 +9,13 @@ class SintaLecturer extends Model
 {
     use HasFactory;
 
-    // Opsional: Laravel otomatis mendeteksi 'sinta_lecturers', tapi baik untuk ditegaskan
     protected $table = 'sinta_lecturers';
 
-    // Mendefinisikan primary key kustom
     protected $primaryKey = 'sinta_id';
 
-    // Karena primary key berformat string (bukan integer auto-increment)
     public $incrementing = false;
     protected $keyType = 'string';
 
-    // Menyesuaikan dengan nama kolom yang baru
     protected $fillable = [
         'sinta_id',
         'name',
@@ -33,19 +29,13 @@ class SintaLecturer extends Model
         'profile_url',
     ];
 
-    /**
-     * Relasi ke detail dosen SINTA.
-     */
     public function detail()
     {
         return $this->hasOne(SintaLecturerDetail::class, 'sinta_id', 'sinta_id');
     }
 
-    /**
-     * Relasi ke data dosen pascasarjana.
-     */
-    public function pascaLecturer()
+    public function postgraduateLecturer()
     {
-        return $this->hasOne(PascaLecturer::class, 'sinta_id', 'sinta_id');
+        return $this->hasOne(PostgraduateLecturer::class, 'sinta_id', 'sinta_id');
     }
 }

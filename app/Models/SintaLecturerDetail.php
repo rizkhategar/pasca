@@ -39,10 +39,8 @@ class SintaLecturerDetail extends Model
                 return;
             }
 
-            // Saat detail dosen dihapus dari list, hapus juga data lokal Pascasarjana.
-            $lecturerDetail->pascaLecturer()->delete();
+            $lecturerDetail->postgraduateLecturer()->delete();
 
-            // Hapus foto hasil scraping SINTA dan foto resmi Pascasarjana jika filenya ada.
             $safeSintaId = Str::of($sintaId)
                 ->trim()
                 ->replaceMatches('/[^A-Za-z0-9_-]/', '')
@@ -76,79 +74,67 @@ class SintaLecturerDetail extends Model
         // Nama dosen disimpan dan dibaca dari relasi utama sinta_lecturers.name.
     }
 
+    public function postgraduateLecturer()
+    {
+        return $this->hasOne(PostgraduateLecturer::class, 'sinta_id', 'sinta_id');
+    }
+
     public function pascaLecturer()
     {
-        return $this->hasOne(PascaLecturer::class, 'sinta_id', 'sinta_id');
+        return $this->postgraduateLecturer();
+    }
+
+    public function studyProgramPivots()
+    {
+        return $this->hasManyThrough(
+            PostgraduateLecturerStudyProgram::class,
+            PostgraduateLecturer::class,
+            'sinta_id',
+            'postgraduate_lecturer_id',
+            'sinta_id',
+            'id'
+        );
     }
 
     public function departments()
     {
-        return $this->hasMany(Departement::class, 'sinta_id', 'sinta_id');
+        return $this->studyProgramPivots();
     }
 
-    /**
-     * Relasi balik ke Master Dosen (SintaLecturer)
-     */
     public function lecturer()
     {
         return $this->belongsTo(SintaLecturer::class, 'sinta_id', 'sinta_id');
     }
 
-    // =========================================================================
-    // --- RELASI ELOQUENT UNTUK FILAMENT RELATION MANAGERS (BAHASA INGGRIS) ---
-    // =========================================================================
-
-    /**
-     * Relasi ke Publikasi Scopus (Memperbaiki error Call to undefined method)
-     */
     public function scopusPublications()
     {
         return $this->hasMany(SintaScopusPublication::class, 'sinta_id', 'sinta_id');
     }
 
-    /**
-     * Relasi ke Publikasi Google Scholar
-     */
     public function scholarPublications()
     {
         return $this->hasMany(SintaScholarPublication::class, 'sinta_id', 'sinta_id');
     }
 
-    /**
-     * Relasi ke Publikasi Garuda
-     */
     public function garudaPublications()
     {
         return $this->hasMany(SintaGarudaPublication::class, 'sinta_id', 'sinta_id');
     }
 
-    /**
-     * Relasi ke Buku
-     */
     public function books()
     {
         return $this->hasMany(SintaBookPublication::class, 'sinta_id', 'sinta_id');
     }
 
-    /**
-     * Relasi ke Penelitian (Researches)
-     */
     public function researches()
     {
         return $this->hasMany(SintaResearch::class, 'sinta_id', 'sinta_id');
     }
 
-    /**
-     * Relasi ke Pengabdian Masyarakat (Services)
-     */
     public function services()
     {
         return $this->hasMany(SintaService::class, 'sinta_id', 'sinta_id');
     }
-
-    // =========================================================================
-    // --- RELASI DATA STATISTIK TAHUNAN (YEARLY STATS) ---
-    // =========================================================================
 
     public function researchYearlies()
     {

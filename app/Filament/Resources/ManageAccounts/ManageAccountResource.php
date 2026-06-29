@@ -18,57 +18,19 @@ use UnitEnum;
 class ManageAccountResource extends Resource
 {
     protected static ?string $model = User::class;
-
-    protected static ?string $slug = 'manage-accounts';
-
+    protected static ?string $slug = 'users';
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-users';
-
-    protected static ?string $navigationLabel = 'Manage Account';
-
-    protected static ?string $modelLabel = 'Account';
-
-    protected static ?string $pluralModelLabel = 'Manage Accounts';
-
-    protected static string|UnitEnum|null $navigationGroup = 'Account';
-
+    protected static ?string $navigationLabel = 'Users';
+    protected static ?string $modelLabel = 'User';
+    protected static ?string $pluralModelLabel = 'Users';
+    protected static string|UnitEnum|null $navigationGroup = 'Users';
     protected static ?int $navigationSort = 1;
 
-    public static function form(Schema $schema): Schema
-    {
-        return ManageAccountForm::configure($schema);
-    }
-
-    public static function table(Table $table): Table
-    {
-        return ManageAccountsTable::configure($table);
-    }
-
-    public static function getPages(): array
-    {
-        return [
-            'index' => ListManageAccounts::route('/'),
-            'create' => CreateManageAccount::route('/create'),
-            'edit' => EditManageAccount::route('/{record}/edit'),
-        ];
-    }
-
-    public static function canViewAny(): bool
-    {
-        return auth()->user()?->canManageAccounts() ?? false;
-    }
-
-    public static function canCreate(): bool
-    {
-        return auth()->user()?->canManageAccounts() ?? false;
-    }
-
-    public static function canEdit(Model $record): bool
-    {
-        return auth()->user()?->canManageAccounts() ?? false;
-    }
-
-    public static function canDelete(Model $record): bool
-    {
-        return (auth()->user()?->canManageAccounts() ?? false) && auth()->id() !== $record->getKey();
-    }
+    public static function form(Schema $schema): Schema { return ManageAccountForm::configure($schema); }
+    public static function table(Table $table): Table { return ManageAccountsTable::configure($table); }
+    public static function getPages(): array { return ['index' => ListManageAccounts::route('/'), 'create' => CreateManageAccount::route('/create'), 'edit' => EditManageAccount::route('/{record}/edit')]; }
+    public static function canViewAny(): bool { return auth()->user()?->canManageAccounts() ?? false; }
+    public static function canCreate(): bool { return auth()->user()?->canManageAccounts() ?? false; }
+    public static function canEdit(Model $record): bool { return auth()->user()?->canManageAccounts() ?? false; }
+    public static function canDelete(Model $record): bool { return (auth()->user()?->canManageAccounts() ?? false) && auth()->id() !== $record->getKey(); }
 }

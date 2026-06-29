@@ -40,11 +40,11 @@ return [
         /*
          * Description rendered on the home page of the API documentation (`/docs/api`).
          */
-        'description' => '',
+        'description' => 'Lecturer SINTA API documentation. This API provides master lecturer data from sinta_lecturers, optional postgraduate registration data, full SINTA details, and module-specific publication/yearly statistics endpoints without category filtering.',
     ],
 
     'ui' => [
-        'title' => null,
+        'title' => 'Lecturer SINTA API Docs',
     ],
 
     'renderer' => 'elements',
@@ -118,48 +118,6 @@ return [
      * When Scramble encounters deep objects in query parameters, it flattens the parameters so the generated
      * OpenAPI document correctly describes the API. Flattening deep query parameters is relevant until
      * OpenAPI 3.2 is released and query string structure can be described properly.
-     *
-     * For example, this nested validation rule describes the object with `bar` property:
-     * `['foo.bar' => ['required', 'int']]`.
-     *
-     * When `flatten_deep_query_parameters` is `true`, Scramble will document the parameter like so:
-     * `{"name":"foo[bar]", "schema":{"type":"int"}, "required":true}`.
-     *
-     * When `flatten_deep_query_parameters` is `false`, Scramble will document the parameter like so:
-     *  `{"name":"foo", "schema": {"type":"object", "properties":{"bar":{"type": "int"}}, "required": ["bar"]}, "required":true}`.
      */
-    'flatten_deep_query_parameters' => true,
-
-    'middleware' => [
-        'web',
-        'auth',
-        RestrictedDocsAccess::class,
-    ],
-
     'extensions' => [],
-
-    /*
-     * Automatically document API security (OpenAPI `security` / `securitySchemes`) based on route
-     * middleware.
-     *
-     * Disabled by default. Uncomment the line below to enable `MiddlewareAuthSecurityStrategy`.
-     * When at least one documented route uses middleware matching the configured patterns (by default
-     * `auth` and `auth:*`), bearer auth is applied globally. Routes without matching middleware are
-     * marked as public (`security: []`).
-     *
-     * Set to `null` explicitly to disable. If you already configure security manually via
-     * `afterOpenApiGenerated` / `extendOpenApi`, keep this disabled to avoid duplicate schemes.
-     *
-     * Customize with a class-string or [class, options]:
-     *
-     * 'security_strategy' => [
-     *     \Dedoc\Scramble\SecurityDocumentation\MiddlewareAuthSecurityStrategy::class,
-     *     [
-     *         'middleware' => ['auth', 'auth:*'],
-     *         'scheme' => \Dedoc\Scramble\Support\Generator\SecurityScheme::http('bearer'),
-     *     ],
-     * ],
-     */
-    // 'security_strategy' => \Dedoc\Scramble\SecurityDocumentation\MiddlewareAuthSecurityStrategy::class,
-    'security_strategy' => null,
 ];

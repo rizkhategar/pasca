@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Departement;
-use App\Models\PascaLecturer;
+use App\Models\PostgraduateLecturer;
+use App\Models\PostgraduateLecturerStudyProgram;
 use App\Models\SintaBookPublication;
 use App\Models\SintaGarudaPublication;
 use App\Models\SintaGarudaYearlyStat;
@@ -17,7 +17,9 @@ use App\Models\SintaScopusPublication;
 use App\Models\SintaScopusYearlyStat;
 use App\Models\SintaService;
 use App\Models\SintaServiceYearly;
+use App\Models\StudyProgram;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -28,23 +30,6 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class ScrapController extends Controller
 {
     private string $photoStorageDirectory = 'sinta-lecturers';
-
-    private function deleteImportedExcelFile(string $filePath): string
-    {
-        $fileName = basename($filePath);
-
-        if (! file_exists($filePath)) {
-            return "<span class='text-gray-400'>[CLEANUP]</span> File {$fileName} sudah tidak ada di scripts/output.\n";
-        }
-
-        if (@unlink($filePath)) {
-            return "<span class='text-success-400'>[CLEANUP]</span> File {$fileName} berhasil dihapus dari scripts/output.\n";
-        }
-
-        Log::warning("Gagal menghapus file import Excel: {$filePath}");
-
-        return "<span class='text-warning-500'>[CLEANUP - WARN]</span> File {$fileName} sudah berhasil diimport, tetapi gagal dihapus. Cek permission file/folder scripts/output.\n";
-    }
 
     private function stream(array $payload): void
     {
@@ -69,6 +54,23 @@ class ScrapController extends Controller
         return $cleaned !== '' ? $cleaned : null;
     }
 
+    private function deleteImportedExcelFile(string $filePath): string
+    {
+        $fileName = basename($filePath);
+
+        if (! file_exists($filePath)) {
+            return "<span class='text-gray-400'>[CLEANUP]</span> File {$fileName} sudah tidak ada di scripts/output.\n";
+        }
+
+        if (@unlink($filePath)) {
+            return "<span class='text-success-400'>[CLEANUP]</span> File {$fileName} berhasil dihapus dari scripts/output.\n";
+        }
+
+        Log::warning("Gagal menghapus file import Excel: {$filePath}");
+
+        return "<span class='text-warning-500'>[CLEANUP - WARN]</span> File {$fileName} sudah berhasil diimport, tetapi gagal dihapus. Cek permission file/folder scripts/output.\n";
+    }
+
     private function downloadLecturerPhotoToStorage(string $photoUrl, string $sintaId): ?string
     {
         $response = Http::withoutVerifying()->timeout(15)->get($photoUrl);
@@ -84,16 +86,11 @@ class ScrapController extends Controller
         Storage::disk('public')->makeDirectory($this->photoStorageDirectory);
         Storage::disk('public')->put($photoPath, $response->body());
 
-        $this->stream(['output' => "<span class='text-success-400'>[FOTO]</span> ✔ File foto berhasil diunduh dari server SINTA.\n"]);
-        $this->stream(['output' => "<span style='color: #0ea5e9;'>[FOTO]</span> Melakukan rename file menjadi: <b>{$photoName}</b>\n"]);
         $this->stream(['output' => "<span class='text-success-400'>[FOTO]</span> ✔ Foto profil berhasil disimpan ke direktori: storage/app/public/{$photoPath}\n"]);
 
         return $photoPath;
     }
 
-    /**
-     * Menampilkan halaman utama panel dan membaca data untuk dropdown.
-     */
     public function index()
     {
         try {
@@ -107,9 +104,6 @@ class ScrapController extends Controller
         return view('filament.resources.detail-dosens.pages.import-detail-dosen', compact('dosenList'));
     }
 
-    /**
-     * SSE Stream: Menjalankan dosen.py (Langkah 1).
-     */
     public function perbaruiDosen(): StreamedResponse
     {
         return new StreamedResponse(function () {
@@ -118,8 +112,8 @@ class ScrapController extends Controller
 
             $baseUrl = env('PYTHON_SCRAPER_URL', 'http://127.0.0.1:8000');
             $streamUrl = $baseUrl . '/api/scrape-dosen';
-
             $ch = curl_init();
+
             curl_setopt($ch, CURLOPT_URL, $streamUrl);
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, '');
@@ -129,7 +123,6 @@ class ScrapController extends Controller
             curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $chunk) {
                 foreach (explode("\n", $chunk) as $line) {
                     $line = trim($line);
-
                     if ($line === '') {
                         continue;
                     }
@@ -144,8 +137,7 @@ class ScrapController extends Controller
             $success = curl_exec($ch);
 
             if (! $success) {
-                $error = curl_error($ch);
-                $this->stream(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> Gagal terhubung ke Docker Python Scraper. URL: {$streamUrl}. Error: {$error}\n"]);
+                $this->stream(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> Gagal terhubung ke Docker Python Scraper. URL: {$streamUrl}. Error: " . curl_error($ch) . "\n"]);
             }
 
             curl_close($ch);
@@ -165,9 +157,7 @@ class ScrapController extends Controller
     private function downloadAndImportMasterLecturers(string $baseUrl): void
     {
         $downloadUrl = $baseUrl . '/api/download-excel-dosen';
-
         $this->stream(['output' => "\n[LARAVEL] Menghubungi API Docker untuk mengunduh berkas Excel master...\n"]);
-
         $fileResponse = Http::get($downloadUrl);
 
         if (! $fileResponse->successful() || isset($fileResponse->json()['error'])) {
@@ -182,13 +172,11 @@ class ScrapController extends Controller
         }
 
         file_put_contents($excelPath, $fileResponse->body());
-
         $this->stream(['output' => "<span class='text-success-400 font-bold'>[OK]</span> Berkas Excel berhasil diunduh. Memulai migrasi data ke tabel sinta_lecturers...\n"]);
 
         try {
             $rows = (new FastExcel())->import($excelPath);
             $insertedCount = 0;
-
             DB::beginTransaction();
 
             foreach ($rows as $row) {
@@ -202,15 +190,15 @@ class ScrapController extends Controller
                 SintaLecturer::updateOrCreate(
                     ['sinta_id' => $sintaId],
                     [
-                        'name'                   => $r['nama'] ?? $r['name'],
-                        'department'             => $r['departemen'] ?? $r['department'] ?? null,
-                        'scopus_h_index'         => $r['scopus h-index'] ?? null,
+                        'name' => $r['nama'] ?? $r['name'],
+                        'department' => $r['departemen'] ?? $r['department'] ?? null,
+                        'scopus_h_index' => $r['scopus h-index'] ?? null,
                         'google_scholar_h_index' => $r['google scholar h-index'] ?? null,
-                        'sinta_score_3yr'        => isset($r['sinta score 3yr']) ? (int) str_replace('.', '', $r['sinta score 3yr']) : null,
-                        'sinta_score'            => isset($r['sinta score']) ? (int) str_replace('.', '', $r['sinta score']) : null,
-                        'affiliation_score_3yr'  => isset($r['affiliation score 3yr']) ? (int) str_replace('.', '', $r['affiliation score 3yr']) : null,
-                        'affiliation_score'      => isset($r['affiliation score']) ? (int) str_replace('.', '', $r['affiliation score']) : null,
-                        'profile_url'            => $r['profile url'] ?? $r['profile_url'] ?? null,
+                        'sinta_score_3yr' => isset($r['sinta score 3yr']) ? (int) str_replace('.', '', $r['sinta score 3yr']) : null,
+                        'sinta_score' => isset($r['sinta score']) ? (int) str_replace('.', '', $r['sinta score']) : null,
+                        'affiliation_score_3yr' => isset($r['affiliation score 3yr']) ? (int) str_replace('.', '', $r['affiliation score 3yr']) : null,
+                        'affiliation_score' => isset($r['affiliation score']) ? (int) str_replace('.', '', $r['affiliation score']) : null,
+                        'profile_url' => $r['profile url'] ?? $r['profile_url'] ?? null,
                     ]
                 );
 
@@ -218,7 +206,6 @@ class ScrapController extends Controller
             }
 
             DB::commit();
-
             $this->stream(['output' => "<span class='text-success-400 font-bold'>[SUKSES] Auto-Import Selesai!</span> Berhasil memperbarui {$insertedCount} dosen ke tabel database sinta_lecturers.\n"]);
             $this->stream(['output' => $this->deleteImportedExcelFile($excelPath) . "----------------------------------------\n"]);
         } catch (\Throwable $importError) {
@@ -226,8 +213,7 @@ class ScrapController extends Controller
                 DB::rollBack();
             }
 
-            $errMsg = addslashes($importError->getMessage());
-            $this->stream(['output' => "\n<span class='text-danger-500 font-bold'>[DATABASE ERROR]</span> Gagal menyimpan data: {$errMsg}\n----------------------------------------\n"]);
+            $this->stream(['output' => "\n<span class='text-danger-500 font-bold'>[DATABASE ERROR]</span> Gagal menyimpan data: " . addslashes($importError->getMessage()) . "\n----------------------------------------\n"]);
         }
     }
 
@@ -238,10 +224,8 @@ class ScrapController extends Controller
             'nama' => 'required|string|max:255',
         ]);
 
-        $cleanSintaId = $this->cleanSintaId($request->sinta_id);
-
         SintaLecturer::create([
-            'sinta_id' => $cleanSintaId,
+            'sinta_id' => $this->cleanSintaId($request->sinta_id),
             'name' => $request->nama,
             'department' => 'Manual Registration',
         ]);
@@ -252,9 +236,76 @@ class ScrapController extends Controller
         ]);
     }
 
-    /**
-     * SSE Stream: Menjalankan 6 script detail publikasi + merge (Langkah 2).
-     */
+    public function syncStudyPrograms(): StreamedResponse
+    {
+        return new StreamedResponse(function () {
+            set_time_limit(0);
+            ignore_user_abort(true);
+            $this->stream(['output' => "Menghubungi API UNW program studi...\n"]);
+
+            try {
+                $response = Http::withoutVerifying()
+                    ->timeout(30)
+                    ->get('https://panel-web.unw.ac.id/api/unw-program-studi');
+
+                if (! $response->successful()) {
+                    $this->stream(['output' => "<span class='text-danger-500'>[ERROR]</span> API program studi gagal diakses. Status HTTP: " . $response->status() . "\n"]);
+                    $this->stream(['done' => true]);
+                    return;
+                }
+
+                $items = $response->json('data', []);
+                $syncedCount = 0;
+                DB::beginTransaction();
+
+                foreach ($items as $item) {
+                    $apiId = data_get($item, 'id');
+                    if (! $apiId) {
+                        continue;
+                    }
+
+                    StudyProgram::updateOrCreate(
+                        ['id_unw_program_studi' => (int) $apiId],
+                        [
+                            'nama' => data_get($item, 'nama'),
+                            'slug' => data_get($item, 'slug'),
+                            'page_slug' => data_get($item, 'page_slug'),
+                            'jenjang' => data_get($item, 'jenjang'),
+                            'jenjang_nama_singkat' => data_get($item, 'jenjang_nama_singkat'),
+                            'unw_fakultas_id' => data_get($item, 'unwFakultas.id'),
+                            'unw_fakultas_nama' => trim((string) data_get($item, 'unwFakultas.nama')),
+                            'unw_fakultas_page_slug' => data_get($item, 'unwFakultas.page_slug'),
+                            'api_created_at' => data_get($item, 'createdAt'),
+                            'api_updated_at' => data_get($item, 'updatedAt'),
+                            'created' => data_get($item, 'created'),
+                            'updated' => data_get($item, 'updated'),
+                        ]
+                    );
+
+                    $syncedCount++;
+                }
+
+                DB::commit();
+                Cache::forget('study_programs_select_import');
+                Cache::forget('academic_programs_nav');
+                $this->stream(['output' => "<span class='text-success-400'>[OK]</span> Berhasil menyinkronkan {$syncedCount} program studi ke tabel study_programs.\n"]);
+            } catch (\Throwable $e) {
+                if (DB::transactionLevel() > 0) {
+                    DB::rollBack();
+                }
+
+                Log::error('Gagal sinkronisasi program studi: ' . $e->getMessage());
+                $this->stream(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> " . addslashes($e->getMessage()) . "\n"]);
+            }
+
+            $this->stream(['done' => true]);
+        }, 200, [
+            'Cache-Control' => 'no-cache',
+            'Content-Type' => 'text/event-stream',
+            'X-Accel-Buffering' => 'no',
+        ]);
+    }
+
     public function ambilDetail($sinta_id): StreamedResponse
     {
         $sintaId = $this->cleanSintaId($sinta_id);
@@ -262,11 +313,10 @@ class ScrapController extends Controller
         return new StreamedResponse(function () use ($sintaId) {
             set_time_limit(0);
             ignore_user_abort(true);
-
             $baseUrl = env('PYTHON_SCRAPER_URL', 'http://127.0.0.1:8000');
             $streamUrl = $baseUrl . "/api/scrape-detail/{$sintaId}";
-
             $ch = curl_init();
+
             curl_setopt($ch, CURLOPT_URL, $streamUrl);
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, '');
@@ -276,7 +326,6 @@ class ScrapController extends Controller
             curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $chunk) {
                 foreach (explode("\n", $chunk) as $line) {
                     $line = trim($line);
-
                     if ($line === '') {
                         continue;
                     }
@@ -291,8 +340,7 @@ class ScrapController extends Controller
             $success = curl_exec($ch);
 
             if (! $success) {
-                $error = curl_error($ch);
-                $this->stream(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> Gagal terhubung ke Docker Python Scraper. URL: {$streamUrl}. Error: {$error}\n"]);
+                $this->stream(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> Gagal terhubung ke Docker Python Scraper. URL: {$streamUrl}. Error: " . curl_error($ch) . "\n"]);
             }
 
             curl_close($ch);
@@ -312,9 +360,7 @@ class ScrapController extends Controller
     private function downloadMergedDetailExcel(string $baseUrl, string $sintaId): void
     {
         $downloadUrl = $baseUrl . "/api/download-excel-detail/{$sintaId}";
-
         $this->stream(['output' => "\n[LARAVEL] Menghubungi API Docker untuk menarik file excel gabungan (merged_data)...\n"]);
-
         $fileResponse = Http::get($downloadUrl);
 
         if (! $fileResponse->successful() || isset($fileResponse->json()['error'])) {
@@ -329,23 +375,17 @@ class ScrapController extends Controller
         }
 
         file_put_contents($excelPath, $fileResponse->body());
-
         $this->stream(['output' => "<span class='text-success-400 font-bold'>[OK]</span> Berkas merged_data_{$sintaId}.xlsx sukses diunduh ke laptop. Memulai sinkronisasi Database...\n"]);
-        $this->stream(['output' => "<span class='text-success-400 font-bold'>[LARAVEL SUCCESS]</span> Seluruh data kualifikasi SINTA Dosen sukses bermigrasi ke MySQL.\n----------------------------------------\n"]);
     }
 
-    /**
-     * Import Excel ke Database dengan SSE (Real-time Stream per Sheet).
-     */
     public function importData(Request $request, $sinta_id): StreamedResponse
     {
-        $jurusan = $request->query('jurusan');
+        $studyProgramIds = $request->query('jurusan', $request->query('program_studi'));
         $sintaId = $this->cleanSintaId($sinta_id);
 
-        return new StreamedResponse(function () use ($sintaId, $jurusan) {
+        return new StreamedResponse(function () use ($sintaId, $studyProgramIds) {
             set_time_limit(0);
             ignore_user_abort(true);
-
             $filePath = base_path("scripts/output/merged_data_{$sintaId}.xlsx");
 
             if (! file_exists($filePath)) {
@@ -356,7 +396,6 @@ class ScrapController extends Controller
 
             try {
                 $this->stream(['output' => "Membaca file Excel: merged_data_{$sintaId}.xlsx...\n"]);
-
                 $sheets = (new FastExcel())->importSheets($filePath);
                 $expectedSheets = [
                     0 => 'DATA_DOSEN',
@@ -375,22 +414,17 @@ class ScrapController extends Controller
 
                 foreach ($sheets as $sheetIndex => $rows) {
                     $sheetNameUpper = strtoupper($expectedSheets[$sheetIndex] ?? "SHEET_{$sheetIndex}");
-
                     $this->stream(['output' => "----------------------------------------\n"]);
                     $this->stream(['output' => "Memproses Sheet: <span class='text-primary-400 font-bold'>{$sheetNameUpper}</span>...\n"]);
 
-                    if (empty($rows) || count($rows) === 0) {
+                    if (empty($rows) || count($rows) === 0 || ! collect($rows)->first()) {
                         $this->stream(['output' => "<span class='text-gray-400'>--> Sheet kosong, dilewati.</span>\n"]);
                         continue;
                     }
 
                     $firstRow = collect($rows)->first();
-                    if (! $firstRow) {
-                        $this->stream(['output' => "<span class='text-gray-400'>--> Sheet kosong, dilewati.</span>\n"]);
-                        continue;
-                    }
-
                     $values = array_map('strtolower', array_map('trim', array_values((array) $firstRow)));
+
                     if (in_array('none', $values, true)) {
                         $this->stream(['output' => "<span class='text-gray-400'>--> Sheet berisi 'none', dilewati.</span>\n"]);
                         continue;
@@ -403,7 +437,7 @@ class ScrapController extends Controller
                         $r = $this->normalizeRow($row);
 
                         if ($sheetNameUpper === 'DATA_DOSEN') {
-                            if ($this->importLecturerDataRow($r, $sintaId, $jurusan)) {
+                            if ($this->importLecturerDataRow($r, $sintaId, $studyProgramIds)) {
                                 $insertedCount++;
                             }
                         } elseif ($sheetNameUpper === 'SCOPUS_PUBLICATIONS') {
@@ -421,9 +455,7 @@ class ScrapController extends Controller
                             $insertedCount++;
                         } elseif ($sheetNameUpper === 'SCOPUS_YEARLY_STATS') {
                             if (empty($r['tahun']) && empty($r['year'])) continue;
-                            SintaScopusYearlyStat::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], [
-                                'count' => isset($r['jumlah']) ? (int) $r['jumlah'] : (isset($r['count']) ? (int) $r['count'] : 0),
-                            ]);
+                            SintaScopusYearlyStat::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], ['count' => isset($r['jumlah']) ? (int) $r['jumlah'] : (isset($r['count']) ? (int) $r['count'] : 0)]);
                             $insertedCount++;
                         } elseif ($sheetNameUpper === 'SCHOLAR_PUBLICATIONS') {
                             if (empty($r['judul']) && empty($r['title'])) continue;
@@ -437,10 +469,7 @@ class ScrapController extends Controller
                             $insertedCount++;
                         } elseif ($sheetNameUpper === 'SCHOLAR_YEARLY_STATS') {
                             if (empty($r['tahun']) && empty($r['year'])) continue;
-                            SintaScholarYearlyStat::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], [
-                                'publications' => isset($r['publications']) ? (int) $r['publications'] : 0,
-                                'citations' => isset($r['citations']) ? (int) $r['citations'] : 0,
-                            ]);
+                            SintaScholarYearlyStat::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], ['publications' => isset($r['publications']) ? (int) $r['publications'] : 0, 'citations' => isset($r['citations']) ? (int) $r['citations'] : 0]);
                             $insertedCount++;
                         } elseif ($sheetNameUpper === 'GARUDA_PUBLICATIONS') {
                             if (empty($r['judul']) && empty($r['title'])) continue;
@@ -458,67 +487,33 @@ class ScrapController extends Controller
                             $insertedCount++;
                         } elseif ($sheetNameUpper === 'GARUDA_YEARLY_STATS') {
                             if (empty($r['tahun']) && empty($r['year'])) continue;
-                            SintaGarudaYearlyStat::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], [
-                                'articles' => isset($r['articles']) ? (int) $r['articles'] : (isset($r['jumlah']) ? (int) $r['jumlah'] : 0),
-                            ]);
+                            SintaGarudaYearlyStat::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], ['articles' => isset($r['articles']) ? (int) $r['articles'] : (isset($r['jumlah']) ? (int) $r['jumlah'] : 0)]);
                             $insertedCount++;
                         } elseif ($sheetNameUpper === 'BOOKS') {
                             if (empty($r['judul']) && empty($r['title'])) continue;
-                            SintaBookPublication::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], [
-                                'category' => $r['kategori'] ?? $r['category'] ?? null,
-                                'authors' => $r['penulis'] ?? $r['authors'] ?? null,
-                                'publisher' => $r['penerbit'] ?? $r['publisher'] ?? null,
-                                'year' => $r['tahun'] ?? $r['year'] ?? null,
-                                'city' => $r['kota'] ?? $r['city'] ?? null,
-                                'isbn' => $r['isbn'] ?? null,
-                            ]);
+                            SintaBookPublication::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], ['category' => $r['kategori'] ?? $r['category'] ?? null, 'authors' => $r['penulis'] ?? $r['authors'] ?? null, 'publisher' => $r['penerbit'] ?? $r['publisher'] ?? null, 'year' => $r['tahun'] ?? $r['year'] ?? null, 'city' => $r['kota'] ?? $r['city'] ?? null, 'isbn' => $r['isbn'] ?? null]);
                             $insertedCount++;
                         } elseif ($sheetNameUpper === 'RESEARCHES') {
                             if (empty($r['judul']) && empty($r['title'])) continue;
-                            SintaResearch::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], [
-                                'leader' => $r['leader'] ?? null,
-                                'scheme' => $r['skema'] ?? $r['scheme'] ?? null,
-                                'personnel' => $r['personils'] ?? $r['personnel'] ?? null,
-                                'year' => $r['tahun'] ?? $r['year'] ?? null,
-                                'funding' => $r['dana'] ?? $r['funding'] ?? null,
-                                'status' => $r['status'] ?? null,
-                                'source' => $r['source'] ?? null,
-                            ]);
+                            SintaResearch::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], ['leader' => $r['leader'] ?? null, 'scheme' => $r['skema'] ?? $r['scheme'] ?? null, 'personnel' => $r['personils'] ?? $r['personnel'] ?? null, 'year' => $r['tahun'] ?? $r['year'] ?? null, 'funding' => $r['dana'] ?? $r['funding'] ?? null, 'status' => $r['status'] ?? null, 'source' => $r['source'] ?? null]);
                             $insertedCount++;
                         } elseif ($sheetNameUpper === 'RESEARCH_YEARLY') {
                             if (empty($r['tahun']) && empty($r['year'])) continue;
-                            SintaResearchYearly::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], [
-                                'count' => isset($r['jumlah']) ? (int) $r['jumlah'] : (isset($r['count']) ? (int) $r['count'] : 0),
-                            ]);
+                            SintaResearchYearly::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], ['count' => isset($r['jumlah']) ? (int) $r['jumlah'] : (isset($r['count']) ? (int) $r['count'] : 0)]);
                             $insertedCount++;
                         } elseif ($sheetNameUpper === 'SERVICES') {
                             if (empty($r['judul']) && empty($r['title'])) continue;
-                            SintaService::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], [
-                                'leader' => $r['leader'] ?? null,
-                                'scheme' => $r['skema'] ?? $r['scheme'] ?? null,
-                                'personnel' => $r['personils'] ?? $r['personnel'] ?? null,
-                                'year' => $r['tahun'] ?? $r['year'] ?? null,
-                                'funding' => $r['dana'] ?? $r['funding'] ?? null,
-                                'status' => $r['status'] ?? null,
-                                'source' => $r['source'] ?? null,
-                            ]);
+                            SintaService::updateOrCreate(['sinta_id' => $sintaId, 'title' => $r['judul'] ?? $r['title']], ['leader' => $r['leader'] ?? null, 'scheme' => $r['skema'] ?? $r['scheme'] ?? null, 'personnel' => $r['personils'] ?? $r['personnel'] ?? null, 'year' => $r['tahun'] ?? $r['year'] ?? null, 'funding' => $r['dana'] ?? $r['funding'] ?? null, 'status' => $r['status'] ?? null, 'source' => $r['source'] ?? null]);
                             $insertedCount++;
                         } elseif ($sheetNameUpper === 'SERVICE_YEARLY') {
                             if (empty($r['tahun']) && empty($r['year'])) continue;
-                            SintaServiceYearly::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], [
-                                'count' => isset($r['jumlah']) ? (int) $r['jumlah'] : (isset($r['count']) ? (int) $r['count'] : 0),
-                            ]);
+                            SintaServiceYearly::updateOrCreate(['sinta_id' => $sintaId, 'year' => $r['tahun'] ?? $r['year']], ['count' => isset($r['jumlah']) ? (int) $r['jumlah'] : (isset($r['count']) ? (int) $r['count'] : 0)]);
                             $insertedCount++;
                         }
                     }
 
                     DB::commit();
-
-                    if ($insertedCount > 0) {
-                        $this->stream(['output' => "<span class='text-success-400'>[OK] Berhasil menyimpan {$insertedCount} baris ke database.</span>\n"]);
-                    } else {
-                        $this->stream(['output' => "<span class='text-gray-400'>--> Tidak ada data valid yang diproses. (Mungkin bukan tabel utama)</span>\n"]);
-                    }
+                    $this->stream(['output' => $insertedCount > 0 ? "<span class='text-success-400'>[OK] Berhasil menyimpan {$insertedCount} baris ke database.</span>\n" : "<span class='text-gray-400'>--> Tidak ada data valid yang diproses.</span>\n"]);
                 }
 
                 $this->stream(['output' => "----------------------------------------\n<span class='text-success-400 font-bold'>[SUKSES IMPORT]</span> Seluruh sheet selesai diimpor!\n"]);
@@ -529,8 +524,7 @@ class ScrapController extends Controller
                     DB::rollBack();
                 }
 
-                $errMsg = addslashes($e->getMessage());
-                $this->stream(['output' => "\n<span class='text-danger-500 font-bold'>[ERROR FATAL]</span> {$errMsg} (Baris: {$e->getLine()})\n"]);
+                $this->stream(['output' => "\n<span class='text-danger-500 font-bold'>[ERROR FATAL]</span> " . addslashes($e->getMessage()) . " (Baris: {$e->getLine()})\n"]);
                 $this->stream(['done' => true]);
             }
         }, 200, [
@@ -540,17 +534,14 @@ class ScrapController extends Controller
         ]);
     }
 
-    private function importLecturerDataRow(array $r, string $sintaId, ?string $jurusan): bool
+    private function importLecturerDataRow(array $r, string $sintaId, ?string $studyProgramIds): bool
     {
         $photoValue = $r['profile photo'] ?? $r['profile_photo'] ?? null;
 
         if (! empty($photoValue) && filter_var($photoValue, FILTER_VALIDATE_URL)) {
             try {
                 $this->stream(['output' => "<span style='color: #0ea5e9;'>[FOTO]</span> URL foto ditemukan: {$photoValue}\n"]);
-                $this->stream(['output' => "<span style='color: #0ea5e9;'>[FOTO]</span> Memulai proses unduh (download)...\n"]);
-
                 $storedPhotoPath = $this->downloadLecturerPhotoToStorage($photoValue, $sintaId);
-
                 if ($storedPhotoPath) {
                     $photoValue = $storedPhotoPath;
                 }
@@ -559,7 +550,6 @@ class ScrapController extends Controller
             }
         } elseif (is_string($photoValue) && trim($photoValue) !== '') {
             $photoValue = trim(str_replace('\\', '/', $photoValue), '/');
-
             if (! str_contains($photoValue, '/')) {
                 $photoValue = $this->photoStorageDirectory . '/' . basename($photoValue);
             }
@@ -576,28 +566,38 @@ class ScrapController extends Controller
             'affil_score_3yr' => isset($r['affil score 3yr']) ? (int) str_replace('.', '', $r['affil score 3yr']) : 0,
         ]);
 
-        PascaLecturer::firstOrCreate(
+        $postgraduateLecturer = PostgraduateLecturer::firstOrCreate(
             ['sinta_id' => $sintaId],
             [
                 'name' => $r['nama'] ?? $r['name'] ?? null,
                 'institution' => $r['institusi'] ?? $r['institution'] ?? $r['afiliasi'] ?? null,
-                'study_program' => $r['program studi'] ?? $r['program_studi'] ?? $r['study_program'] ?? null,
                 'profile_photo' => $photoValue,
             ]
         );
 
-        if (! empty($jurusan)) {
-            $idDepartements = explode(',', $jurusan);
+        if (! empty($studyProgramIds)) {
+            $selectedStudyProgramIds = collect(explode(',', $studyProgramIds))
+                ->map(fn ($studyProgramId) => trim((string) $studyProgramId))
+                ->filter()
+                ->unique()
+                ->values();
 
-            Departement::where('sinta_id', $sintaId)->delete();
+            $validStudyProgramIds = StudyProgram::query()
+                ->whereIn('id', $selectedStudyProgramIds)
+                ->orWhereIn('id_unw_program_studi', $selectedStudyProgramIds)
+                ->pluck('id')
+                ->map(fn ($studyProgramId) => (int) $studyProgramId)
+                ->unique()
+                ->values()
+                ->toArray();
 
-            foreach ($idDepartements as $idDept) {
-                if (trim($idDept) !== '') {
-                    Departement::create([
-                        'sinta_id' => $sintaId,
-                        'id_departement' => trim($idDept),
-                    ]);
-                }
+            PostgraduateLecturerStudyProgram::where('postgraduate_lecturer_id', $postgraduateLecturer->id)->delete();
+
+            foreach ($validStudyProgramIds as $studyProgramId) {
+                PostgraduateLecturerStudyProgram::create([
+                    'postgraduate_lecturer_id' => $postgraduateLecturer->id,
+                    'study_program_id' => $studyProgramId,
+                ]);
             }
         }
 
