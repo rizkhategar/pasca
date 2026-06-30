@@ -20,7 +20,7 @@ class ContactResource extends Resource
     protected static ?string $slug = 'contacts';
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-phone';
     protected static ?string $navigationLabel = 'Contacts';
-    protected static ?string $modelLabel = 'Contact';
+    protected static ?string $modelLabel = 'Contacts';
     protected static ?string $pluralModelLabel = 'Contacts';
     protected static string|UnitEnum|null $navigationGroup = 'Contacts';
     protected static ?int $navigationSort = 1;
