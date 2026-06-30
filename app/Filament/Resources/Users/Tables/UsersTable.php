@@ -30,6 +30,12 @@ class UsersTable
                     ->badge()
                     ->formatStateUsing(fn (?string $state): string => User::roleOptions()[$state] ?? '-'),
 
+                TextColumn::make('role_code')
+                    ->label('Role Code')
+                    ->state(fn (User $record): string => $record->role ?: '-')
+                    ->badge()
+                    ->copyable(),
+
                 TextColumn::make('updated_at')
                     ->label('Updated At')
                     ->dateTime('d M Y H:i')
