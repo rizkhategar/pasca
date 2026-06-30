@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Policies;
 
 use App\Models\Contacts;
-use Illuminate\Foundation\Auth\User as AuthUser;
 use Illuminate\Auth\Access\HandlesAuthorization;
+use Illuminate\Foundation\Auth\User as AuthUser;
 
 class ContactsPolicy
 {
@@ -14,61 +14,66 @@ class ContactsPolicy
 
     public function viewAny(AuthUser $authUser): bool
     {
-        return $authUser->can('ViewAny:Contact');
+        return $this->allows($authUser, 'ViewAny');
     }
 
     public function view(AuthUser $authUser, Contacts $contacts): bool
     {
-        return $authUser->can('View:Contact');
+        return $this->allows($authUser, 'View');
     }
 
     public function create(AuthUser $authUser): bool
     {
-        return $authUser->can('Create:Contact');
+        return $this->allows($authUser, 'Create');
     }
 
     public function update(AuthUser $authUser, Contacts $contacts): bool
     {
-        return $authUser->can('Update:Contact');
+        return $this->allows($authUser, 'Update');
     }
 
     public function delete(AuthUser $authUser, Contacts $contacts): bool
     {
-        return $authUser->can('Delete:Contact');
+        return $this->allows($authUser, 'Delete');
     }
 
     public function deleteAny(AuthUser $authUser): bool
     {
-        return $authUser->can('DeleteAny:Contact');
+        return $this->allows($authUser, 'DeleteAny');
     }
 
     public function restore(AuthUser $authUser, Contacts $contacts): bool
     {
-        return $authUser->can('Restore:Contact');
+        return $this->allows($authUser, 'Restore');
     }
 
     public function forceDelete(AuthUser $authUser, Contacts $contacts): bool
     {
-        return $authUser->can('ForceDelete:Contact');
+        return $this->allows($authUser, 'ForceDelete');
     }
 
     public function forceDeleteAny(AuthUser $authUser): bool
     {
-        return $authUser->can('ForceDeleteAny:Contact');
+        return $this->allows($authUser, 'ForceDeleteAny');
     }
 
     public function restoreAny(AuthUser $authUser): bool
     {
-        return $authUser->can('RestoreAny:Contact');
+        return $this->allows($authUser, 'RestoreAny');
     }
 
     public function replicate(AuthUser $authUser, Contacts $contacts): bool
     {
-        return $authUser->can('Replicate:Contact');
+        return $this->allows($authUser, 'Replicate');
     }
 
     public function reorder(AuthUser $authUser): bool
     {
-        return $authUser->can('Reorder:Contact');
+        return $this->allows($authUser, 'Reorder');
+    }
+
+    private function allows(AuthUser $authUser, string $action): bool
+    {
+        return $authUser->can($action . ':Contact') || $authUser->can($action . ':Contacts');
     }
 }
