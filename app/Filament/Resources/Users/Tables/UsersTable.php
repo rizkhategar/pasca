@@ -32,12 +32,6 @@ class UsersTable
                     ->state(fn (User $record): string => $record->getRoleNames()->map(fn (string $role): string => Str::headline($role))->implode(', ') ?: '-')
                     ->badge(),
 
-                TextColumn::make('role_code')
-                    ->label('Role Code')
-                    ->state(fn (User $record): string => $record->getRoleNames()->implode(', ') ?: '-')
-                    ->badge()
-                    ->copyable(),
-
                 TextColumn::make('updated_at')
                     ->label('Updated At')
                     ->dateTime('d M Y H:i')
