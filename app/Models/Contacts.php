@@ -5,8 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-class Contact extends Model
+class Contacts extends Model
 {
+    protected $table = 'contacts';
+
     protected $fillable = [
         'primary_admin_name',
         'primary_whatsapp',

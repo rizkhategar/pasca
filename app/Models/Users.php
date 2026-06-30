@@ -14,12 +14,19 @@ use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable implements FilamentUser
+class Users extends Authenticatable implements FilamentUser
 {
     public const ROLE_SUPER_ADMIN = 'super_admin';
 
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, Notifiable;
+
+    protected $table = 'users';
+
+    protected static function newFactory(): UserFactory
+    {
+        return UserFactory::new();
+    }
 
     public function canAccessPanel(Panel $panel): bool
     {
