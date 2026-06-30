@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\Users\Tables;
 
 use App\Filament\Resources\Users\UserResource;
-use App\Models\User;
+use App\Models\Users;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
@@ -29,7 +29,7 @@ class UsersTable
 
                 TextColumn::make('role_label')
                     ->label('Role')
-                    ->state(fn (User $record): string => $record->getRoleNames()->map(fn (string $role): string => Str::headline($role))->implode(', ') ?: '-')
+                    ->state(fn (Users $record): string => $record->getRoleNames()->map(fn (string $role): string => Str::headline($role))->implode(', ') ?: '-')
                     ->badge(),
 
                 TextColumn::make('updated_at')
@@ -40,11 +40,11 @@ class UsersTable
             ->recordActions([
                 Impersonate::make()
                     ->redirectTo(url('/admin'))
-                    ->visible(fn (User $record): bool => (auth()->user()?->canImpersonate() ?? false) && $record->canBeImpersonated()),
+                    ->visible(fn (Users $record): bool => (auth()->user()?->canImpersonate() ?? false) && $record->canBeImpersonated()),
                 EditAction::make()
-                    ->visible(fn (User $record): bool => UserResource::canEdit($record)),
+                    ->visible(fn (Users $record): bool => UserResource::canEdit($record)),
                 DeleteAction::make()
-                    ->visible(fn (User $record): bool => UserResource::canDelete($record)),
+                    ->visible(fn (Users $record): bool => UserResource::canDelete($record)),
             ]);
     }
 }

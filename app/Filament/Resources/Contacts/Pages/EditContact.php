@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\Contacts\Pages;
 
 use App\Filament\Resources\Contacts\ContactResource;
-use App\Models\Contact;
+use App\Models\Contacts;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
@@ -14,7 +14,7 @@ class EditContact extends EditRecord
     protected function mutateFormDataBeforeFill(array $data): array
     {
         if (empty($data['whatsapp_admins'])) {
-            $data['whatsapp_admins'] = Contact::fallbackWhatsAppAdmins($data);
+            $data['whatsapp_admins'] = Contacts::fallbackWhatsAppAdmins($data);
         }
 
         return $data;
@@ -22,7 +22,7 @@ class EditContact extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        return Contact::syncLegacyWhatsAppFields($data);
+        return Contacts::syncLegacyWhatsAppFields($data);
     }
 
     protected function getHeaderActions(): array
