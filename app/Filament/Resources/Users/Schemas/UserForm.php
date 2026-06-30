@@ -2,11 +2,12 @@
 
 namespace App\Filament\Resources\Users\Schemas;
 
-use App\Models\User;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 class UserForm
 {
@@ -16,7 +17,7 @@ class UserForm
             ->columns(1)
             ->components([
                 Section::make('User Information')
-                    ->description('Kelola akun admin dan role akses Filament.')
+                    ->description('Kelola akun admin dan role akses dari Filament Shield.')
                     ->columnSpanFull()
                     ->schema([
                         TextInput::make('name')
@@ -31,10 +32,14 @@ class UserForm
                             ->unique(ignoreRecord: true)
                             ->maxLength(255),
 
-                        Select::make('role')
+                        Select::make('roles')
                             ->label('Role Access')
-                            ->options(User::roleOptions())
-                            ->default(User::ROLE_ADMIN)
+                            ->relationship('roles', 'name')
+                            ->getOptionLabelFromRecordUsing(fn (Role $record): string => Str::headline($record->name))
+                            ->multiple()
+                            ->maxItems(1)
+                            ->preload()
+                            ->searchable()
                             ->native(false)
                             ->required(),
 
