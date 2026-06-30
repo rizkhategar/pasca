@@ -55,7 +55,7 @@ return [
     |
     */
 
-    'auth_provider_model' => 'App\\Models\\User',
+    'auth_provider_model' => 'App\\Models\\Users',
 
     /*
     |--------------------------------------------------------------------------
@@ -209,7 +209,6 @@ return [
     | Like pages, widgets typically only need view permissions. Add widgets
     | to the exclude array if you don't want them to appear in your role
     | management interface.
-    |
     */
 
     'widgets' => [
