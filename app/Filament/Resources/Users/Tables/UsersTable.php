@@ -7,6 +7,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use STS\FilamentImpersonate\Actions\Impersonate;
 
 class UsersTable
 {
@@ -35,6 +36,9 @@ class UsersTable
                     ->sortable(),
             ])
             ->recordActions([
+                Impersonate::make()
+                    ->redirectTo(url('/admin'))
+                    ->visible(fn (User $record): bool => (auth()->user()?->canImpersonate() ?? false) && $record->canBeImpersonated()),
                 EditAction::make(),
                 DeleteAction::make()
                     ->visible(fn (User $record): bool => auth()->id() !== $record->id),

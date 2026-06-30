@@ -12,41 +12,75 @@
         .research-list-page #dosenGrid.lecturer-list {
             display: grid !important;
             grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-            gap: 1rem !important;
+            gap: 1.15rem !important;
             align-items: stretch !important;
         }
 
         .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card {
+            position: relative !important;
             display: grid !important;
-            grid-template-columns: 150px minmax(0, 1fr) !important;
+            grid-template-columns: 162px minmax(0, 1fr) !important;
             grid-template-areas: "photo info" !important;
-            align-items: stretch !important;
+            align-items: center !important;
             gap: 0 !important;
             width: 100% !important;
-            min-height: 175px !important;
+            min-height: 235px !important;
             overflow: hidden !important;
             text-decoration: none !important;
             flex-direction: unset !important;
+            border: 1px solid rgba(148, 163, 184, .24) !important;
+            border-radius: 1.25rem !important;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fbff 55%, #f1f7ff 100%) !important;
+            box-shadow: 0 16px 38px rgba(15, 23, 42, .08) !important;
+            transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease, background .22s ease !important;
+        }
+
+        .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card:hover {
+            transform: translateY(-5px) !important;
+            border-color: rgba(247, 181, 0, .55) !important;
+            box-shadow: 0 26px 58px rgba(247, 181, 0, .32), 0 10px 28px rgba(15, 23, 42, .12) !important;
+        }
+
+        .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card::before {
+            content: "";
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 4px;
+            background: linear-gradient(180deg, #1d4ed8, #60a5fa, #93c5fd);
+            opacity: .9;
+        }
+
+        .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card:hover::before {
+            background: linear-gradient(180deg, #f7b500, #ffd86b, #fff3b0);
         }
 
         .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card > .lecturer-card-photo {
             grid-area: photo !important;
             position: relative !important;
-            width: 150px !important;
-            max-width: 150px !important;
-            height: 100% !important;
-            min-height: 175px !important;
-            margin: 0 !important;
-            border-radius: 0 !important;
-            flex: 0 0 150px !important;
+            width: 128px !important;
+            max-width: 128px !important;
+            height: 193px !important;
+            min-height: 193px !important;
+            margin: 0 0 0 1.55rem !important;
+            border-radius: 1rem !important;
+            overflow: hidden !important;
+            background: #e5e7eb !important;
+            border: 4px solid #ffffff !important;
+            box-shadow: 0 14px 30px rgba(15, 23, 42, .20) !important;
+            flex: 0 0 128px !important;
+            align-self: center !important;
+        }
+
+        .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card:hover > .lecturer-card-photo {
+            box-shadow: 0 18px 34px rgba(247, 181, 0, .28), 0 10px 24px rgba(15, 23, 42, .18) !important;
         }
 
         .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card > .lecturer-card-photo img {
             width: 100% !important;
             height: 100% !important;
-            min-height: 175px !important;
+            min-height: 0 !important;
             object-fit: cover !important;
-            object-position: center top !important;
+            object-position: center center !important;
             display: block !important;
         }
 
@@ -57,7 +91,7 @@
             justify-content: space-between !important;
             width: auto !important;
             min-width: 0 !important;
-            padding: .95rem 1rem !important;
+            padding: 1.05rem 1.1rem 1rem .9rem !important;
         }
 
         .research-list-page .lecturer-card-main-info {
@@ -69,13 +103,16 @@
             align-items: flex-start;
             justify-content: space-between;
             gap: .65rem;
-            margin-bottom: .5rem;
+            margin-bottom: .45rem;
         }
 
         .research-list-page .lecturer-card-title-row .news-page-title {
             margin: 0;
+            color: #0f172a;
             font-size: 1rem;
-            line-height: 1.25;
+            font-weight: 800;
+            line-height: 1.28;
+            letter-spacing: -.01em;
         }
 
         .research-list-page .lecturer-sinta-chip {
@@ -84,17 +121,25 @@
             gap: .35rem;
             flex: 0 0 auto;
             border-radius: 999px;
-            padding: .3rem .55rem;
+            padding: .32rem .58rem;
             background: rgba(37, 99, 235, .08);
             color: #1d4ed8;
-            font-size: .72rem;
+            border: 1px solid rgba(37, 99, 235, .14);
+            font-size: .7rem;
             font-weight: 800;
             white-space: nowrap;
         }
 
+        .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card:hover .lecturer-sinta-chip {
+            background: rgba(255, 248, 214, .65);
+            color: #072b57;
+            border-color: rgba(247, 181, 0, .30);
+        }
+
         .research-list-page .lecturer-card-info .news-page-excerpt {
-            margin-bottom: .7rem;
-            font-size: .86rem;
+            margin-bottom: .65rem;
+            color: #475569;
+            font-size: .84rem;
             line-height: 1.45;
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -102,64 +147,113 @@
             overflow: hidden;
         }
 
+        .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card:hover .news-page-excerpt {
+            color: #334155;
+        }
+
+        .research-list-page .lecturer-data-label {
+            display: inline-flex;
+            align-items: center;
+            width: fit-content;
+            gap: .4rem;
+            margin-bottom: .55rem;
+            border-radius: 999px;
+            padding: .36rem .68rem;
+            background: linear-gradient(135deg, rgba(14, 165, 233, .12), rgba(37, 99, 235, .10));
+            color: #075985;
+            border: 1px solid rgba(14, 165, 233, .18);
+            font-size: .72rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card:hover .lecturer-data-label {
+            background: rgba(255, 248, 214, .65);
+            color: #072b57;
+            border-color: rgba(247, 181, 0, .30);
+        }
+
+        .research-list-page .lecturer-data-label i {
+            color: #2563eb;
+        }
+
         .research-list-page .lecturer-card-info .lecturer-stats {
-            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-            gap: .55rem !important;
-            margin-top: .55rem;
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            gap: .48rem !important;
+            margin-top: .25rem;
         }
 
         .research-list-page .lecturer-card-info .lecturer-stats .stat-box {
-            padding: .55rem .45rem !important;
-            min-height: auto !important;
+            position: relative;
+            overflow: hidden;
+            padding: .58rem .42rem !important;
+            min-height: 62px !important;
+            border-radius: .85rem !important;
+            background: rgba(255, 255, 255, .9) !important;
+            border: 1px solid rgba(148, 163, 184, .18) !important;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, .05) !important;
+        }
+
+        .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card:hover .stat-box {
+            background: rgba(255, 255, 255, .92) !important;
+            border-color: rgba(247, 181, 0, .26) !important;
+            box-shadow: 0 10px 20px rgba(247, 181, 0, .12) !important;
+        }
+
+        .research-list-page .lecturer-card-info .lecturer-stats .stat-box::after {
+            content: "";
+            position: absolute;
+            inset: auto 0 0 0;
+            height: 3px;
+            background: linear-gradient(90deg, #1d4ed8, #38bdf8);
+            opacity: .75;
         }
 
         .research-list-page .lecturer-card-info .lecturer-stats .stat-number {
-            font-size: .95rem !important;
-            line-height: 1.2 !important;
+            color: #0f172a;
+            font-size: .9rem !important;
+            font-weight: 850 !important;
+            line-height: 1.12 !important;
         }
 
         .research-list-page .lecturer-card-info .lecturer-stats .stat-desc {
-            font-size: .7rem !important;
+            margin-top: .18rem;
+            color: #64748b;
+            font-size: .66rem !important;
+            font-weight: 750;
+            text-transform: uppercase;
+            letter-spacing: .03em;
         }
 
         .research-list-page .lecturer-card-info .news-page-footer {
+            display: flex;
+            justify-content: flex-end;
             margin-top: .7rem;
-            padding-top: .7rem;
+            padding-top: .65rem;
             border-top: 1px solid rgba(15, 23, 42, .08);
         }
 
-        .research-list-page .lecturer-card-info .news-page-date,
         .research-list-page .lecturer-card-info .read-more {
+            display: inline-flex;
+            align-items: center;
+            gap: .42rem;
+            color: #1d4ed8;
             font-size: .78rem;
+            font-weight: 800;
         }
 
-        @media (max-width: 1100px) {
+        .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card:hover .read-more {
+            color: #072b57;
+        }
+
+        @media (max-width: 1200px) {
             .research-list-page #dosenGrid.lecturer-list {
                 grid-template-columns: 1fr !important;
             }
 
             .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card {
-                grid-template-columns: 190px minmax(0, 1fr) !important;
-                min-height: 200px !important;
-            }
-
-            .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card > .lecturer-card-photo {
-                width: 190px !important;
-                max-width: 190px !important;
-                min-height: 200px !important;
-                flex-basis: 190px !important;
-            }
-
-            .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card > .lecturer-card-photo img {
-                min-height: 200px !important;
-            }
-
-            .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card > .lecturer-card-info {
-                padding: 1.1rem !important;
-            }
-
-            .research-list-page .lecturer-card-info .lecturer-stats {
-                grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+                grid-template-columns: 162px minmax(0, 1fr) !important;
+                min-height: 235px !important;
             }
         }
 
@@ -173,18 +267,26 @@
                 grid-template-areas:
                     "photo"
                     "info" !important;
+                min-height: auto !important;
+            }
+
+            .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card::before {
+                inset: 0 0 auto 0;
+                width: 100%;
+                height: 4px;
             }
 
             .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card > .lecturer-card-photo {
-                width: 100% !important;
-                max-width: 100% !important;
-                height: 240px !important;
-                min-height: 240px !important;
-                flex-basis: auto !important;
+                width: 128px !important;
+                max-width: 128px !important;
+                height: 193px !important;
+                min-height: 193px !important;
+                margin: 1.1rem auto .15rem auto !important;
+                flex-basis: 128px !important;
             }
 
-            .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card > .lecturer-card-photo img {
-                min-height: 240px !important;
+            .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card > .lecturer-card-info {
+                padding: .9rem 1rem 1rem 1rem !important;
             }
 
             .research-list-page .lecturer-card-title-row {
@@ -332,10 +434,15 @@
 
                                     <p class="news-page-excerpt">{{ $dosen->program_studi }}</p>
 
+                                    <div class="lecturer-data-label">
+                                        <i class="fas fa-chart-line"></i>
+                                        <span>Data Riset SINTA</span>
+                                    </div>
+
                                     <div class="stats-grid lecturer-stats">
                                         <div class="stat-box">
                                             <div class="stat-number">{{ number_format($dosen->sinta_score_overall ?? 0) }}</div>
-                                            <div class="stat-desc">Overall</div>
+                                            <div class="stat-desc">Total</div>
                                         </div>
 
                                         <div class="stat-box">
@@ -350,13 +457,12 @@
 
                                         <div class="stat-box">
                                             <div class="stat-number">{{ number_format($dosen->affil_score_3yr ?? 0) }}</div>
-                                            <div class="stat-desc">Affil 3Yr</div>
+                                            <div class="stat-desc">Affil 3Y</div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div class="news-page-footer">
-                                    <span class="news-page-date"><i class="fas fa-chart-line"></i>Data Riset SINTA</span>
                                     <span class="read-more">Detail<i class="fas fa-arrow-right"></i></span>
                                 </div>
                             </div>
