@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="UTF-8">
@@ -24,7 +24,7 @@
         @yield('content')
     </main>
     @include('components.footer')
+    <x-impersonate::banner />
     @stack('scripts')
 </body>
 </html>
-
