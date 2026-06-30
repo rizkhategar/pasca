@@ -7,6 +7,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\Str;
 use STS\FilamentImpersonate\Actions\Impersonate;
 
 class UsersTable
@@ -27,12 +28,13 @@ class UsersTable
 
                 TextColumn::make('role')
                     ->label('Role')
-                    ->badge()
-                    ->formatStateUsing(fn (?string $state): string => User::roleOptions()[$state] ?? '-'),
+                    ->state(fn (User $record): string => $record->primaryRoleName() ?: '-')
+                    ->formatStateUsing(fn (string $state): string => User::roleOptions()[$state] ?? Str::headline($state))
+                    ->badge(),
 
                 TextColumn::make('role_code')
                     ->label('Role Code')
-                    ->state(fn (User $record): string => $record->role ?: '-')
+                    ->state(fn (User $record): string => $record->primaryRoleName() ?: '-')
                     ->badge()
                     ->copyable(),
 
