@@ -67,6 +67,16 @@ class User extends Authenticatable implements FilamentUser
         return $this->isSuperAdmin() || $this->isAdmin();
     }
 
+    public function canImpersonate(): bool
+    {
+        return $this->isSuperAdmin();
+    }
+
+    public function canBeImpersonated(): bool
+    {
+        return ! $this->isSuperAdmin() && auth()->id() !== $this->getKey();
+    }
+
     /**
      * Get the attributes that should be cast.
      *
