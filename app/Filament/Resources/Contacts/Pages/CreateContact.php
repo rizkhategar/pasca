@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\Contacts\Pages;
 
 use App\Filament\Resources\Contacts\ContactResource;
-use App\Models\Contact;
+use App\Models\Contacts;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateContact extends CreateRecord
@@ -12,6 +12,6 @@ class CreateContact extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        return Contact::syncLegacyWhatsAppFields($data);
+        return Contacts::syncLegacyWhatsAppFields($data);
     }
 }
