@@ -34,8 +34,8 @@ class AdminPanelProvider extends PanelProvider
             if (class_exists($pluginClass)) {
                 $shieldPlugin = $pluginClass::make()
                     ->navigationLabel('Roles')
-                    ->navigationGroup('Filament Shield')
-                    ->navigationSort(1)
+                    ->navigationGroup('Authentication')
+                    ->navigationSort(2)
                     ->registerNavigation(true);
                 break;
             }
@@ -58,8 +58,8 @@ class AdminPanelProvider extends PanelProvider
                 NavigationItem::make('Roles')
                     ->url(url('/admin/shield/roles'))
                     ->icon('heroicon-o-shield-check')
-                    ->group('Filament Shield')
-                    ->sort(1),
+                    ->group('Authentication')
+                    ->sort(2),
             ])
             ->navigationGroups([
                 NavigationGroup::make()
@@ -79,11 +79,7 @@ class AdminPanelProvider extends PanelProvider
                     ->collapsed(false),
 
                 NavigationGroup::make()
-                    ->label('Users')
-                    ->collapsed(false),
-
-                NavigationGroup::make()
-                    ->label('Filament Shield')
+                    ->label('Authentication')
                     ->collapsed(false),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
