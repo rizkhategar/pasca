@@ -56,10 +56,10 @@ class ActivityLogResource extends Resource
                     ->searchable()
                     ->wrap(),
 
-                TextColumn::make('causer.name')
-                    ->label('User')
+                TextColumn::make('causer_id')
+                    ->label('User ID')
                     ->placeholder('System')
-                    ->searchable(),
+                    ->sortable(),
 
                 TextColumn::make('subject_type')
                     ->label('Subject')
