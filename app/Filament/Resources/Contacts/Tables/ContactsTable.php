@@ -29,8 +29,10 @@ class ContactsTable
                     ->sortable(),
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()
+                    ->visible(fn (Contact $record): bool => ContactResource::canEdit($record)),
+                DeleteAction::make()
+                    ->visible(fn (Contact $record): bool => ContactResource::canDelete($record)),
             ]);
     }
 }

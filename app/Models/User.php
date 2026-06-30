@@ -10,6 +10,9 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'email', 'password', 'role'])]
@@ -25,11 +28,23 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->hasAnyRole(array_keys(self::roleOptions())) || in_array($this->role, array_keys(self::roleOptions()), true);
+        return $this->roles()->exists() || filled($this->role);
     }
 
     public static function roleOptions(): array
     {
+        if (Schema::hasTable('roles')) {
+            $roles = Role::query()
+                ->orderBy('name')
+                ->pluck('name')
+                ->mapWithKeys(fn (string $name): array => [$name => Str::headline($name)])
+                ->all();
+
+            if (! empty($roles)) {
+                return $roles;
+            }
+        }
+
         return [
             self::ROLE_SUPER_ADMIN => 'Super Admin',
             self::ROLE_ADMIN => 'Admin',
@@ -37,9 +52,16 @@ class User extends Authenticatable implements FilamentUser
         ];
     }
 
+    public function primaryRoleName(): ?string
+    {
+        return $this->getRoleNames()->first() ?: $this->role;
+    }
+
     public function isSuperAdmin(): bool
     {
-        return $this->hasRole(self::ROLE_SUPER_ADMIN) || $this->role === self::ROLE_SUPER_ADMIN;
+        $superAdminRole = config('filament-shield.super_admin.name', self::ROLE_SUPER_ADMIN);
+
+        return $this->hasRole($superAdminRole) || $this->role === $superAdminRole;
     }
 
     public function isAdmin(): bool
@@ -54,17 +76,20 @@ class User extends Authenticatable implements FilamentUser
 
     public function canManageAccounts(): bool
     {
-        return $this->isSuperAdmin();
+        return $this->can('ViewAny:User');
     }
 
     public function canManageContact(): bool
     {
-        return $this->isSuperAdmin() || $this->isAdminPmb();
+        return $this->can('ViewAny:Contact');
     }
 
     public function canManageContent(): bool
     {
-        return $this->isSuperAdmin() || $this->isAdmin();
+        return $this->can('ViewAny:Slider')
+            || $this->can('ViewAny:AboutPostgraduate')
+            || $this->can('ViewAny:VisionMission')
+            || $this->can('ViewAny:OrganizationalStructure');
     }
 
     public function canImpersonate(): bool

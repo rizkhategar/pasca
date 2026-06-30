@@ -15,7 +15,7 @@ class ListSliders extends ListRecords
         return [
             CreateAction::make()
                 ->label('Add Slider')
-                ->visible(fn (): bool => auth()->user()?->canManageContent() ?? false),
+                ->visible(fn (): bool => SliderResource::canCreate()),
         ];
     }
 }
