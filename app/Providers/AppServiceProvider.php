@@ -6,6 +6,7 @@ use App\Models\ActivityLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -49,7 +50,7 @@ class AppServiceProvider extends ServiceProvider
 
     private function shouldLogModelActivity(Model $model): bool
     {
-        if ($model instanceof ActivityLog) {
+        if ($model instanceof ActivityLog || ! Schema::hasTable('activity_logs')) {
             return false;
         }
 
@@ -62,6 +63,11 @@ class AppServiceProvider extends ServiceProvider
     private function recordModelActivity(string $event, Model $model): void
     {
         $changes = $this->resolveActivityChanges($event, $model);
+
+        if ($event === 'updated' && empty($changes['attributes'])) {
+            return;
+        }
+
         $causer = auth()->user();
         $request = request();
 
