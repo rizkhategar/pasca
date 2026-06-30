@@ -59,7 +59,8 @@ class AdminPanelProvider extends PanelProvider
                     ->url(url('/admin/shield/roles'))
                     ->icon('heroicon-o-shield-check')
                     ->group('Authentication')
-                    ->sort(2),
+                    ->sort(2)
+                    ->visible(fn (): bool => auth()->user()?->can('ViewAny:Role') ?? false),
             ])
             ->navigationGroups([
                 NavigationGroup::make()
