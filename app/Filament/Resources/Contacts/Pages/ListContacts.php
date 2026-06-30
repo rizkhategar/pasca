@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\Contacts\Pages;
 
 use App\Filament\Resources\Contacts\ContactResource;
-use App\Models\Contact;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
@@ -16,7 +15,7 @@ class ListContacts extends ListRecords
         return [
             CreateAction::make()
                 ->label('Add Contact')
-                ->visible(fn (): bool => (auth()->user()?->canManageContact() ?? false) && Contact::query()->doesntExist()),
+                ->visible(fn (): bool => ContactResource::canCreate()),
         ];
     }
 }

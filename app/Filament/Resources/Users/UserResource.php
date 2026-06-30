@@ -52,23 +52,8 @@ class UserResource extends Resource
         ];
     }
 
-    public static function canViewAny(): bool
-    {
-        return auth()->user()?->canManageAccounts() ?? false;
-    }
-
-    public static function canCreate(): bool
-    {
-        return auth()->user()?->canManageAccounts() ?? false;
-    }
-
-    public static function canEdit(Model $record): bool
-    {
-        return auth()->user()?->canManageAccounts() ?? false;
-    }
-
     public static function canDelete(Model $record): bool
     {
-        return (auth()->user()?->canManageAccounts() ?? false) && auth()->id() !== $record->getKey();
+        return parent::canDelete($record) && auth()->id() !== $record->getKey();
     }
 }

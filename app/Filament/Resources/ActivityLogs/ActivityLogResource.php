@@ -43,7 +43,7 @@ class ActivityLogResource extends Resource
             ->columns([
                 TextColumn::make('created_at')
                     ->label('Time')
-                    ->dateTime('d M Y H:i:s')
+                    ->formatStateUsing(fn ($state): string => $state?->timezone('Asia/Jakarta')->format('d M Y H:i:s') ?? '-')
                     ->sortable(),
 
                 TextColumn::make('event')
@@ -94,7 +94,7 @@ class ActivityLogResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->isSuperAdmin() ?? false;
+        return auth()->user()?->can('ViewAny:ActivityLog') ?? false;
     }
 
     public static function canCreate(): bool
