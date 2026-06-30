@@ -27,15 +27,14 @@ class UsersTable
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('role')
+                TextColumn::make('role_label')
                     ->label('Role')
-                    ->state(fn (User $record): string => $record->primaryRoleName() ?: '-')
-                    ->formatStateUsing(fn (string $state): string => User::roleOptions()[$state] ?? Str::headline($state))
+                    ->state(fn (User $record): string => $record->getRoleNames()->map(fn (string $role): string => Str::headline($role))->implode(', ') ?: '-')
                     ->badge(),
 
                 TextColumn::make('role_code')
                     ->label('Role Code')
-                    ->state(fn (User $record): string => $record->primaryRoleName() ?: '-')
+                    ->state(fn (User $record): string => $record->getRoleNames()->implode(', ') ?: '-')
                     ->badge()
                     ->copyable(),
 
