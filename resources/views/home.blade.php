@@ -48,6 +48,23 @@
             'icon' => 'M12 2a1 1 0 0 1 1 1v2h5a1 1 0 1 1 0 2h-1l2.5 5a3.5 3.5 0 0 1-7 0L15 7h-2v11h4a1 1 0 1 1 0 2H7a1 1 0 1 1 0-2h4V7H9l2.5 5a3.5 3.5 0 0 1-7 0L7 7H6a1 1 0 1 1 0-2h5V3a1 1 0 0 1 1-1Zm-4 6-1.6 3h3.2L8 8Zm8 0-1.6 3h3.2L16 8Z',
         ],
     ];
+
+    $homeNewsCategories = [
+        'Semua',
+        'Umum',
+        'Kemahasiswaan',
+        'Akademik',
+        'LPPM',
+        'Kehumasan',
+        'Pengembangan & Perencanaan',
+        'Alumni',
+        'Panduan Akademik',
+        'Dosen',
+        'PMB',
+        'Beasiswa',
+        'Teknologi',
+        'PKKS/PP PT',
+    ];
 @endphp
 
 @extends('layouts.app')
@@ -147,12 +164,14 @@
                         <h2 class="section-title">Berita Terkini & Agenda</h2>
                     </div>
 
-                    <div class="category-filters">
-                        <button class="cat-pill active" type="button">Semua</button>
-                        <button class="cat-pill" type="button">Umum</button>
-                        <button class="cat-pill" type="button">Kemahasiswaan</button>
-                        <button class="cat-pill" type="button">Akademik</button>
-                        <button class="cat-pill" type="button">PMB</button>
+                    <div class="category-filters" aria-label="Filter kategori berita">
+                        @foreach ($homeNewsCategories as $index => $category)
+                            <button class="cat-pill {{ $index === 0 ? 'active' : '' }}" type="button"
+                                data-category-id="{{ $index === 0 ? 'all' : Str::slug($category) }}">
+                                <i class="fas fa-tag" aria-hidden="true"></i>
+                                <span>{{ $category }}</span>
+                            </button>
+                        @endforeach
                     </div>
 
                     <div class="news-list">
@@ -183,14 +202,14 @@
 
                     <div class="service-grid">
                         <button class="service-card" type="button">
-                            <svg viewBox="0 0 24 24"><path d="M10 17v-3H3v-4h7V7l5 5-5 5ZM12 3h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-8v-2h7V5h-7V3Z" /></svg>
-                            <span>Login<br>Mahasiswa</span>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17v-3H3v-4h7V7l5 5-5 5ZM12 3h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-8v-2h7V5h-7V3Z" /></svg>
+                            <span class="service-label">Login<br>Mahasiswa</span>
                         </button>
 
                         <div class="edom-card-wrapper" id="edomCardWrapper">
                             <button class="service-card" type="button" id="edomService">
-                                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm-1 7V3.5L18.5 9H13ZM8 13h8v2H8v-2Zm0 4h8v2H8v-2Zm0-8h3v2H8V9Z" /></svg>
-                                <span>EDOM</span>
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm-1 7V3.5L18.5 9H13ZM8 13h8v2H8v-2Zm0 4h8v2H8v-2Zm0-8h3v2H8V9Z" /></svg>
+                                <span class="service-label">EDOM</span>
                             </button>
 
                             <div class="edom-popover">
@@ -201,19 +220,22 @@
                             </div>
                         </div>
 
-                        <button class="service-card" type="button">
-                            <svg viewBox="0 0 24 24"><path d="M12 3 1 9l11 6 9-4.91V17h2V9L12 3Zm0 14.2L5 13.4V17l7 4 7-4v-3.6l-7 3.8Z" /></svg>
-                            <span>E-Learning</span>
+                        <button class="service-card service-card-link" type="button">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 1 9l11 6 9-4.91V17h2V9L12 3Zm0 14.2L5 13.4V17l7 4 7-4v-3.6l-7 3.8Z" /></svg>
+                            <span class="service-label">SIAKAD</span>
+                            <i class="service-arrow fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
                         </button>
 
-                        <button class="service-card" type="button">
-                            <svg viewBox="0 0 24 24"><path d="M12 3 1 9l11 6 9-4.91V17h2V9L12 3Zm0 14.2L5 13.4V17l7 4 7-4v-3.6l-7 3.8Z" /></svg>
-                            <span>Perpustakaan<br>Digital</span>
+                        <button class="service-card service-card-link" type="button">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 1 9l11 6 9-4.91V17h2V9L12 3Zm0 14.2L5 13.4V17l7 4 7-4v-3.6l-7 3.8Z" /></svg>
+                            <span class="service-label">Perpustakaan<br>Digital</span>
+                            <i class="service-arrow fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
                         </button>
 
-                        <button class="service-card" type="button">
-                            <svg viewBox="0 0 24 24"><path d="M12 3 1 9l11 6 9-4.91V17h2V9L12 3Zm0 14.2L5 13.4V17l7 4 7-4v-3.6l-7 3.8Z" /></svg>
-                            <span>E-Learning</span>
+                        <button class="service-card service-card-link" type="button">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 1 9l11 6 9-4.91V17h2V9L12 3Zm0 14.2L5 13.4V17l7 4 7-4v-3.6l-7 3.8Z" /></svg>
+                            <span class="service-label">SIPOLIN</span>
+                            <i class="service-arrow fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
                         </button>
                     </div>
                 </div>
