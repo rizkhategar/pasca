@@ -386,9 +386,27 @@
     max-height: calc(100vh - 120px) !important;
 }
 
-.home-page .hero-content {
-    min-height: 0 !important;
+.home-page .hero > .container {
     height: 100% !important;
+    min-height: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    position: relative !important;
+    z-index: 5 !important;
+}
+
+.home-page .hero-content {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.home-page .hero-text {
+    align-self: center !important;
+    margin-top: 0 !important;
+    transform: none !important;
 }
 
 .home-page .hero-slide,
