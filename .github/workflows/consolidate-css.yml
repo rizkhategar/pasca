@@ -1,0 +1,40 @@
+name: Consolidate CSS
+
+on:
+  push:
+    branches:
+      - refactor/app-css-single-file
+
+permissions:
+  contents: write
+
+jobs:
+  consolidate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: refactor/app-css-single-file
+
+      - name: Merge CSS into app.css
+        run: |
+          set -euo pipefail
+
+          if [ ! -f resources/css/app-base.css ]; then
+            echo "resources/css/app-base.css not found"
+            exit 1
+          fi
+
+          tail -n +2 resources/css/app.css > /tmp/app-extra.css
+          cat resources/css/app-base.css /tmp/app-extra.css > /tmp/app.css
+          mv /tmp/app.css resources/css/app.css
+
+          git rm -f resources/css/app-base.css .github/workflows/consolidate-css.yml
+          git add resources/css/app.css
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "refactor(css): consolidate styles into app css"
+          git push origin HEAD:refactor/app-css-single-file
