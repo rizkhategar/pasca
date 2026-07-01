@@ -28,25 +28,22 @@ class EditPostgraduateLecturer extends EditRecord
     {
         $postgraduateLecturer = PostgraduateLecturer::where('sinta_id', $this->record->sinta_id)->first();
 
-        if ($postgraduateLecturer) {
-            $data['name']        = $postgraduateLecturer->name;
-            $data['institution'] = $postgraduateLecturer->institution;
-        } else {
-            $data['name']          = $this->record->name;
-            $data['institution']   = $this->record->institution;
-            $data['study_program'] = $this->record->study_program;
-        }
+        $data['sinta_id'] = $postgraduateLecturer?->sinta_id ?? $this->record->sinta_id;
+        $data['name'] = $postgraduateLecturer?->name;
+        $data['institution'] = $postgraduateLecturer?->institution;
 
         return $data;
     }
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
+        $postgraduateLecturer = PostgraduateLecturer::where('sinta_id', $record->sinta_id)->first();
+
         PostgraduateLecturer::updateOrCreate(
             ['sinta_id' => $record->sinta_id],
             [
-                'name'        => $data['name'] ?? null,
-                'institution' => $data['institution'] ?? null,
+                'name' => $postgraduateLecturer?->name,
+                'institution' => $data['institution'] ?? $postgraduateLecturer?->institution,
             ]
         );
 

@@ -15,7 +15,7 @@ use Filament\Tables\Table;
 class GarudaPublicationsRelationManager extends RelationManager
 {
     protected static string $relationship = 'garudaPublications';
-    protected static ?string $title = 'Publikasi Garuda';
+    protected static ?string $title = 'Garuda Publications';
 
     public function form(Schema $schema): Schema
     {

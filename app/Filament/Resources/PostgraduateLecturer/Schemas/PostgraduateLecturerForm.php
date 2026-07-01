@@ -26,18 +26,17 @@ class PostgraduateLecturerForm
                 TextInput::make('sinta_id')
                     ->label('SINTA ID')
                     ->required()
-                    ->disabled(fn ($context) => $context === 'edit'),
+                    ->disabled()
+                    ->dehydrated(false),
 
-                Placeholder::make('lecturer_name')
+                TextInput::make('name')
                     ->label('Nama Lengkap')
-                    ->content(fn ($record) => $record?->lecturer?->name ?? '-'),
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->default(null),
 
                 TextInput::make('institution')
                     ->label('Institusi')
-                    ->default(null),
-
-                TextInput::make('study_program')
-                    ->label('Program Studi SINTA')
                     ->default(null),
 
                 Select::make('department')
@@ -82,14 +81,11 @@ class PostgraduateLecturerForm
                             return;
                         }
 
-                        $postgraduateLecturer = PostgraduateLecturer::firstOrCreate(
-                            ['sinta_id' => $sintaId],
-                            [
-                                'name' => $record->lecturer?->name,
-                                'institution' => $record->institution,
-                                'profile_photo' => $record->profile_photo,
-                            ]
-                        );
+                        $postgraduateLecturer = PostgraduateLecturer::where('sinta_id', $sintaId)->first();
+
+                        if (! $postgraduateLecturer) {
+                            return;
+                        }
 
                         DB::table('postgraduate_lecturer_study_programs')
                             ->where('postgraduate_lecturer_id', $postgraduateLecturer->id)
@@ -126,38 +122,14 @@ class PostgraduateLecturerForm
                             return new HtmlString('<span class="text-gray-500 text-sm">SINTA ID belum diisi</span>');
                         }
 
-                        $safeSintaId = Str::of($sintaId)->trim()->replaceMatches('/[^A-Za-z0-9_-]/', '')->toString();
+                        $postgraduateLecturer = PostgraduateLecturer::where('sinta_id', $sintaId)->first();
+                        $photoHtml = self::profilePhotoHtml($sintaId, $postgraduateLecturer?->profile_photo);
 
-                        $customPath = "sinta-lecturers/{$safeSintaId}_PL.jpg";
-                        $scrapedPath = "sinta-lecturers/{$safeSintaId}.jpg";
-
-                        if (Storage::disk('public')->exists($customPath)) {
-                            $customUrl = Storage::disk('public')->url($customPath) . '?v=' . time();
-
-                            return new HtmlString("
-                                <div class='flex items-center gap-4 py-2'>
-                                    <img src='{$customUrl}'
-                                         class='w-32 h-32 rounded-xl object-cover shadow-sm border border-success-300 dark:border-success-700'
-                                         alt='Foto Kustom Dosen' />
-                                    <span class='text-xs font-semibold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800/50'>Foto Resmi Admin (_PL)</span>
-                                </div>
-                            ");
+                        if ($photoHtml !== '-') {
+                            return new HtmlString($photoHtml);
                         }
 
-                        if (Storage::disk('public')->exists($scrapedPath)) {
-                            $scrapedUrl = Storage::disk('public')->url($scrapedPath) . '?v=' . time();
-
-                            return new HtmlString("
-                                <div class='flex items-center gap-4 py-2'>
-                                    <img src='{$scrapedUrl}'
-                                         class='w-32 h-32 rounded-xl object-cover shadow-sm border border-gray-300 dark:border-gray-700'
-                                         alt='Foto Bawaan SINTA' />
-                                    <span class='text-xs font-semibold px-2.5 py-1 rounded-md bg-gray-50 text-gray-600 border border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700'>Foto Bawaan Scraping SINTA</span>
-                                </div>
-                            ");
-                        }
-
-                        return new HtmlString('<span class="text-gray-400 text-sm">Foto tidak ditemukan di storage/app/public/sinta-lecturers/</span>');
+                        return new HtmlString('<span class="text-gray-400 text-sm">Foto dosen belum tersedia.</span>');
                     })
                     ->columnSpanFull(),
 
@@ -170,7 +142,6 @@ class PostgraduateLecturerForm
                     ->previewable(false)
                     ->openable(false)
                     ->downloadable(false)
-                    ->dehydrated(false)
                     ->columnSpanFull()
                     ->visible(fn ($context) => $context !== 'view')
                     ->saveUploadedFileUsing(function (TemporaryUploadedFile $file, $record, $get) {
@@ -191,7 +162,14 @@ class PostgraduateLecturerForm
                             Storage::disk('public')->delete($customFilePath);
                         }
 
-                        return FilamentImageUpload::saveToPublicDisk($file, 'sinta-lecturers', $customFileName);
+                        $savedPath = FilamentImageUpload::saveToPublicDisk($file, 'sinta-lecturers', $customFileName);
+
+                        PostgraduateLecturer::updateOrCreate(
+                            ['sinta_id' => $sintaId],
+                            ['profile_photo' => $savedPath]
+                        );
+
+                        return $savedPath;
                     })
                     ->deleteUploadedFileUsing(function (string|array|null $file): void {
                         $path = is_array($file) ? collect($file)->filter()->last() : $file;
@@ -204,5 +182,68 @@ class PostgraduateLecturerForm
                         FilamentImageUpload::pruneLivewireTemporaryUploads();
                     }),
             ]);
+    }
+
+    private static function profilePhotoHtml(?string $sintaId, ?string $profilePhoto = null): string
+    {
+        $safeSintaId = Str::of((string) $sintaId)->trim()->replaceMatches('/[^A-Za-z0-9_-]/', '')->toString();
+        if (! $safeSintaId) {
+            return '-';
+        }
+
+        $officialPath = "sinta-lecturers/{$safeSintaId}_PL.jpg";
+        $defaultPath = "sinta-lecturers/{$safeSintaId}.jpg";
+
+        if (filled($profilePhoto)) {
+            if (filter_var($profilePhoto, FILTER_VALIDATE_URL)) {
+                return self::imageHtml((string) $profilePhoto, 'Foto Profil Pascasarjana');
+            }
+
+            $normalizedPath = trim(str_replace('\\', '/', (string) $profilePhoto), '/');
+
+            if (Storage::disk('public')->exists($normalizedPath)) {
+                $caption = basename($normalizedPath) === "{$safeSintaId}_PL.jpg"
+                    ? 'Foto Resmi Admin (_PL)'
+                    : 'Foto Bawaan SINTA';
+
+                return self::imageHtml(Storage::disk('public')->url($normalizedPath) . '?v=' . time(), $caption);
+            }
+        }
+
+        if (Storage::disk('public')->exists($officialPath)) {
+            PostgraduateLecturer::where('sinta_id', $safeSintaId)
+                ->where(function ($query): void {
+                    $query->whereNull('profile_photo')
+                        ->orWhere('profile_photo', 'not like', '%_PL.jpg');
+                })
+                ->update(['profile_photo' => $officialPath]);
+
+            return self::imageHtml(Storage::disk('public')->url($officialPath) . '?v=' . time(), 'Foto Resmi Admin (_PL)');
+        }
+
+        if (Storage::disk('public')->exists($defaultPath)) {
+            PostgraduateLecturer::where('sinta_id', $safeSintaId)
+                ->whereNull('profile_photo')
+                ->update(['profile_photo' => $defaultPath]);
+
+            return self::imageHtml(Storage::disk('public')->url($defaultPath) . '?v=' . time(), 'Foto Bawaan SINTA');
+        }
+
+        return '-';
+    }
+
+    private static function imageHtml(string $url, string $caption): string
+    {
+        $safeUrl = e($url);
+        $safeCaption = e($caption);
+
+        return "
+            <div class='flex items-center gap-4 py-2'>
+                <img src='{$safeUrl}'
+                     class='w-32 h-32 rounded-xl object-cover shadow-sm border border-gray-300 dark:border-gray-700'
+                     alt='Foto Dosen' />
+                <span class='text-xs font-semibold px-2.5 py-1 rounded-md bg-gray-50 text-gray-600 border border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700'>{$safeCaption}</span>
+            </div>
+        ";
     }
 }
