@@ -3,7 +3,7 @@
 use App\Filament\Resources\SintaLecturer\SintaLecturerResource;
 use App\Http\Controllers\AboutController;
 use App\Http\Controllers\AcademicController;
-use App\Http\Controllers\ContactController;
+use App\Http\Controllers\ContactsController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\OrganizationStructureController;
@@ -103,7 +103,7 @@ Route::get('/about-pascasarjanas/{aboutPascasarjana}/point-icons/{index}', funct
 Route::get('/berita', [NewsController::class, 'index'])->name('news.index');
 Route::get('/berita/search', [NewsController::class, 'search'])->name('news.search');
 Route::get('/berita/{slug}', [NewsController::class, 'show'])->name('news.show');
-Route::get('/kontak', [ContactController::class, 'index'])->name('contact.index');
+Route::get('/kontak', [ContactsController::class, 'index'])->name('contact.index');
 Route::get('/akademik/magister-hukum', [AcademicController::class, 'show'])->defaults('slug', 'magister-hukum')->name('akademik.hukum');
 Route::get('/akademik/{slug}', [AcademicController::class, 'show'])->name('akademik.show');
 Route::get('/visi-misi', [VisionMissionController::class, 'index'])->name('visi-misi');
