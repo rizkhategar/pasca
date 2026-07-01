@@ -14,7 +14,7 @@ use Filament\Tables\Table;
 class ResearchYearliesRelationManager extends RelationManager
 {
     protected static string $relationship = 'researchYearlies';
-    protected static ?string $title = 'Grafik Penelitian Tahunan';
+    protected static ?string $title = 'Annual Research Chart';
 
     public function form(Schema $schema): Schema
     {

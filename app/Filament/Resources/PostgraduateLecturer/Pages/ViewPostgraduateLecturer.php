@@ -9,6 +9,11 @@ class ViewPostgraduateLecturer extends ViewRecord
 {
     protected static string $resource = PostgraduateLecturerResource::class;
 
+    public function getTitle(): string
+    {
+        return 'Detail Lecturers';
+    }
+
     public function hasCombinedRelationManagerTabsWithContent(): bool
     {
         return true;

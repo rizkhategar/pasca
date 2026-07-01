@@ -14,6 +14,7 @@ use Filament\Schemas\Concerns\InteractsWithSchemas;
 use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Schemas\Schema;
 use Illuminate\Support\HtmlString;
+use Throwable;
 
 class ImportSintaLecturers extends Page implements HasSchemas
 {
@@ -74,19 +75,45 @@ class ImportSintaLecturers extends Page implements HasSchemas
                         return;
                     }
 
-                    SintaLecturer::create([
-                        'sinta_id' => $sintaId,
-                        'name' => $data['name'],
-                        'department' => 'Manual Registration',
-                    ]);
+                    try {
+                        SintaLecturer::create([
+                            'sinta_id' => $sintaId,
+                            'name' => $data['name'],
+                            'department' => 'Manual Registration',
+                        ]);
 
-                    Notification::make()
-                        ->title('Lecturer added')
-                        ->body('The lecturer has been added to the SINTA lecturer master table.')
-                        ->success()
-                        ->send();
+                        Notification::make()
+                            ->title('Lecturer added')
+                            ->body('The lecturer has been added to the SINTA lecturer master table.')
+                            ->success()
+                            ->send();
+                    } catch (Throwable $exception) {
+                        Notification::make()
+                            ->title('Failed to add lecturer')
+                            ->body($exception->getMessage())
+                            ->danger()
+                            ->send();
+                    }
                 }),
         ];
+    }
+
+    public function notifyFromBrowser(string $status, string $title, ?string $body = null): void
+    {
+        $notification = Notification::make()->title($title);
+
+        if (filled($body)) {
+            $notification->body($body);
+        }
+
+        match ($status) {
+            'success' => $notification->success(),
+            'warning' => $notification->warning(),
+            'danger', 'error' => $notification->danger(),
+            default => $notification->info(),
+        };
+
+        $notification->send();
     }
 
     public function form(Schema $schema): Schema
@@ -101,6 +128,7 @@ class ImportSintaLecturers extends Page implements HasSchemas
         $terminalHtml = <<<HTML
         <div wire:ignore x-data="{
             init() {
+                const livewire = this.\$wire;
                 const NL = String.fromCharCode(10);
                 const outputBox = document.getElementById('output-box');
                 const terminalContainer = document.getElementById('terminal-container');
@@ -124,26 +152,61 @@ class ImportSintaLecturers extends Page implements HasSchemas
                     button.style.opacity = isLoading ? '0.5' : '1';
                 };
 
-                const openStream = (url, onDone, onErrorText) => {
+                const notify = (status, title, body = '') => {
+                    if (livewire && typeof livewire.call === 'function') {
+                        livewire.call('notifyFromBrowser', status, title, body);
+                    } else if (livewire && typeof livewire.notifyFromBrowser === 'function') {
+                        livewire.notifyFromBrowser(status, title, body);
+                    }
+                };
+
+                const stripHtml = (value) => String(value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+
+                const hasErrorKeyword = (text) => [
+                    '[error]', 'error', 'gagal', 'failed', 'fatal', 'exception', 'database error',
+                    'tidak tersedia', 'not found', 'could not', 'interrupted', 'tidak ditemukan'
+                ].some((keyword) => text.includes(keyword));
+
+                const notifyFromOutput = (streamOutput, successTitle, successBody, errorTitle) => {
+                    const plainText = stripHtml(streamOutput);
+                    const normalized = plainText.toLowerCase();
+
+                    if (hasErrorKeyword(normalized)) {
+                        notify('danger', errorTitle, plainText.slice(0, 240) || 'The process failed. Please check the terminal output and Laravel logs.');
+                        return;
+                    }
+
+                    notify('success', successTitle, successBody);
+                };
+
+                const openStream = (url, onDone, onErrorText, successTitle, successBody, errorTitle, onError = null) => {
+                    let streamOutput = '';
                     appendTerminal('[SSE] Opening connection: ' + url + NL);
                     const eventSource = new EventSource(url);
 
                     eventSource.onmessage = (event) => {
                         try {
                             const data = JSON.parse(event.data);
-                            if (data.output) appendTerminal(data.output);
+                            if (data.output) {
+                                streamOutput += data.output + NL;
+                                appendTerminal(data.output);
+                            }
                             if (data.done) {
                                 eventSource.close();
+                                notifyFromOutput(streamOutput, successTitle, successBody, errorTitle);
                                 if (onDone) onDone();
                             }
                         } catch (error) {
                             appendTerminal(NL + '[ERROR] Failed to parse stream response: ' + error.message + NL);
+                            notify('danger', 'Failed to parse import response', error.message);
                         }
                     };
 
                     eventSource.onerror = () => {
                         eventSource.close();
                         appendTerminal(onErrorText + NL);
+                        notify('danger', errorTitle, stripHtml(onErrorText));
+                        if (onError) onError();
                     };
                 };
 
@@ -156,7 +219,9 @@ class ImportSintaLecturers extends Page implements HasSchemas
                     openStream('{$urlPerbarui}', () => {
                         appendTerminal(NL + '[SUCCESS] SINTA lecturer data has been updated. Reloading page...' + NL);
                         setTimeout(() => { window.location.reload(); }, 2000);
-                    }, NL + '[ERROR] Lecturer sync connection was interrupted. Check route scrap.perbaruiDosen or Laravel logs.');
+                    }, NL + '[ERROR] Lecturer sync connection was interrupted. Check route scrap.perbaruiDosen or Laravel logs.', 'SINTA lecturers synced', 'SINTA lecturer data has been updated successfully.', 'SINTA lecturer sync failed', () => {
+                        toggleLoading(btnPerbarui, false, 'Sync SINTA Lecturers');
+                    });
                 });
             }
         }" style="background-color: #0a0a0a; border-radius: 0.75rem; border: 1px solid #262626; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; height: 450px; overflow: hidden; margin-top: 1.5rem;">

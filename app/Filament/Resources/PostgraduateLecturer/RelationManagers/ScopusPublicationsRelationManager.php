@@ -15,7 +15,7 @@ use Filament\Tables\Table;
 class ScopusPublicationsRelationManager extends RelationManager
 {
     protected static string $relationship = 'scopusPublications';
-    protected static ?string $title = 'Publikasi Scopus';
+    protected static ?string $title = 'Scopus Publications';
 
     public function form(Schema $schema): Schema
     {

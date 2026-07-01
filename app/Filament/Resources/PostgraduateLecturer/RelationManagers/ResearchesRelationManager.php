@@ -15,7 +15,7 @@ use Filament\Tables\Table;
 class ResearchesRelationManager extends RelationManager
 {
     protected static string $relationship = 'researches';
-    protected static ?string $title = 'Data Penelitian';
+    protected static ?string $title = 'Research Data';
 
     public function form(Schema $schema): Schema
     {

@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\SintaLecturer\Tables;
 
+use App\Filament\Resources\SintaLecturer\SintaLecturerResource;
+use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -67,7 +69,11 @@ class SintaLecturerTable
                 //
             ])
             ->actions([
-                // Master SINTA lecturers are synced from SINTA, not edited from this table.
+                ViewAction::make('detail')
+                    ->label('Detail')
+                    ->icon('heroicon-m-eye')
+                    ->visible(fn ($record): bool => (bool) $record->detail)
+                    ->url(fn ($record): string => SintaLecturerResource::getUrl('view', ['record' => $record])),
             ])
             ->toolbarActions([
                 //

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\PostgraduateLecturer;
 
+use App\Filament\Resources\PostgraduateLecturer\Infolists\PostgraduateLecturerInfolist;
 use App\Filament\Resources\PostgraduateLecturer\Pages\CreatePostgraduateLecturer;
 use App\Filament\Resources\PostgraduateLecturer\Pages\EditPostgraduateLecturer;
 use App\Filament\Resources\PostgraduateLecturer\Pages\ListPostgraduateLecturers;
@@ -46,6 +47,11 @@ class PostgraduateLecturerResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return PostgraduateLecturerForm::configure($schema);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return PostgraduateLecturerInfolist::configure($schema);
     }
 
     public static function table(Table $table): Table

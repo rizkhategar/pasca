@@ -7,6 +7,7 @@ use App\Models\SintaLecturer;
 use App\Models\StudyProgram;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -31,6 +32,24 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
     public function mount(): void
     {
         $this->form->fill();
+    }
+
+    public function notifyFromBrowser(string $status, string $title, ?string $body = null): void
+    {
+        $notification = Notification::make()->title($title);
+
+        if (filled($body)) {
+            $notification->body($body);
+        }
+
+        match ($status) {
+            'success' => $notification->success(),
+            'warning' => $notification->warning(),
+            'danger', 'error' => $notification->danger(),
+            default => $notification->info(),
+        };
+
+        $notification->send();
     }
 
     public function form(Schema $schema): Schema
@@ -83,26 +102,62 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
                     button.style.opacity = isLoading ? '0.5' : '1';
                 };
 
-                const openStream = (url, onDone, onErrorText) => {
+                const notify = (status, title, body = '') => {
+                    if (livewire && typeof livewire.call === 'function') {
+                        livewire.call('notifyFromBrowser', status, title, body);
+                    } else if (livewire && typeof livewire.notifyFromBrowser === 'function') {
+                        livewire.notifyFromBrowser(status, title, body);
+                    }
+                };
+
+                const stripHtml = (value) => String(value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+
+                const hasErrorKeyword = (text) => [
+                    '[error]', 'error', 'gagal', 'failed', 'fatal', 'exception', 'database error',
+                    'excel file was not found', 'excel tidak tersedia', 'tidak tersedia', 'not found',
+                    'could not', 'interrupted', 'tidak ditemukan'
+                ].some((keyword) => text.includes(keyword));
+
+                const notifyFromOutput = (streamOutput, successTitle, successBody, errorTitle) => {
+                    const plainText = stripHtml(streamOutput);
+                    const normalized = plainText.toLowerCase();
+
+                    if (hasErrorKeyword(normalized)) {
+                        notify('danger', errorTitle, plainText.slice(0, 240) || 'The process failed. Please check the terminal output and Laravel logs.');
+                        return;
+                    }
+
+                    notify('success', successTitle, successBody);
+                };
+
+                const openStream = (url, onDone, onErrorText, successTitle, successBody, errorTitle, onError = null) => {
+                    let streamOutput = '';
                     appendTerminal('[SSE] Opening connection: ' + url + NL);
                     const eventSource = new EventSource(url);
 
                     eventSource.onmessage = (event) => {
                         try {
                             const data = JSON.parse(event.data);
-                            if (data.output) appendTerminal(data.output);
+                            if (data.output) {
+                                streamOutput += data.output + NL;
+                                appendTerminal(data.output);
+                            }
                             if (data.done) {
                                 eventSource.close();
+                                notifyFromOutput(streamOutput, successTitle, successBody, errorTitle);
                                 if (onDone) onDone();
                             }
                         } catch (error) {
                             appendTerminal(NL + '[ERROR] Failed to parse stream response: ' + error.message + NL);
+                            notify('danger', 'Failed to parse import response', error.message);
                         }
                     };
 
                     eventSource.onerror = () => {
                         eventSource.close();
                         appendTerminal(onErrorText + NL);
+                        notify('danger', errorTitle, stripHtml(onErrorText));
+                        if (onError) onError();
                     };
                 };
 
@@ -111,14 +166,19 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
                     if (!btnAmbilDetail) return;
                     event.preventDefault();
                     const sintaId = livewire.get('data.sinta_id');
-                    if (!sintaId) return alert('Please select a lecturer from the SINTA Lecturers master table first.');
+                    if (!sintaId) {
+                        notify('warning', 'Lecturer not selected', 'Please select a lecturer from the SINTA Lecturers master table first.');
+                        return;
+                    }
                     resetTerminal('>>> Fetching SINTA detail modules for ID: ' + sintaId + '...' + NL + NL);
                     toggleLoading(btnAmbilDetail, true, 'Fetch SINTA Lecturer Detail');
                     const targetUrl = '{$urlAmbilDetail}'.replace(':id', sintaId);
                     openStream(targetUrl, () => {
                         appendTerminal(NL + '[SUCCESS] All modules and merged import file have been generated.' + NL);
                         toggleLoading(btnAmbilDetail, false, 'Fetch SINTA Lecturer Detail');
-                    }, NL + '[ERROR] Detail extraction was interrupted. Check route scrap.ambilDetail or Laravel logs.');
+                    }, NL + '[ERROR] Detail extraction was interrupted. Check route scrap.ambilDetail or Laravel logs.', 'SINTA detail fetched', 'The lecturer detail Excel file has been generated successfully.', 'Failed to fetch SINTA detail', () => {
+                        toggleLoading(btnAmbilDetail, false, 'Fetch SINTA Lecturer Detail');
+                    });
                 });
 
                 document.addEventListener('click', (event) => {
@@ -130,7 +190,9 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
                     openStream('{$urlSyncProgramStudi}', () => {
                         appendTerminal(NL + '[SUCCESS] Study programs have been synced. Reloading dropdown...' + NL);
                         setTimeout(() => { window.location.reload(); }, 1500);
-                    }, NL + '[ERROR] Study program sync was interrupted. Check route scrap.syncStudyPrograms or Laravel logs.');
+                    }, NL + '[ERROR] Study program sync was interrupted. Check route scrap.syncStudyPrograms or Laravel logs.', 'Study programs synced', 'Postgraduate study programs have been synced successfully.', 'Study program sync failed', () => {
+                        toggleLoading(btnSyncProgramStudi, false, 'Sync Study Programs');
+                    });
                 });
 
                 document.addEventListener('click', (event) => {
@@ -139,9 +201,13 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
                     event.preventDefault();
                     const sintaId = livewire.get('data.sinta_id');
                     const programStudi = livewire.get('data.program_studi');
-                    if (!sintaId) return alert('SINTA ID was not found. Please select a lecturer in Step 1.');
+                    if (!sintaId) {
+                        notify('warning', 'SINTA ID was not found', 'Please select a lecturer in Step 1.');
+                        return;
+                    }
                     if (!programStudi || (Array.isArray(programStudi) && programStudi.length === 0)) {
-                        return alert('Please select at least one Postgraduate Study Program.');
+                        notify('warning', 'Study program is required', 'Please select at least one Postgraduate Study Program.');
+                        return;
                     }
                     const programStudiString = Array.isArray(programStudi) ? programStudi.join(',') : programStudi;
                     resetTerminal('>>> Importing lecturer into postgraduate_lecturers for SINTA ID: ' + sintaId + ' (study_program_id: ' + programStudiString + ')...' + NL);
@@ -150,7 +216,9 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
                     targetUrl += '?jurusan=' + encodeURIComponent(programStudiString);
                     openStream(targetUrl, () => {
                         toggleLoading(btnImport, false, 'Import to Postgraduate');
-                    }, NL + '[ERROR] Database import stream was interrupted. Check route scrap.importData or Laravel logs.');
+                    }, NL + '[ERROR] Database import stream was interrupted. Check route scrap.importData or Laravel logs.', 'Postgraduate lecturer imported', 'The lecturer has been imported into postgraduate lecturers successfully.', 'Postgraduate lecturer import failed', () => {
+                        toggleLoading(btnImport, false, 'Import to Postgraduate');
+                    });
                 });
             }
         }" style="background-color: #0a0a0a; border-radius: 0.75rem; border: 1px solid #262626; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; height: 450px; overflow: hidden; margin-top: 1.5rem;">
