@@ -22,22 +22,18 @@ class UserRolePermissionSeeder extends Seeder
     public function run(): void
     {
         // add user data
-        if (!User::where('username', 'super_admin')->first()) {
+        if (!User::where('email', 'superadmin@mail.com')->first()) {
             DB::table('users')->insert([
                 'name' => 'Super Admin',
-                'username' => 'super_admin',
                 'email' => 'superadmin@mail.com',
                 'password' => Hash::make('SUPERadminpasca1^'),
-                'is_active' => 1,
             ]);
         }
-        if (!User::where('username', 'admin')->first()) {
+        if (!User::where('email', 'admin@mail.co')->first()) {
             DB::table('users')->insert([
                 'name' => 'admin',
-                'username' => 'admin',
                 'email' => 'admin@mail.com',
                 'password' => Hash::make('ADMINpasca1^'),
-                'is_active' => 1,
             ]);
         }
 
@@ -66,10 +62,10 @@ class UserRolePermissionSeeder extends Seeder
         );
 
         // Assign role to user
-        $userSuperAdmin = User::where('username', 'super_admin')->first();
+        $userSuperAdmin = User::where('email', 'superadmin@mail.com')->first();
         $userSuperAdmin->syncRoles(['super_admin']);
 
-        $userAdmin = User::where('username', 'admin')->first();
+        $userAdmin = User::where('email', 'admin@mail.com')->first();
         $userAdmin->syncRoles(['admin']);
     }
 }
