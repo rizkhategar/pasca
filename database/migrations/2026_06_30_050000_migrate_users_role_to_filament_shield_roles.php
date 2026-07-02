@@ -44,7 +44,7 @@ return new class extends Migration
 
                         DB::table('model_has_roles')->updateOrInsert([
                             'role_id' => $roleId,
-                            'model_type' => Users::class,
+                            'model_type' => User::class,
                             'model_id' => $user->id,
                         ]);
                     }

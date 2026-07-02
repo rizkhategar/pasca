@@ -17,7 +17,7 @@ use UnitEnum;
 
 class UserResource extends Resource
 {
-    protected static ?string $model = Users::class;
+    protected static ?string $model = User::class;
 
     protected static ?string $slug = 'users';
 

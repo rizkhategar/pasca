@@ -13,23 +13,23 @@ return new class extends Migration
         if (Schema::hasTable('model_has_roles')) {
             DB::table('model_has_roles')
                 ->where('model_type', 'App\\Models\\User')
-                ->update(['model_type' => Users::class]);
+                ->update(['model_type' => User::class]);
         }
 
         if (Schema::hasTable('model_has_permissions')) {
             DB::table('model_has_permissions')
                 ->where('model_type', 'App\\Models\\User')
-                ->update(['model_type' => Users::class]);
+                ->update(['model_type' => User::class]);
         }
 
         if (Schema::hasTable('activity_logs')) {
             DB::table('activity_logs')
                 ->where('causer_type', 'App\\Models\\User')
-                ->update(['causer_type' => Users::class]);
+                ->update(['causer_type' => User::class]);
 
             DB::table('activity_logs')
                 ->where('subject_type', 'App\\Models\\User')
-                ->update(['subject_type' => Users::class]);
+                ->update(['subject_type' => User::class]);
 
             DB::table('activity_logs')
                 ->where('subject_type', 'App\\Models\\Contact')
@@ -41,23 +41,23 @@ return new class extends Migration
     {
         if (Schema::hasTable('model_has_roles')) {
             DB::table('model_has_roles')
-                ->where('model_type', Users::class)
+                ->where('model_type', User::class)
                 ->update(['model_type' => 'App\\Models\\User']);
         }
 
         if (Schema::hasTable('model_has_permissions')) {
             DB::table('model_has_permissions')
-                ->where('model_type', Users::class)
+                ->where('model_type', User::class)
                 ->update(['model_type' => 'App\\Models\\User']);
         }
 
         if (Schema::hasTable('activity_logs')) {
             DB::table('activity_logs')
-                ->where('causer_type', Users::class)
+                ->where('causer_type', User::class)
                 ->update(['causer_type' => 'App\\Models\\User']);
 
             DB::table('activity_logs')
-                ->where('subject_type', Users::class)
+                ->where('subject_type', User::class)
                 ->update(['subject_type' => 'App\\Models\\User']);
 
             DB::table('activity_logs')

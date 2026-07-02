@@ -14,7 +14,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
-class Users extends Authenticatable implements FilamentUser
+class User extends Authenticatable implements FilamentUser
 {
     public const ROLE_SUPER_ADMIN = 'super_admin';
 

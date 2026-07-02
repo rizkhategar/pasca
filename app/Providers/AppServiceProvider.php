@@ -33,7 +33,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         // scramble
-        Gate::define('viewApiDocs', function (Users $user) {
+        Gate::define('viewApiDocs', function (User $user) {
             return $user->hasRole(['super_admin', 'admin', 'apiuser']);
         });
 
