@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\Users\Tables;
 
 use App\Filament\Resources\Users\UserResource;
-use App\Models\Users;
+use App\Models\User;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;

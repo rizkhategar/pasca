@@ -3,7 +3,7 @@
 namespace App\Providers;
 
 use App\Models\ActivityLog;
-use App\Models\Users;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Event;
