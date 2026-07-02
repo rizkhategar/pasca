@@ -32,13 +32,28 @@
             border-radius: 1.25rem !important;
             background: linear-gradient(135deg, #ffffff 0%, #f8fbff 55%, #f1f7ff 100%) !important;
             box-shadow: 0 16px 38px rgba(15, 23, 42, .08) !important;
-            transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease, background .22s ease !important;
+            transition: opacity .55s ease, transform .55s ease, box-shadow .22s ease, border-color .22s ease, background .22s ease !important;
         }
 
         .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card:hover {
             transform: translateY(-5px) !important;
             border-color: rgba(247, 181, 0, .55) !important;
             box-shadow: 0 26px 58px rgba(247, 181, 0, .32), 0 10px 28px rgba(15, 23, 42, .12) !important;
+        }
+
+        .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card.lecturer-reveal-card:not(.is-card-loading):not(.is-visible) {
+            opacity: 0;
+            transform: translateY(28px) !important;
+        }
+
+        .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card.lecturer-reveal-card.is-visible:not(:hover) {
+            opacity: 1;
+            transform: translateY(0) !important;
+        }
+
+        .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card.lecturer-reveal-card.is-visible:hover {
+            opacity: 1;
+            transform: translateY(-5px) !important;
         }
 
         .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card::before {
@@ -69,6 +84,7 @@
             box-shadow: 0 14px 30px rgba(15, 23, 42, .20) !important;
             flex: 0 0 128px !important;
             align-self: center !important;
+            cursor: zoom-in;
         }
 
         .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card:hover > .lecturer-card-photo {
@@ -82,6 +98,34 @@
             object-fit: cover !important;
             object-position: center center !important;
             display: block !important;
+            transition: transform .28s ease, filter .28s ease !important;
+        }
+
+        .research-list-page .lecturer-card-photo:hover img,
+        .research-list-page .lecturer-card-photo:focus-visible img {
+            transform: scale(1.05);
+            filter: brightness(.78);
+        }
+
+        .research-list-page .lecturer-photo-zoom {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 1.7rem;
+            opacity: 0;
+            transform: scale(.86);
+            background: rgba(7, 43, 87, .24);
+            transition: opacity .24s ease, transform .24s ease;
+            pointer-events: none;
+        }
+
+        .research-list-page .lecturer-card-photo:hover .lecturer-photo-zoom,
+        .research-list-page .lecturer-card-photo:focus-visible .lecturer-photo-zoom {
+            opacity: 1;
+            transform: scale(1);
         }
 
         .research-list-page #dosenGrid.lecturer-list > .lecturer-list-card > .lecturer-card-info {
@@ -246,6 +290,181 @@
             color: #072b57;
         }
 
+        .research-list-page .lecturer-list-card.is-card-loading {
+            pointer-events: none;
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+        }
+
+        .research-list-page .lecturer-list-card.is-card-loading > :not(.lecturer-card-skeleton) {
+            opacity: 0;
+        }
+
+        .research-list-page .lecturer-card-skeleton {
+            display: none;
+        }
+
+        .research-list-page .lecturer-list-card.is-card-loading .lecturer-card-skeleton {
+            position: absolute;
+            inset: 0;
+            z-index: 5;
+            display: grid;
+            grid-template-columns: 162px minmax(0, 1fr);
+            align-items: center;
+            min-height: 235px;
+            padding: 1.25rem 1.1rem 1.2rem 1.55rem;
+            gap: 1rem;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e5e7eb 55%, #f8fafc 100%);
+        }
+
+        .research-list-page .skeleton-block {
+            position: relative;
+            overflow: hidden;
+            border-radius: .9rem;
+            background: #dbe3ec;
+        }
+
+        .research-list-page .skeleton-block::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            transform: translateX(-100%);
+            background: linear-gradient(90deg, transparent 0%, rgba(148, 163, 184, .34) 42%, rgba(71, 85, 105, .22) 52%, transparent 100%);
+            animation: lecturerSkeletonShimmer 1.05s ease-in-out 2;
+        }
+
+        .research-list-page .skeleton-photo {
+            width: 128px;
+            height: 193px;
+            border-radius: 1rem;
+            border: 4px solid rgba(255, 255, 255, .86);
+        }
+
+        .research-list-page .skeleton-info {
+            display: flex;
+            flex-direction: column;
+            gap: .78rem;
+            min-width: 0;
+        }
+
+        .research-list-page .skeleton-line-lg {
+            width: 78%;
+            height: 18px;
+        }
+
+        .research-list-page .skeleton-line-md {
+            width: 58%;
+            height: 14px;
+        }
+
+        .research-list-page .skeleton-line-sm {
+            width: 34%;
+            height: 13px;
+            border-radius: 999px;
+        }
+
+        .research-list-page .skeleton-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: .48rem;
+            margin-top: .15rem;
+        }
+
+        .research-list-page .skeleton-stat {
+            height: 62px;
+            border-radius: .85rem;
+        }
+
+        @keyframes lecturerSkeletonShimmer {
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        body.photo-preview-open {
+            overflow: hidden;
+        }
+
+        .lecturer-photo-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.25rem;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity .22s ease, visibility .22s ease;
+        }
+
+        .lecturer-photo-modal.is-open {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .lecturer-photo-modal-backdrop {
+            position: absolute;
+            inset: 0;
+            border: 0;
+            background: rgba(3, 31, 66, .72);
+            backdrop-filter: blur(7px);
+            cursor: zoom-out;
+        }
+
+        .lecturer-photo-dialog {
+            position: relative;
+            z-index: 1;
+            width: min(420px, 92vw);
+            border-radius: 1.35rem;
+            background: #ffffff;
+            box-shadow: 0 32px 80px rgba(3, 31, 66, .38);
+            overflow: hidden;
+            transform: translateY(18px) scale(.96);
+            transition: transform .22s ease;
+        }
+
+        .lecturer-photo-modal.is-open .lecturer-photo-dialog {
+            transform: translateY(0) scale(1);
+        }
+
+        .lecturer-photo-dialog img {
+            display: block;
+            width: 100%;
+            max-height: 72vh;
+            object-fit: contain;
+            background: #e5e7eb;
+        }
+
+        .lecturer-photo-caption {
+            padding: .95rem 1.1rem;
+            color: #072b57;
+            font-size: .95rem;
+            font-weight: 850;
+            text-align: center;
+            border-top: 1px solid rgba(148, 163, 184, .22);
+        }
+
+        .lecturer-photo-close {
+            position: absolute;
+            top: .75rem;
+            right: .75rem;
+            z-index: 2;
+            width: 38px;
+            height: 38px;
+            border: 0;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(7, 43, 87, .86);
+            color: #ffffff;
+            cursor: pointer;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, .22);
+        }
+
         @media (max-width: 1200px) {
             .research-list-page #dosenGrid.lecturer-list {
                 grid-template-columns: 1fr !important;
@@ -298,8 +517,19 @@
                 white-space: normal;
             }
 
-            .research-list-page .lecturer-card-info .lecturer-stats {
+            .research-list-page .lecturer-card-info .lecturer-stats,
+            .research-list-page .skeleton-stat-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+
+            .research-list-page .lecturer-list-card.is-card-loading .lecturer-card-skeleton {
+                grid-template-columns: 1fr;
+                justify-items: center;
+                padding: 1.1rem;
+            }
+
+            .research-list-page .skeleton-info {
+                width: 100%;
             }
         }
     </style>
@@ -417,9 +647,20 @@
                             }
                         @endphp
 
-                        <a href="{{ route('riset.detail', $dosen->sinta_id) }}" class="news-page-card lecturer-card lecturer-list-card">
-                            <div class="news-page-thumb lecturer-thumb lecturer-card-photo">
+                        <a href="{{ route('riset.detail', $dosen->sinta_id) }}" class="news-page-card lecturer-card lecturer-list-card is-card-loading">
+                            <div
+                                class="news-page-thumb lecturer-thumb lecturer-card-photo"
+                                role="button"
+                                tabindex="0"
+                                aria-label="Lihat foto {{ $dosen->nama }}"
+                                data-photo-preview
+                                data-photo-url="{{ $photoUrl }}"
+                                data-photo-name="{{ $dosen->nama }}"
+                            >
                                 <img src="{{ $photoUrl }}" alt="{{ $dosen->nama }}">
+                                <span class="lecturer-photo-zoom" aria-hidden="true">
+                                    <i class="fas fa-magnifying-glass-plus"></i>
+                                </span>
                             </div>
 
                             <div class="news-page-body lecturer-card-info">
@@ -466,6 +707,21 @@
                                     <span class="read-more">Detail<i class="fas fa-arrow-right"></i></span>
                                 </div>
                             </div>
+
+                            <div class="lecturer-card-skeleton" aria-hidden="true">
+                                <div class="skeleton-block skeleton-photo"></div>
+                                <div class="skeleton-info">
+                                    <div class="skeleton-block skeleton-line-lg"></div>
+                                    <div class="skeleton-block skeleton-line-md"></div>
+                                    <div class="skeleton-block skeleton-line-sm"></div>
+                                    <div class="skeleton-stat-grid">
+                                        <div class="skeleton-block skeleton-stat"></div>
+                                        <div class="skeleton-block skeleton-stat"></div>
+                                        <div class="skeleton-block skeleton-stat"></div>
+                                        <div class="skeleton-block skeleton-stat"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </a>
                     @empty
                         <div class="empty">
@@ -482,6 +738,17 @@
             </section>
         </div>
     </main>
+
+    <div class="lecturer-photo-modal" id="lecturerPhotoModal" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Preview foto dosen">
+        <button type="button" class="lecturer-photo-modal-backdrop" data-photo-close aria-label="Tutup preview foto"></button>
+        <div class="lecturer-photo-dialog">
+            <button type="button" class="lecturer-photo-close" data-photo-close aria-label="Tutup preview foto">
+                <i class="fas fa-times"></i>
+            </button>
+            <img src="" alt="" id="lecturerPhotoModalImage">
+            <div class="lecturer-photo-caption" id="lecturerPhotoModalCaption"></div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
@@ -490,6 +757,12 @@
             const form = document.getElementById('filterForm');
             const searchInput = document.getElementById('searchInput');
             const jurusanSelect = document.getElementById('jurusanSelect');
+            const lecturerCards = Array.from(document.querySelectorAll('.lecturer-list-card'));
+            const photoModal = document.getElementById('lecturerPhotoModal');
+            const photoModalImage = document.getElementById('lecturerPhotoModalImage');
+            const photoModalCaption = document.getElementById('lecturerPhotoModalCaption');
+            const photoPreviewButtons = document.querySelectorAll('[data-photo-preview]');
+            const photoCloseButtons = document.querySelectorAll('[data-photo-close]');
 
             jurusanSelect?.addEventListener('change', function () {
                 form.submit();
@@ -502,6 +775,127 @@
                     form.submit();
                 }, 800);
             });
+
+            function isInViewport(element) {
+                const rect = element.getBoundingClientRect();
+                return rect.top < window.innerHeight * 0.92 && rect.bottom > 0;
+            }
+
+            function revealCard(card, observer = null) {
+                if (!card || card.dataset.revealed === 'true') {
+                    return;
+                }
+
+                card.dataset.revealed = 'true';
+                card.classList.add('is-visible');
+                observer?.unobserve(card);
+            }
+
+            function setupLecturerCards() {
+                if (!lecturerCards.length) {
+                    return;
+                }
+
+                lecturerCards.forEach(function (card) {
+                    card.classList.add('lecturer-reveal-card');
+                });
+
+                const observer = 'IntersectionObserver' in window
+                    ? new IntersectionObserver(function (entries) {
+                        entries.forEach(function (entry) {
+                            if (entry.isIntersecting) {
+                                revealCard(entry.target, observer);
+                            }
+                        });
+                    }, { threshold: 0.16, rootMargin: '0px 0px -8% 0px' })
+                    : null;
+
+                const finishLoading = function () {
+                    lecturerCards.forEach(function (card) {
+                        if (isInViewport(card) || !observer) {
+                            revealCard(card, observer);
+                        }
+                    });
+
+                    lecturerCards.forEach(function (card) {
+                        card.classList.remove('is-card-loading');
+                    });
+
+                    if (observer) {
+                        lecturerCards.forEach(function (card) {
+                            if (card.dataset.revealed !== 'true') {
+                                observer.observe(card);
+                            }
+                        });
+                    }
+                };
+
+                window.setTimeout(finishLoading, 850);
+            }
+
+            function openPhotoPreview(trigger) {
+                if (!photoModal || !photoModalImage || !photoModalCaption) {
+                    return;
+                }
+
+                const imageUrl = trigger.dataset.photoUrl;
+                const photoName = trigger.dataset.photoName || 'Foto Dosen';
+
+                if (!imageUrl) {
+                    return;
+                }
+
+                photoModalImage.src = imageUrl;
+                photoModalImage.alt = photoName;
+                photoModalCaption.textContent = photoName;
+                photoModal.classList.add('is-open');
+                photoModal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('photo-preview-open');
+            }
+
+            function closePhotoPreview() {
+                if (!photoModal || !photoModalImage) {
+                    return;
+                }
+
+                photoModal.classList.remove('is-open');
+                photoModal.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('photo-preview-open');
+                window.setTimeout(function () {
+                    if (!photoModal.classList.contains('is-open')) {
+                        photoModalImage.src = '';
+                        photoModalImage.alt = '';
+                    }
+                }, 220);
+            }
+
+            photoPreviewButtons.forEach(function (trigger) {
+                trigger.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openPhotoPreview(trigger);
+                });
+
+                trigger.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        openPhotoPreview(trigger);
+                    }
+                });
+            });
+
+            photoCloseButtons.forEach(function (button) {
+                button.addEventListener('click', closePhotoPreview);
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    closePhotoPreview();
+                }
+            });
+
+            setupLecturerCards();
         });
     </script>
 @endpush

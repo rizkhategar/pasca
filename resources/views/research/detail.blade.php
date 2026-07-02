@@ -35,12 +35,12 @@
             ');
         }
 
-        $width = 720;
-        $height = 260;
-        $left = 54;
-        $right = 24;
-        $top = 30;
-        $bottom = 48;
+        $width = max(760, 160 + ($rows->count() * 96));
+        $height = 290;
+        $left = 58;
+        $right = 34;
+        $top = 42;
+        $bottom = 56;
         $plotWidth = $width - $left - $right;
         $plotHeight = $height - $top - $bottom;
         $bottomY = $height - $bottom;
@@ -60,12 +60,13 @@
         foreach ($series as $serie) {
             $total = $rows->sum(fn ($row) => (int) data_get($row, $serie['key'], 0));
             $color = $serie['color'] ?? '#2563eb';
-            $html .= '<span><i style="background:' . e($color) . '"></i>' . e($serie['label']) . ': <strong>' . number_format($total) . '</strong></span>';
+            $html .= '<span style="--legend-color:' . e($color) . '"><i style="background:' . e($color) . '"></i>' . e($serie['label']) . ': <strong>' . number_format($total) . '</strong></span>';
         }
 
         $html .= '</div></div>';
-        $html .= '<div class="yearly-chart-wrap">';
-        $html .= '<svg class="yearly-chart-svg" viewBox="0 0 ' . $width . ' ' . $height . '" role="img" aria-label="' . e($title) . '">';
+        $html .= '<div class="yearly-chart-wrap" data-chart-wrap>';
+        $html .= '<div class="yearly-chart-scroll-inner">';
+        $html .= '<svg class="yearly-chart-svg" viewBox="0 0 ' . $width . ' ' . $height . '" style="width:' . $width . 'px" role="img" aria-label="' . e($title) . '">';
         $html .= '<line x1="' . $left . '" y1="' . $top . '" x2="' . $left . '" y2="' . $bottomY . '" class="chart-axis" />';
         $html .= '<line x1="' . $left . '" y1="' . $bottomY . '" x2="' . ($width - $right) . '" y2="' . $bottomY . '" class="chart-axis" />';
         $html .= '<text x="' . ($left - 10) . '" y="' . ($top + 4) . '" class="chart-label" text-anchor="end">' . number_format($maxValue) . '</text>';
@@ -73,36 +74,60 @@
 
         foreach ([0.25, 0.5, 0.75] as $gridPosition) {
             $gridY = $bottomY - ($plotHeight * $gridPosition);
+            $gridValue = (int) round($maxValue * $gridPosition);
             $html .= '<line x1="' . $left . '" y1="' . $gridY . '" x2="' . ($width - $right) . '" y2="' . $gridY . '" class="chart-grid" />';
+            $html .= '<text x="' . ($left - 10) . '" y="' . ($gridY + 4) . '" class="chart-label chart-label-soft" text-anchor="end">' . number_format($gridValue) . '</text>';
         }
 
         foreach ($rows as $index => $row) {
             $year = data_get($row, 'year', data_get($row, 'tahun'));
             $x = $rows->count() === 1 ? $left + ($plotWidth / 2) : $left + (($plotWidth / $count) * $index);
-            $html .= '<text x="' . $x . '" y="' . ($bottomY + 27) . '" class="chart-label" text-anchor="middle">' . e($year) . '</text>';
+            $html .= '<text x="' . $x . '" y="' . ($bottomY + 30) . '" class="chart-label chart-year-label" text-anchor="middle">' . e($year) . '</text>';
         }
 
-        foreach ($series as $serie) {
+        foreach ($series as $serieIndex => $serie) {
             $color = $serie['color'] ?? '#2563eb';
             $points = [];
             $pointData = [];
+            $delay = number_format($serieIndex * 0.16, 2, '.', '');
 
             foreach ($rows as $index => $row) {
+                $year = data_get($row, 'year', data_get($row, 'tahun'));
                 $value = (int) data_get($row, $serie['key'], 0);
                 $x = $rows->count() === 1 ? $left + ($plotWidth / 2) : $left + (($plotWidth / $count) * $index);
                 $y = $bottomY - (($value / $maxValue) * $plotHeight);
                 $points[] = round($x, 2) . ',' . round($y, 2);
-                $pointData[] = ['x' => round($x, 2), 'y' => round($y, 2), 'value' => $value, 'label' => $serie['label']];
+                $pointData[] = [
+                    'x' => round($x, 2),
+                    'y' => round($y, 2),
+                    'value' => $value,
+                    'year' => $year,
+                    'label' => $serie['label'],
+                    'color' => $color,
+                ];
             }
 
-            $html .= '<polyline points="' . implode(' ', $points) . '" fill="none" stroke="' . e($color) . '" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />';
+            $html .= '<polyline class="chart-line" pathLength="1" points="' . implode(' ', $points) . '" fill="none" stroke="' . e($color) . '" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" style="--chart-color:' . e($color) . ';--chart-delay:' . $delay . 's" />';
 
-            foreach ($pointData as $point) {
-                $html .= '<circle cx="' . $point['x'] . '" cy="' . $point['y'] . '" r="5" fill="#ffffff" stroke="' . e($color) . '" stroke-width="3"><title>' . e($point['label']) . ': ' . number_format($point['value']) . '</title></circle>';
+            foreach ($pointData as $pointIndex => $point) {
+                $pointDelay = number_format(($serieIndex * 0.16) + 0.42 + ($pointIndex * 0.08), 2, '.', '');
+                $labelY = max(16, $point['y'] - 14);
+                $html .= '<g class="chart-point-group" tabindex="0" style="--chart-color:' . e($point['color']) . ';--point-delay:' . $pointDelay . 's" data-chart-label="' . e($point['label']) . '" data-chart-year="' . e($point['year']) . '" data-chart-value="' . e(number_format($point['value'])) . '" data-chart-color="' . e($point['color']) . '">';
+                $html .= '<circle cx="' . $point['x'] . '" cy="' . $point['y'] . '" r="6" fill="#ffffff" stroke="' . e($point['color']) . '" stroke-width="3" />';
+
+                if ($point['value'] > 0) {
+                    $html .= '<text x="' . $point['x'] . '" y="' . $labelY . '" class="chart-point-value" fill="' . e($point['color']) . '" text-anchor="middle">' . number_format($point['value']) . '</text>';
+                }
+
+                $html .= '</g>';
             }
         }
 
-        $html .= '</svg></div></div>';
+        $html .= '</svg>';
+        $html .= '<div class="yearly-chart-tooltip" data-chart-tooltip aria-hidden="true"></div>';
+        $html .= '</div>';
+        $html .= '<div class="yearly-chart-scroll-hint"><i class="fas fa-arrows-left-right"></i><span>Geser grafik untuk melihat data lain</span></div>';
+        $html .= '</div></div>';
 
         return new \Illuminate\Support\HtmlString($html);
     };
@@ -110,12 +135,36 @@
 
 @push('styles')
     <style>
+        .research-detail-page .profile-main-body,
+        .research-detail-page .profile-container {
+            min-width: 0;
+        }
+
+        .research-detail-page .research-layout,
+        .research-detail-page .research-card,
+        .research-detail-page .content-block {
+            min-width: 0;
+        }
+
+        .tabs-container-wrap {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+        }
+
+        .tabs-container {
+            min-width: max-content;
+        }
+
         .yearly-stat-card {
             margin: 0 0 1.25rem;
             padding: 1.25rem;
             border: 1px solid rgba(15, 23, 42, 0.08);
             border-radius: 1.25rem;
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
+            box-shadow: 0 18px 42px rgba(15, 23, 42, .07);
+            overflow: hidden;
         }
 
         .yearly-chart-head {
@@ -156,7 +205,12 @@
             background: #fff;
             color: #334155;
             font-size: .82rem;
-            font-weight: 600;
+            font-weight: 700;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, .05);
+        }
+
+        .yearly-chart-legend span strong {
+            color: var(--legend-color, #2563eb);
         }
 
         .yearly-chart-legend i {
@@ -164,18 +218,44 @@
             height: .65rem;
             border-radius: 999px;
             display: inline-block;
+            box-shadow: 0 0 0 4px color-mix(in srgb, var(--legend-color, #2563eb) 12%, transparent);
         }
 
         .yearly-chart-wrap {
+            position: relative;
             width: 100%;
             overflow-x: auto;
+            overflow-y: visible;
+            padding: .25rem .15rem .55rem;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+        }
+
+        .yearly-chart-wrap::-webkit-scrollbar,
+        .table-responsive::-webkit-scrollbar,
+        .tabs-container-wrap::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .yearly-chart-wrap::-webkit-scrollbar-thumb,
+        .table-responsive::-webkit-scrollbar-thumb,
+        .tabs-container-wrap::-webkit-scrollbar-thumb {
+            border-radius: 999px;
+            background: rgba(7, 43, 87, .24);
+        }
+
+        .yearly-chart-scroll-inner {
+            position: relative;
+            width: max-content;
+            min-width: 100%;
         }
 
         .yearly-chart-svg {
-            width: 100%;
-            min-width: 540px;
+            max-width: none;
+            min-width: 720px;
             height: auto;
             display: block;
+            overflow: visible;
         }
 
         .chart-axis {
@@ -192,7 +272,166 @@
         .chart-label {
             fill: #64748b;
             font-size: 13px;
-            font-weight: 600;
+            font-weight: 700;
+        }
+
+        .chart-label-soft {
+            fill: rgba(100, 116, 139, .72);
+            font-size: 11px;
+        }
+
+        .chart-year-label {
+            fill: #334155;
+            font-weight: 800;
+        }
+
+        .chart-line {
+            stroke-dasharray: 1;
+            stroke-dashoffset: 1;
+            animation: yearlyChartLineDraw 1.15s cubic-bezier(.65, 0, .25, 1) forwards;
+            animation-delay: var(--chart-delay, 0s);
+            filter: drop-shadow(0 8px 10px rgba(15, 23, 42, .12));
+        }
+
+        .chart-point-group {
+            cursor: pointer;
+            opacity: 0;
+            transform-box: fill-box;
+            transform-origin: center;
+            animation: yearlyChartPointPop .35s ease forwards;
+            animation-delay: var(--point-delay, .45s);
+            outline: none;
+        }
+
+        .chart-point-group circle {
+            transition: r .2s ease, filter .2s ease, stroke-width .2s ease;
+        }
+
+        .chart-point-group:hover circle,
+        .chart-point-group:focus circle {
+            r: 8;
+            stroke-width: 4;
+            filter: drop-shadow(0 8px 14px color-mix(in srgb, var(--chart-color, #2563eb) 42%, transparent));
+        }
+
+        .chart-point-value {
+            font-size: 12px;
+            font-weight: 900;
+            paint-order: stroke;
+            stroke: #ffffff;
+            stroke-width: 4px;
+            stroke-linejoin: round;
+            opacity: .96;
+        }
+
+        @keyframes yearlyChartLineDraw {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        @keyframes yearlyChartPointPop {
+            from {
+                opacity: 0;
+                transform: scale(.5);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .yearly-chart-tooltip {
+            position: fixed;
+            z-index: 10001;
+            min-width: 190px;
+            max-width: min(280px, calc(100vw - 32px));
+            padding: .85rem .95rem;
+            border-radius: 1rem;
+            background: linear-gradient(135deg, rgba(255, 255, 255, .98), rgba(248, 250, 252, .98));
+            border: 1px solid rgba(226, 232, 240, .95);
+            box-shadow: 0 22px 52px rgba(3, 31, 66, .24);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translate3d(-50%, -110%, 0) scale(.96);
+            transition: opacity .16s ease, visibility .16s ease, transform .16s ease;
+        }
+
+        .yearly-chart-tooltip.is-visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translate3d(-50%, -116%, 0) scale(1);
+        }
+
+        .chart-tooltip-top {
+            display: flex;
+            align-items: center;
+            gap: .55rem;
+            margin-bottom: .45rem;
+        }
+
+        .chart-tooltip-dot {
+            width: .8rem;
+            height: .8rem;
+            border-radius: 999px;
+            background: var(--tooltip-color, #2563eb);
+            box-shadow: 0 0 0 5px color-mix(in srgb, var(--tooltip-color, #2563eb) 14%, transparent);
+            flex: 0 0 auto;
+        }
+
+        .chart-tooltip-label {
+            color: #0f172a;
+            font-size: .86rem;
+            font-weight: 900;
+            line-height: 1.25;
+        }
+
+        .chart-tooltip-year {
+            width: fit-content;
+            margin-top: .1rem;
+            padding: .18rem .48rem;
+            border-radius: 999px;
+            color: #475569;
+            background: rgba(148, 163, 184, .14);
+            font-size: .68rem;
+            font-weight: 800;
+        }
+
+        .chart-tooltip-value {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: .8rem;
+            padding-top: .55rem;
+            border-top: 1px solid rgba(148, 163, 184, .22);
+            color: #475569;
+            font-size: .75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+        }
+
+        .chart-tooltip-value strong {
+            color: var(--tooltip-color, #2563eb);
+            font-size: 1.45rem;
+            line-height: 1;
+            font-weight: 950;
+            letter-spacing: -.03em;
+        }
+
+        .yearly-chart-scroll-hint {
+            display: none;
+            align-items: center;
+            gap: .45rem;
+            width: fit-content;
+            margin: .6rem auto 0;
+            padding: .42rem .7rem;
+            border-radius: 999px;
+            color: #64748b;
+            background: rgba(148, 163, 184, .12);
+            font-size: .72rem;
+            font-weight: 800;
         }
 
         .yearly-chart-empty {
@@ -202,6 +441,55 @@
             color: #64748b;
             text-align: center;
             font-weight: 600;
+        }
+
+        .table-responsive {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: .35rem;
+            scrollbar-width: thin;
+        }
+
+        .table-responsive .table-data {
+            min-width: 780px;
+        }
+
+        #research .table-responsive .table-data,
+        #service .table-responsive .table-data,
+        #books .table-responsive .table-data {
+            min-width: 860px;
+        }
+
+        @media (max-width: 768px) {
+            .yearly-stat-card {
+                padding: 1rem;
+                border-radius: 1rem;
+            }
+
+            .yearly-chart-head {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .yearly-chart-legend {
+                justify-content: flex-start;
+            }
+
+            .yearly-chart-scroll-hint {
+                display: inline-flex;
+            }
+
+            .table-responsive {
+                margin-inline: -.25rem;
+                padding-inline: .25rem;
+            }
+
+            .tabs-container-wrap {
+                margin-inline: -1rem;
+                padding-inline: 1rem;
+            }
         }
     </style>
 @endpush
@@ -383,5 +671,101 @@ function switchTab(evt, tabId) {
     document.getElementById(tabId).classList.add('active');
     evt.currentTarget.classList.add('active');
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    const chartPoints = document.querySelectorAll('.chart-point-group');
+
+    function moveTooltip(tooltip, event) {
+        const padding = 16;
+        const tooltipWidth = tooltip.offsetWidth || 220;
+        const tooltipHeight = tooltip.offsetHeight || 120;
+        let left = event.clientX;
+        let top = event.clientY - 16;
+
+        left = Math.max(padding + (tooltipWidth / 2), Math.min(window.innerWidth - padding - (tooltipWidth / 2), left));
+        top = Math.max(padding + tooltipHeight, top);
+
+        tooltip.style.left = left + 'px';
+        tooltip.style.top = top + 'px';
+    }
+
+    function showTooltip(point, event = null) {
+        const wrap = point.closest('[data-chart-wrap]');
+        const tooltip = wrap?.querySelector('[data-chart-tooltip]');
+
+        if (!tooltip) {
+            return;
+        }
+
+        const color = point.dataset.chartColor || '#2563eb';
+        const label = point.dataset.chartLabel || 'Data';
+        const year = point.dataset.chartYear || '-';
+        const value = point.dataset.chartValue || '0';
+
+        tooltip.style.setProperty('--tooltip-color', color);
+        tooltip.innerHTML = `
+            <div class="chart-tooltip-top">
+                <span class="chart-tooltip-dot"></span>
+                <div>
+                    <div class="chart-tooltip-label">${label}</div>
+                    <div class="chart-tooltip-year">Tahun ${year}</div>
+                </div>
+            </div>
+            <div class="chart-tooltip-value">
+                <span>Jumlah data</span>
+                <strong>${value}</strong>
+            </div>
+        `;
+
+        tooltip.classList.add('is-visible');
+        tooltip.setAttribute('aria-hidden', 'false');
+
+        if (event) {
+            moveTooltip(tooltip, event);
+        } else {
+            const rect = point.getBoundingClientRect();
+            moveTooltip(tooltip, { clientX: rect.left + (rect.width / 2), clientY: rect.top });
+        }
+    }
+
+    function hideTooltip(point) {
+        const wrap = point.closest('[data-chart-wrap]');
+        const tooltip = wrap?.querySelector('[data-chart-tooltip]');
+
+        if (!tooltip) {
+            return;
+        }
+
+        tooltip.classList.remove('is-visible');
+        tooltip.setAttribute('aria-hidden', 'true');
+    }
+
+    chartPoints.forEach(function (point) {
+        point.addEventListener('mouseenter', function (event) {
+            showTooltip(point, event);
+        });
+
+        point.addEventListener('mousemove', function (event) {
+            const wrap = point.closest('[data-chart-wrap]');
+            const tooltip = wrap?.querySelector('[data-chart-tooltip]');
+
+            if (tooltip?.classList.contains('is-visible')) {
+                moveTooltip(tooltip, event);
+            }
+        });
+
+        point.addEventListener('mouseleave', function () {
+            hideTooltip(point);
+        });
+
+        point.addEventListener('focus', function () {
+            showTooltip(point);
+        });
+
+        point.addEventListener('blur', function () {
+            hideTooltip(point);
+        });
+    });
+});
 </script>
 @endpush
