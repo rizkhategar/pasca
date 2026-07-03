@@ -1,21 +1,30 @@
 <?php
 
 use App\Models\ActivityLog;
+use Spatie\Activitylog\Actions\CleanActivityLogAction;
+use Spatie\Activitylog\Actions\LogActivityAction;
 
 return [
-    'enabled' => env('ACTIVITY_LOGGER_ENABLED', true),
+    'enabled' => env('ACTIVITYLOG_ENABLED', true),
 
-    'delete_records_older_than_days' => 365,
+    'clean_after_days' => 365,
 
     'default_log_name' => 'system',
 
     'default_auth_driver' => null,
 
-    'subject_returns_soft_deleted_models' => false,
+    'include_soft_deleted_subjects' => false,
 
     'activity_model' => ActivityLog::class,
 
-    'table_name' => env('ACTIVITY_LOGGER_TABLE_NAME', 'activity_logs'),
+    'default_except_attributes' => [],
 
-    'database_connection' => env('ACTIVITY_LOGGER_DB_CONNECTION'),
+    'buffer' => [
+        'enabled' => env('ACTIVITYLOG_BUFFER_ENABLED', false),
+    ],
+
+    'actions' => [
+        'log_activity' => LogActivityAction::class,
+        'clean_log' => CleanActivityLogAction::class,
+    ],
 ];
