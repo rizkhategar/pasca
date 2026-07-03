@@ -4,8 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Models\Activity;
 
 #[Fillable([
     'log_name',
@@ -20,8 +21,15 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
     'user_agent',
 ])]
 #[Hidden(['user_agent'])]
-class ActivityLog extends Model
+class ActivityLog extends Activity
 {
+    protected $table = 'activity_logs';
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()->logAll()->logOnlyDirty();
+    }
+
     protected function casts(): array
     {
         return [

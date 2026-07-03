@@ -5,9 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class AboutPostgraduate extends Model
 {
+    use LogsActivity;
+
     protected $table = 'about_postgraduate';
 
     protected $fillable = [
@@ -27,6 +31,11 @@ class AboutPostgraduate extends Model
     protected $casts = [
         'points' => 'array',
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()->logAll()->logOnlyDirty();
+    }
 
     public static function normalizeImagePath(mixed $value): ?string
     {

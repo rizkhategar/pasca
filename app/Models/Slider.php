@@ -4,9 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Slider extends Model
 {
+    use LogsActivity;
+
     protected $table = 'sliders';
 
     protected $fillable = [
@@ -17,6 +21,11 @@ class Slider extends Model
         'duration_ms',
         'is_active',
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()->logAll()->logOnlyDirty();
+    }
 
     protected function casts(): array
     {
