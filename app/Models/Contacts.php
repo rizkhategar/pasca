@@ -4,9 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Contacts extends Model
 {
+    use LogsActivity;
+
     protected $table = 'contacts';
 
     protected $fillable = [
@@ -16,6 +20,11 @@ class Contacts extends Model
         'secondary_whatsapp',
         'whatsapp_admins',
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()->logAll()->logOnlyDirty();
+    }
 
     protected function casts(): array
     {
