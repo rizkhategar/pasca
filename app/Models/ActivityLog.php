@@ -3,9 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Models\Activity;
 
 #[Fillable([
@@ -16,26 +14,12 @@ use Spatie\Activitylog\Models\Activity;
     'subject_id',
     'causer_type',
     'causer_id',
+    'attribute_changes',
     'properties',
-    'ip_address',
-    'user_agent',
 ])]
-#[Hidden(['user_agent'])]
 class ActivityLog extends Activity
 {
-    protected $table = 'activity_logs';
-
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()->logAll()->logOnlyDirty();
-    }
-
-    protected function casts(): array
-    {
-        return [
-            'properties' => 'array',
-        ];
-    }
+    protected $table = 'activity_log';
 
     public function subject(): MorphTo
     {
