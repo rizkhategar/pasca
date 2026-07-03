@@ -69,10 +69,6 @@ class ActivityLogResource extends Resource
                 TextColumn::make('subject_id')
                     ->label('Subject ID')
                     ->sortable(),
-
-                TextColumn::make('ip_address')
-                    ->label('IP')
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('event')
