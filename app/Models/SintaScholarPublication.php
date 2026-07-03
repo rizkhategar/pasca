@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class SintaScholarPublication extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     // Menegaskan nama tabel
     protected $table = 'sinta_scholar_publications';
@@ -22,6 +24,11 @@ class SintaScholarPublication extends Model
         'year',
         'citation',
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()->logAll()->logOnlyDirty();
+    }
 
     /**
      * Relasi balik ke dosen pemilik publikasi
