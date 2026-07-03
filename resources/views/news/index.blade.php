@@ -6,7 +6,7 @@
 @section('content')
     <section class="news-hero">
         <div class="hero-dots"></div>
-        <div class="hero-line"></div>
+        @include('components.hero-spotlight')
 
         <div class="container">
             <div class="hero-inner">

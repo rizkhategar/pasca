@@ -3,9 +3,11 @@
 namespace App\Providers;
 
 use App\Models\ActivityLog;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -29,6 +31,11 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
         }
+
+        // scramble
+        Gate::define('viewApiDocs', function (User $user) {
+            return $user->hasRole(['super_admin', 'admin', 'apiuser']);
+        });
 
         $this->registerActivityLogger();
     }

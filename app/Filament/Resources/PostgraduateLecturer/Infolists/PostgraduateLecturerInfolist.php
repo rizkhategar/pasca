@@ -11,8 +11,8 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Filament\Support\Enums\FontWeight;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
 class PostgraduateLecturerInfolist
@@ -26,65 +26,72 @@ class PostgraduateLecturerInfolist
                     ->schema([
                         Grid::make(2)
                             ->schema([
+                                TextEntry::make('profile_photo_label')
+                                    ->hiddenLabel()
+                                    ->getStateUsing(fn (): string => 'Profile Photo')
+                                    ->formatStateUsing(fn (): HtmlString => self::labelOnly('Profile Photo'))
+                                    ->html()
+                                    ->columnSpan(2),
+
                                 ImageEntry::make('postgraduate_profile_photo')
-                                    ->label('Profile Photo')
+                                    ->hiddenLabel()
                                     ->disk('public')
                                     ->getStateUsing(fn ($record): ?string => self::profilePhotoPath($record))
                                     ->columnSpan(2),
 
                                 TextEntry::make('postgraduate_sinta_id')
-                                    ->label('SINTA ID')
+                                    ->hiddenLabel()
                                     ->getStateUsing(fn ($record): string => self::display(self::postgraduateLecturer($record)?->sinta_id))
-                                    ->color('primary')
-                                    ->weight(FontWeight::SemiBold),
+                                    ->formatStateUsing(fn (string $state): HtmlString => self::labelValue('SINTA ID', $state))
+                                    ->html(),
 
                                 TextEntry::make('sinta_lecturer_name')
-                                    ->label('Lecturer Name')
+                                    ->hiddenLabel()
                                     ->getStateUsing(fn ($record): string => self::display(self::sintaLecturer($record)?->name))
-                                    ->color('primary')
-                                    ->weight(FontWeight::SemiBold),
+                                    ->formatStateUsing(fn (string $state): HtmlString => self::labelValue('Lecturer Name', $state))
+                                    ->html(),
 
                                 TextEntry::make('postgraduate_institution')
-                                    ->label('Institution')
+                                    ->hiddenLabel()
                                     ->getStateUsing(fn ($record): string => self::display(self::postgraduateLecturer($record)?->institution))
-                                    ->color('primary')
-                                    ->weight(FontWeight::SemiBold),
+                                    ->formatStateUsing(fn (string $state): HtmlString => self::labelValue('Institution', $state))
+                                    ->html(),
 
                                 TextEntry::make('postgraduate_study_programs')
-                                    ->label('Postgraduate Study Programs')
+                                    ->hiddenLabel()
                                     ->getStateUsing(fn ($record): string => self::studyPrograms($record))
-                                    ->color('primary')
-                                    ->weight(FontWeight::SemiBold),
+                                    ->formatStateUsing(fn (string $state): HtmlString => self::labelValue('Postgraduate Study Programs', $state))
+                                    ->html(),
 
                                 TextEntry::make('detail_study_program')
-                                    ->label('Study Program')
+                                    ->hiddenLabel()
                                     ->getStateUsing(fn ($record): string => self::display(self::sintaDetail($record)?->study_program))
-                                    ->color('primary')
-                                    ->weight(FontWeight::SemiBold),
+                                    ->formatStateUsing(fn (string $state): HtmlString => self::labelValue('Study Program', $state))
+                                    ->html(),
 
                                 TextEntry::make('detail_sinta_score_overall')
-                                    ->label('SINTA Score Overall')
+                                    ->hiddenLabel()
                                     ->getStateUsing(fn ($record): string => self::number(self::sintaDetail($record)?->sinta_score_overall))
-                                    ->color('primary')
-                                    ->weight(FontWeight::SemiBold),
+                                    ->formatStateUsing(fn (string $state): HtmlString => self::labelValue('SINTA Score Overall', $state))
+                                    ->html(),
 
                                 TextEntry::make('detail_sinta_score_3yr')
-                                    ->label('SINTA Score 3Yr')
+                                    ->hiddenLabel()
                                     ->getStateUsing(fn ($record): string => self::number(self::sintaDetail($record)?->sinta_score_3yr))
-                                    ->color('primary')
-                                    ->weight(FontWeight::SemiBold),
+                                    ->formatStateUsing(fn (string $state): HtmlString => self::labelValue('SINTA Score 3Yr', $state))
+                                    ->html(),
 
                                 TextEntry::make('detail_affil_score')
-                                    ->label('Affiliation Score')
+                                    ->hiddenLabel()
                                     ->getStateUsing(fn ($record): string => self::number(self::sintaDetail($record)?->affil_score))
-                                    ->color('primary')
-                                    ->weight(FontWeight::SemiBold),
+                                    ->formatStateUsing(fn (string $state): HtmlString => self::labelValue('Affiliation Score', $state))
+                                    ->html(),
 
                                 TextEntry::make('detail_affil_score_3yr')
-                                    ->label('Affiliation Score 3Yr')
+                                    ->hiddenLabel()
                                     ->getStateUsing(fn ($record): string => self::number(self::sintaDetail($record)?->affil_score_3yr))
-                                    ->color('primary')
-                                    ->weight(FontWeight::SemiBold),
+                                    ->formatStateUsing(fn (string $state): HtmlString => self::labelValue('Affiliation Score 3Yr', $state))
+                                    ->html(),
                             ]),
                     ])
                     ->columnSpanFull(),
@@ -204,6 +211,21 @@ class PostgraduateLecturerInfolist
         }
 
         return null;
+    }
+
+    private static function labelOnly(string $label): HtmlString
+    {
+        return new HtmlString('<div style="color:#f59e0b;font-weight:700;font-size:13px;line-height:1.4;">' . e($label) . '</div>');
+    }
+
+    private static function labelValue(string $label, string $value): HtmlString
+    {
+        return new HtmlString('
+            <div style="display:flex;flex-direction:column;gap:4px;line-height:1.45;">
+                <span style="color:#f59e0b;font-weight:700;font-size:13px;">' . e($label) . '</span>
+                <span style="color:#ffffff;font-weight:700;font-size:14px;">' . e($value) . '</span>
+            </div>
+        ');
     }
 
     private static function display(mixed $value): string
