@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\Contacts\Tables;
 
 use App\Filament\Resources\Contacts\ContactResource;
-use App\Models\Contacts;
+use App\Models\Contact;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
@@ -17,7 +17,7 @@ class ContactsTable
             ->columns([
                 TextColumn::make('whatsapp_admins')
                     ->label('WhatsApp Admins')
-                    ->getStateUsing(function (Contacts $record): string {
+                    ->getStateUsing(function (Contact $record): string {
                         return collect($record->resolvedWhatsAppAdmins())
                             ->map(fn (array $admin): string => $admin['name'] . ' — ' . $admin['number'])
                             ->implode("\n");
@@ -30,9 +30,9 @@ class ContactsTable
             ])
             ->recordActions([
                 EditAction::make()
-                    ->visible(fn (Contacts $record): bool => ContactResource::canEdit($record)),
+                    ->visible(fn (Contact $record): bool => ContactResource::canEdit($record)),
                 DeleteAction::make()
-                    ->visible(fn (Contacts $record): bool => ContactResource::canDelete($record)),
+                    ->visible(fn (Contact $record): bool => ContactResource::canDelete($record)),
             ]);
     }
 }
