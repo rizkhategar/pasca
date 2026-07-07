@@ -32,12 +32,14 @@
             position: relative !important;
             isolation: isolate !important;
             overflow: hidden !important;
-            min-height: clamp(320px, 32vw, 410px) !important;
+            min-height: clamp(318px, 31vw, 405px) !important;
             display: flex !important;
             align-items: center !important;
-            padding: clamp(54px, 6vw, 76px) 0 clamp(96px, 8vw, 122px) !important;
+            padding: clamp(54px, 6vw, 76px) 0 clamp(92px, 8vw, 118px) !important;
             color: #fff !important;
             background: linear-gradient(135deg, #062e62 0%, #0b5f9f 60%, #2389cf 100%) !important;
+            background-image: linear-gradient(135deg, #062e62 0%, #0b5f9f 60%, #2389cf 100%) !important;
+            box-shadow: none !important;
         }
 
         .page-hero::before,
@@ -47,14 +49,16 @@
         .contact-hero::before,
         .academic-page .page-hero::before,
         .profile-page .profile-hero::before {
-            content: "" !important;
-            position: absolute !important;
-            inset: 0 !important;
-            z-index: 1 !important;
-            pointer-events: none !important;
+            content: none !important;
+            display: none !important;
+            position: static !important;
+            inset: auto !important;
+            width: 0 !important;
+            height: 0 !important;
             background: none !important;
             background-image: none !important;
             opacity: 0 !important;
+            visibility: hidden !important;
             box-shadow: none !important;
             transform: none !important;
         }
@@ -68,18 +72,33 @@
         .profile-page .profile-hero::after {
             content: "" !important;
             position: absolute !important;
-            left: -6% !important;
-            right: -6% !important;
+            left: -7% !important;
+            right: -7% !important;
             top: auto !important;
             bottom: -78px !important;
             width: auto !important;
-            height: 142px !important;
+            height: 140px !important;
             z-index: 2 !important;
             pointer-events: none !important;
             border-radius: 50% 50% 0 0 / 100% 100% 0 0 !important;
             background: #f8fbff !important;
-            box-shadow: 0 -18px 42px rgba(3, 31, 66, .08) !important;
+            background-image: none !important;
+            box-shadow: none !important;
             transform: none !important;
+        }
+
+        .page-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner),
+        .about-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner),
+        .news-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner),
+        .rd-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner),
+        .contact-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner),
+        .profile-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner) {
+            display: none !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            background: none !important;
+            background-image: none !important;
+            box-shadow: none !important;
         }
 
         .page-hero [class*="spotlight"],
@@ -124,41 +143,75 @@
         .rd-hero [class*="orb"],
         .contact-hero [class*="orb"],
         .profile-hero [class*="orb"],
-        .page-hero > [aria-hidden="true"]:not(.hero-wave):not(.rd-hero-wave):not(.hero-shape):not([class*="wave"]):not([class*="shape"]),
-        .about-hero > [aria-hidden="true"]:not(.hero-wave):not(.rd-hero-wave):not(.hero-shape):not([class*="wave"]):not([class*="shape"]),
-        .news-hero > [aria-hidden="true"]:not(.hero-wave):not(.rd-hero-wave):not(.hero-shape):not([class*="wave"]):not([class*="shape"]),
-        .rd-hero > [aria-hidden="true"]:not(.hero-wave):not(.rd-hero-wave):not(.hero-shape):not([class*="wave"]):not([class*="shape"]),
-        .contact-hero > [aria-hidden="true"]:not(.hero-wave):not(.rd-hero-wave):not(.hero-shape):not([class*="wave"]):not([class*="shape"]),
-        .profile-hero > [aria-hidden="true"]:not(.hero-wave):not(.rd-hero-wave):not(.hero-shape):not([class*="wave"]):not([class*="shape"]) {
+        .page-hero [class*="wave"],
+        .about-hero [class*="wave"],
+        .news-hero [class*="wave"],
+        .rd-hero [class*="wave"],
+        .contact-hero [class*="wave"],
+        .profile-hero [class*="wave"],
+        .page-hero [class*="shape"],
+        .about-hero [class*="shape"],
+        .news-hero [class*="shape"],
+        .rd-hero [class*="shape"],
+        .contact-hero [class*="shape"],
+        .profile-hero [class*="shape"],
+        .page-hero [aria-hidden="true"],
+        .about-hero [aria-hidden="true"],
+        .news-hero [aria-hidden="true"],
+        .rd-hero [aria-hidden="true"],
+        .contact-hero [aria-hidden="true"],
+        .profile-hero [aria-hidden="true"] {
             display: none !important;
             opacity: 0 !important;
             visibility: hidden !important;
+            background: none !important;
+            background-image: none !important;
+            box-shadow: none !important;
+            transform: none !important;
         }
 
-        .hero-wave,
-        .rd-hero-wave,
-        .hero-shape,
-        .hero-wave svg,
-        .rd-hero-wave svg,
-        .hero-shape svg {
-            display: block !important;
-            opacity: 1 !important;
-            visibility: visible !important;
+        .page-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::before,
+        .page-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::after,
+        .about-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::before,
+        .about-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::after,
+        .news-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::before,
+        .news-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::after,
+        .rd-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::before,
+        .rd-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::after,
+        .contact-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::before,
+        .contact-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::after,
+        .profile-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::before,
+        .profile-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::after {
+            content: none !important;
+            display: none !important;
+            background: none !important;
+            background-image: none !important;
+            box-shadow: none !important;
+        }
+
+        .hero-inner,
+        .rd-hero-inner,
+        .academic-page .hero-inner,
+        .profile-page .hero-inner,
+        .page-hero .container,
+        .about-hero .container,
+        .news-hero .container,
+        .rd-hero .container,
+        .contact-hero .container,
+        .profile-hero .container {
+            position: relative !important;
+            z-index: 5 !important;
         }
 
         .hero-inner,
         .rd-hero-inner,
         .academic-page .hero-inner,
         .profile-page .hero-inner {
-            position: relative !important;
-            z-index: 5 !important;
             width: min(900px, 100%) !important;
             max-width: 900px !important;
         }
 
         .contact-page .contact-hero .hero-inner {
-            position: relative !important;
-            z-index: 5 !important;
             display: grid !important;
             grid-template-columns: minmax(0, 1fr) minmax(280px, 340px) !important;
             gap: 32px !important;
