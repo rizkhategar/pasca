@@ -86,11 +86,17 @@ HTML;
         $perPage = min(30, max(1, (int) $request->query('paginate', 9)));
         $categoryId = (string) $request->query('category_id', 'all');
         $categorySlug = (string) $request->query('category', 'all');
+        $programSlug = Str::of((string) $request->query('program_studi', 'all'))->lower()->squish()->toString();
+        $programName = Str::of((string) $request->query('program_name', ''))->lower()->squish()->toString();
+        $programId = Str::of((string) $request->query('program_id', ''))->lower()->squish()->toString();
         $sort = strtolower((string) $request->query('sort', 'desc')) === 'asc' ? 'asc' : 'desc';
+        $hasProgramFilter = ! in_array($programSlug, ['', 'all'], true)
+            || ! in_array($programName, ['', 'all'], true)
+            || ! in_array($programId, ['', 'all'], true);
 
         try {
             // The default state fetches only the page being viewed. This keeps first paint fast.
-            if ($query === '' && $categoryId === 'all' && $categorySlug === 'all' && $sort === 'desc') {
+            if ($query === '' && $categoryId === 'all' && $categorySlug === 'all' && ! $hasProgramFilter && $sort === 'desc') {
                 return response()
                     ->json($this->getFastNewsPage($page, $perPage))
                     ->header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
@@ -102,6 +108,10 @@ HTML;
                 $items = $items->filter(fn (array $item): bool => (string) data_get($item, 'category.id', data_get($item, 'category_id', '')) === $categoryId);
             } elseif ($categorySlug !== 'all' && $categorySlug !== '') {
                 $items = $items->filter(fn (array $item): bool => (string) data_get($item, 'category.slug', '') === $categorySlug);
+            }
+
+            if ($hasProgramFilter) {
+                $items = $items->filter(fn (array $item): bool => $this->matchesStudyProgram($item, $programSlug, $programName, $programId));
             }
 
             if ($query !== '') {
@@ -393,6 +403,71 @@ HTML;
         return collect(explode(' ', $query))
             ->filter()
             ->every(fn (string $keyword): bool => str_contains($haystack, $keyword));
+    }
+
+    private function matchesStudyProgram(array $item, string $programSlug, string $programName = '', string $programId = ''): bool
+    {
+        $programSlug = Str::of($programSlug)->lower()->squish()->toString();
+        $programName = Str::of($programName)->lower()->squish()->toString();
+        $programId = Str::of($programId)->lower()->squish()->toString();
+
+        $values = $this->flattenScalarValues($item);
+        $normalizedValues = collect($values)
+            ->map(fn (mixed $value): string => Str::of((string) $value)->lower()->squish()->toString())
+            ->filter()
+            ->values();
+        $slugValues = $normalizedValues
+            ->map(fn (string $value): string => Str::slug($value))
+            ->filter()
+            ->values();
+
+        if ($programId !== '' && $programId !== 'all' && $normalizedValues->contains($programId)) {
+            return true;
+        }
+
+        if ($programSlug !== '' && $programSlug !== 'all') {
+            $targetSlug = Str::slug($programSlug);
+
+            if ($slugValues->contains($targetSlug) || $slugValues->contains(fn (string $value): bool => str_contains($value, $targetSlug))) {
+                return true;
+            }
+
+            $withoutDegree = Str::of($targetSlug)->after('s2-')->toString();
+            $hasDegreeSignal = $slugValues->contains(fn (string $value): bool => in_array($value, ['s2', 'magister', 'pascasarjana'], true) || str_contains($value, 's2') || str_contains($value, 'magister') || str_contains($value, 'pascasarjana'));
+
+            if ($withoutDegree !== $targetSlug && $withoutDegree !== '' && $hasDegreeSignal && $slugValues->contains(fn (string $value): bool => str_contains($value, $withoutDegree))) {
+                return true;
+            }
+        }
+
+        if ($programName !== '' && $programName !== 'all') {
+            $targetNameSlug = Str::slug($programName);
+            $hasDegreeSignal = $slugValues->contains(fn (string $value): bool => str_contains($value, 's2') || str_contains($value, 'magister') || str_contains($value, 'pascasarjana'));
+
+            return $slugValues->contains($targetNameSlug)
+                || ($hasDegreeSignal && $slugValues->contains(fn (string $value): bool => str_contains($value, $targetNameSlug)));
+        }
+
+        return false;
+    }
+
+    private function flattenScalarValues(mixed $value): array
+    {
+        if (is_scalar($value) || $value === null) {
+            return [$value];
+        }
+
+        if (! is_array($value)) {
+            return [];
+        }
+
+        $values = [];
+
+        foreach ($value as $child) {
+            array_push($values, ...$this->flattenScalarValues($child));
+        }
+
+        return $values;
     }
 
     private function newsDate(array $item): string
