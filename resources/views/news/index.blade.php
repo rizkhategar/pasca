@@ -50,7 +50,7 @@
                         </div>
 
                         <div class="compact-dropdown program-filter" id="programDropdown">
-                            <button class="dropdown-trigger" type="button" id="programDropdownButton" aria-label="Pilih Pascasarjana" aria-expanded="false">
+                            <button class="dropdown-trigger" type="button" id="programDropdownButton" aria-label="Pilih Program Studi" aria-expanded="false">
                                 <i class="fas fa-graduation-cap left-icon"></i>
                                 <span class="selected-text" id="programSelectedText">Memuat...</span>
                                 <i class="fas fa-chevron-down chevron-icon"></i>
@@ -108,6 +108,7 @@
                 sort: 'desc',
                 q: '',
             };
+            const PROGRAM_ORDER = ['s2-keperawatan', 's2-kesehatan-masyarakat', 's2-manajemen-pendidikan', 's2-hukum'];
             let searchTimer = null;
             let activeRequestId = 0;
 
@@ -138,6 +139,7 @@
             function arr(payload) { if (Array.isArray(payload)) return payload; if (Array.isArray(payload?.data)) return payload.data; if (Array.isArray(payload?.data?.data)) return payload.data.data; return []; }
             function date(value) { if (!value) return ''; const d = new Date(value); if (Number.isNaN(d.getTime())) return String(value); return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }); }
             function img(url) { if (!url) return ''; url = String(url); if (/^https?:\/\//i.test(url)) return url; if (url.startsWith('/')) return API_ORIGIN + url; return API_ORIGIN + '/' + url.replace(/^\/+/, ''); }
+            function slug(value) { return String(value ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
 
             async function get(url) {
                 const response = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -212,7 +214,7 @@
                 state.programName = option.dataset.name || '';
                 state.programId = option.dataset.id || '';
                 state.page = 1;
-                programText.textContent = option.dataset.label || option.textContent.trim() || 'Semua Pascasarjana';
+                programText.textContent = option.dataset.label || option.textContent.trim() || 'Semua Program Studi';
                 setActiveOption(programMenu, state.program); closeDropdown(programDropdown); load();
             });
 
@@ -310,10 +312,10 @@
 
             function fallbackPrograms() {
                 return [
-                    { id: '21', nama: 'Manajemen Pendidikan', page_slug: 's2-manajemen-pendidikan', jenjang_nama_singkat: 'S2' },
-                    { id: '22', nama: 'Hukum', page_slug: 's2-hukum', jenjang_nama_singkat: 'S2' },
                     { id: '23', nama: 'Keperawatan', page_slug: 's2-keperawatan', jenjang_nama_singkat: 'S2' },
                     { id: '24', nama: 'Kesehatan Masyarakat', page_slug: 's2-kesehatan-masyarakat', jenjang_nama_singkat: 'S2' },
+                    { id: '21', nama: 'Manajemen Pendidikan', page_slug: 's2-manajemen-pendidikan', jenjang_nama_singkat: 'S2' },
+                    { id: '22', nama: 'Hukum', page_slug: 's2-hukum', jenjang_nama_singkat: 'S2' },
                 ];
             }
 
@@ -321,14 +323,18 @@
                 const faculties = arr(payload);
                 const pascasarjana = faculties.find(function(faculty) {
                     const name = String(faculty?.nama || faculty?.unwFakultas?.nama || '').trim().toLowerCase();
-                    const slug = String(faculty?.slug || faculty?.page_slug || '').trim().toLowerCase();
-                    return slug === 'pascasarjana' || name === 'pascasarjana';
+                    const slugValue = String(faculty?.slug || faculty?.page_slug || '').trim().toLowerCase();
+                    return slugValue === 'pascasarjana' || name === 'pascasarjana';
                 });
                 const programs = Array.isArray(pascasarjana?.unwProgramStudi) ? pascasarjana.unwProgramStudi : [];
                 return programs.filter(function(program) {
                     const degree = String(program?.jenjang_nama_singkat || program?.jenjang || '').trim().toLowerCase();
-                    const slug = String(program?.page_slug || '').trim().toLowerCase();
-                    return degree === 's2' || degree === 'magister' || slug.startsWith('s2-');
+                    const pageSlug = String(program?.page_slug || '').trim().toLowerCase();
+                    return degree === 's2' || degree === 'magister' || pageSlug.startsWith('s2-');
+                }).sort(function(a, b) {
+                    const firstOrder = PROGRAM_ORDER.indexOf(slug(a?.page_slug || a?.slug || a?.nama));
+                    const secondOrder = PROGRAM_ORDER.indexOf(slug(b?.page_slug || b?.slug || b?.nama));
+                    return (firstOrder === -1 ? 99 : firstOrder) - (secondOrder === -1 ? 99 : secondOrder);
                 });
             }
 
@@ -339,12 +345,12 @@
             }
 
             function renderProgramOptions(programs) {
-                const options = [`<button type="button" class="dropdown-option active" data-value="all" data-label="Semua Pascasarjana" data-name="" data-id=""><i class="fas fa-check"></i><span>Semua Pascasarjana</span></button>`];
+                const options = [`<button type="button" class="dropdown-option active" data-value="all" data-label="Semua Program Studi" data-name="" data-id=""><i class="fas fa-check"></i><span>Semua Program Studi</span></button>`];
                 programs.forEach(function(program) {
                     const label = `${program.jenjang_nama_singkat || 'S2'} ${program.nama || 'Program Studi'}`.trim();
                     options.push(`<button type="button" class="dropdown-option" data-value="${esc(program.page_slug || program.slug || program.id)}" data-label="${esc(label)}" data-name="${esc(program.nama || '')}" data-id="${esc(program.id || '')}" title="${esc(label)}"><i class="fas fa-check"></i><span>${esc(label)}</span></button>`);
                 });
-                programMenu.innerHTML = options.join(''); programText.textContent = 'Semua Pascasarjana'; setActiveOption(programMenu, state.program);
+                programMenu.innerHTML = options.join(''); programText.textContent = 'Semua Program Studi'; setActiveOption(programMenu, state.program);
             }
 
             async function loadFilters() {
