@@ -19,13 +19,10 @@
 @extends('layouts.app')
 
 @section('title', 'Struktur Organisasi - Pascasarjana UNW')
-@section('body_class', 'organization-structure-page')
+@section('body_class', 'organization-structure-page profile-menu-page')
 
 @section('content')
     <section class="page-hero">
-        <div class="hero-dots"></div>
-        @include('components.hero-spotlight')
-
         <div class="so-container">
             <div class="hero-inner">
                 <div class="hero-kicker">
@@ -44,8 +41,9 @@
         </div>
 
         <div class="hero-wave">
-            <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
-                <path d="M0,74 C180,122 384,36 650,62 C930,90 1120,128 1440,44 L1440,120 L0,120 Z" fill="#ffffff"></path>
+            <svg viewBox="0 0 1440 140" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M0,78 C190,118 364,38 620,62 C898,88 1074,132 1440,54 L1440,140 L0,140 Z" fill="rgba(255,255,255,.58)"></path>
+                <path d="M0,94 C210,126 402,72 640,82 C914,94 1114,116 1440,72 L1440,140 L0,140 Z" fill="#f8fbff"></path>
             </svg>
         </div>
     </section>
