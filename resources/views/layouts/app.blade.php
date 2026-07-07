@@ -22,235 +22,101 @@
             background: linear-gradient(180deg, #f8fbff 0%, #f4f8fc 48%, #eef5fb 100%) !important;
         }
 
-        .page-hero,
-        .about-hero,
-        .news-hero,
-        .rd-hero,
-        .contact-hero,
-        .academic-page .page-hero,
-        .profile-page .profile-hero {
+        .profile-menu-page .page-hero,
+        .profile-menu-page .about-hero {
             position: relative !important;
             isolation: isolate !important;
             overflow: hidden !important;
-            min-height: clamp(318px, 31vw, 405px) !important;
+            min-height: clamp(330px, 32vw, 430px) !important;
             display: flex !important;
             align-items: center !important;
-            padding: clamp(54px, 6vw, 76px) 0 clamp(92px, 8vw, 118px) !important;
+            padding: clamp(54px, 6vw, 82px) 0 clamp(108px, 8vw, 132px) !important;
             color: #fff !important;
-            background: linear-gradient(135deg, #062e62 0%, #0b5f9f 60%, #2389cf 100%) !important;
-            background-image: linear-gradient(135deg, #062e62 0%, #0b5f9f 60%, #2389cf 100%) !important;
+            background: linear-gradient(135deg, #062e62 0%, #0b5f9f 63%, #2389cf 100%) !important;
+            background-image: linear-gradient(135deg, #062e62 0%, #0b5f9f 63%, #2389cf 100%) !important;
             box-shadow: none !important;
         }
 
-        .page-hero::before,
-        .about-hero::before,
-        .news-hero::before,
-        .rd-hero::before,
-        .contact-hero::before,
-        .academic-page .page-hero::before,
-        .profile-page .profile-hero::before {
+        .profile-menu-page .page-hero::before,
+        .profile-menu-page .about-hero::before,
+        .profile-menu-page .page-hero::after,
+        .profile-menu-page .about-hero::after {
             content: none !important;
             display: none !important;
-            position: static !important;
-            inset: auto !important;
-            width: 0 !important;
-            height: 0 !important;
             background: none !important;
             background-image: none !important;
-            opacity: 0 !important;
-            visibility: hidden !important;
             box-shadow: none !important;
-            transform: none !important;
         }
 
-        .page-hero::after,
-        .about-hero::after,
-        .news-hero::after,
-        .rd-hero::after,
-        .contact-hero::after,
-        .academic-page .page-hero::after,
-        .profile-page .profile-hero::after {
-            content: "" !important;
+        .profile-menu-page .page-hero [class*="spotlight"],
+        .profile-menu-page .about-hero [class*="spotlight"],
+        .profile-menu-page .page-hero [class*="dots"],
+        .profile-menu-page .about-hero [class*="dots"],
+        .profile-menu-page .page-hero [class*="line"],
+        .profile-menu-page .about-hero [class*="line"],
+        .profile-menu-page .page-hero [class*="glow"],
+        .profile-menu-page .about-hero [class*="glow"],
+        .profile-menu-page .page-hero [class*="orb"],
+        .profile-menu-page .about-hero [class*="orb"],
+        .profile-menu-page .page-hero [class*="pattern"],
+        .profile-menu-page .about-hero [class*="pattern"],
+        .profile-menu-page .page-hero [class*="decor"],
+        .profile-menu-page .about-hero [class*="decor"],
+        .profile-menu-page .page-hero [aria-hidden="true"],
+        .profile-menu-page .about-hero [aria-hidden="true"] {
+            display: none !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+        }
+
+        .profile-menu-page .hero-wave {
             position: absolute !important;
-            left: -7% !important;
-            right: -7% !important;
-            top: auto !important;
-            bottom: -78px !important;
-            width: auto !important;
-            height: 140px !important;
-            z-index: 2 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: -1px !important;
+            z-index: 3 !important;
+            height: clamp(86px, 8vw, 124px) !important;
+            display: block !important;
+            opacity: 1 !important;
             pointer-events: none !important;
-            border-radius: 50% 50% 0 0 / 100% 100% 0 0 !important;
-            background: #f8fbff !important;
-            background-image: none !important;
-            box-shadow: none !important;
-            transform: none !important;
         }
 
-        .page-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner),
-        .about-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner),
-        .news-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner),
-        .rd-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner),
-        .contact-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner),
-        .profile-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner) {
-            display: none !important;
-            opacity: 0 !important;
-            visibility: hidden !important;
-            background: none !important;
-            background-image: none !important;
-            box-shadow: none !important;
+        .profile-menu-page .hero-wave svg {
+            width: 100% !important;
+            height: 100% !important;
+            display: block !important;
         }
 
-        .page-hero [class*="spotlight"],
-        .about-hero [class*="spotlight"],
-        .news-hero [class*="spotlight"],
-        .rd-hero [class*="spotlight"],
-        .contact-hero [class*="spotlight"],
-        .profile-hero [class*="spotlight"],
-        .page-hero [class*="decor"],
-        .about-hero [class*="decor"],
-        .news-hero [class*="decor"],
-        .rd-hero [class*="decor"],
-        .contact-hero [class*="decor"],
-        .profile-hero [class*="decor"],
-        .page-hero [class*="pattern"],
-        .about-hero [class*="pattern"],
-        .news-hero [class*="pattern"],
-        .rd-hero [class*="pattern"],
-        .contact-hero [class*="pattern"],
-        .profile-hero [class*="pattern"],
-        .page-hero [class*="dots"],
-        .about-hero [class*="dots"],
-        .news-hero [class*="dots"],
-        .rd-hero [class*="dots"],
-        .contact-hero [class*="dots"],
-        .profile-hero [class*="dots"],
-        .page-hero [class*="line"],
-        .about-hero [class*="line"],
-        .news-hero [class*="line"],
-        .rd-hero [class*="line"],
-        .contact-hero [class*="line"],
-        .profile-hero [class*="line"],
-        .page-hero [class*="glow"],
-        .about-hero [class*="glow"],
-        .news-hero [class*="glow"],
-        .rd-hero [class*="glow"],
-        .contact-hero [class*="glow"],
-        .profile-hero [class*="glow"],
-        .page-hero [class*="orb"],
-        .about-hero [class*="orb"],
-        .news-hero [class*="orb"],
-        .rd-hero [class*="orb"],
-        .contact-hero [class*="orb"],
-        .profile-hero [class*="orb"],
-        .page-hero [class*="wave"],
-        .about-hero [class*="wave"],
-        .news-hero [class*="wave"],
-        .rd-hero [class*="wave"],
-        .contact-hero [class*="wave"],
-        .profile-hero [class*="wave"],
-        .page-hero [class*="shape"],
-        .about-hero [class*="shape"],
-        .news-hero [class*="shape"],
-        .rd-hero [class*="shape"],
-        .contact-hero [class*="shape"],
-        .profile-hero [class*="shape"],
-        .page-hero [aria-hidden="true"],
-        .about-hero [aria-hidden="true"],
-        .news-hero [aria-hidden="true"],
-        .rd-hero [aria-hidden="true"],
-        .contact-hero [aria-hidden="true"],
-        .profile-hero [aria-hidden="true"] {
-            display: none !important;
-            opacity: 0 !important;
-            visibility: hidden !important;
-            background: none !important;
-            background-image: none !important;
-            box-shadow: none !important;
-            transform: none !important;
-        }
-
-        .page-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::before,
-        .page-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::after,
-        .about-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::before,
-        .about-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::after,
-        .news-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::before,
-        .news-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::after,
-        .rd-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::before,
-        .rd-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::after,
-        .contact-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::before,
-        .contact-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::after,
-        .profile-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::before,
-        .profile-hero > :not(.container):not(.about-container):not(.rd-container):not(.profile-container):not(.hero-inner):not(.rd-hero-inner):not(.profile-hero-inner)::after {
-            content: none !important;
-            display: none !important;
-            background: none !important;
-            background-image: none !important;
-            box-shadow: none !important;
-        }
-
-        .hero-inner,
-        .rd-hero-inner,
-        .academic-page .hero-inner,
-        .profile-page .hero-inner,
-        .page-hero .container,
-        .about-hero .container,
-        .news-hero .container,
-        .rd-hero .container,
-        .contact-hero .container,
-        .profile-hero .container {
+        .profile-menu-page .hero-inner {
             position: relative !important;
             z-index: 5 !important;
+            max-width: 920px !important;
+            width: min(920px, 100%) !important;
         }
 
-        .hero-inner,
-        .rd-hero-inner,
-        .academic-page .hero-inner,
-        .profile-page .hero-inner {
-            width: min(900px, 100%) !important;
-            max-width: 900px !important;
-        }
-
-        .contact-page .contact-hero .hero-inner {
-            display: grid !important;
-            grid-template-columns: minmax(0, 1fr) minmax(280px, 340px) !important;
-            gap: 32px !important;
-            align-items: center !important;
-        }
-
-        .hero-kicker,
-        .rd-kicker,
-        .news-category-pill,
-        .category-pill,
-        .profile-tag,
-        .hero-badge {
+        .profile-menu-page .hero-kicker {
             width: fit-content !important;
             display: inline-flex !important;
             align-items: center !important;
             gap: 8px !important;
             margin: 0 0 16px !important;
-            padding: 9px 14px !important;
+            padding: 9px 15px !important;
             border-radius: 999px !important;
             color: #fff !important;
             background: rgba(255, 255, 255, .15) !important;
-            border: 1px solid rgba(255, 255, 255, .22) !important;
+            border: 1px solid rgba(255, 255, 255, .24) !important;
             box-shadow: none !important;
             font-size: 12px !important;
             line-height: 1.15 !important;
-            font-weight: 850 !important;
+            font-weight: 900 !important;
             text-transform: uppercase !important;
             letter-spacing: .45px !important;
             backdrop-filter: blur(8px) !important;
         }
 
-        .page-title,
-        .about-title,
-        .rd-title,
-        .news-title-page,
-        .contact-title,
-        .title-page,
-        .profile-hero-title {
-            max-width: 850px !important;
+        .profile-menu-page .page-title,
+        .profile-menu-page .about-title {
+            max-width: 860px !important;
             margin: 0 0 16px !important;
             color: #fff !important;
             font-size: clamp(34px, 5vw, 58px) !important;
@@ -261,10 +127,8 @@
             text-wrap: balance !important;
         }
 
-        .page-desc,
-        .about-subtitle,
-        .rd-desc,
-        .contact-subtitle {
+        .profile-menu-page .page-desc,
+        .profile-menu-page .about-subtitle {
             max-width: 760px !important;
             margin: 0 !important;
             color: rgba(255, 255, 255, .91) !important;
@@ -274,22 +138,14 @@
             text-wrap: pretty !important;
         }
 
-        .hero-meta,
-        .rd-hero-meta,
-        .news-meta,
-        .page-meta,
-        .profile-meta {
+        .profile-menu-page .hero-meta {
             display: flex !important;
             flex-wrap: wrap !important;
             gap: 10px !important;
             margin-top: 22px !important;
         }
 
-        .hero-meta span,
-        .rd-hero-meta span,
-        .news-meta span,
-        .page-meta span,
-        .profile-meta span {
+        .profile-menu-page .hero-meta span {
             min-height: 38px !important;
             display: inline-flex !important;
             align-items: center !important;
@@ -305,113 +161,310 @@
             backdrop-filter: blur(8px) !important;
         }
 
-        .hero-meta i,
-        .rd-hero-meta i,
-        .news-meta i,
-        .page-meta i,
-        .profile-meta i {
+        .profile-menu-page .hero-meta i,
+        .profile-menu-page .hero-kicker i {
             color: #f7b500 !important;
         }
 
-        .content-section,
-        .about-section,
-        .vm-section,
-        .so-section,
-        .news-section,
-        .rd-section,
-        .contact-section,
-        .news-content-section,
-        .visi-misi-section {
+        .profile-menu-page .about-section,
+        .profile-menu-page .visi-misi-section,
+        .profile-menu-page .content-section {
             position: relative !important;
             z-index: 6 !important;
-            margin-top: -42px !important;
-            padding-bottom: 84px !important;
+            margin-top: -46px !important;
+            padding-bottom: 90px !important;
         }
 
-        .content-card,
-        .about-card,
-        .vm-card,
-        .so-card,
-        .news-card,
-        .rd-card,
-        .contact-card,
-        .map-card,
-        .content-block,
-        .news-panel,
-        .news-card-detail {
-            border-radius: 24px !important;
+        .profile-menu-page .about-container,
+        .profile-menu-page .vm-container,
+        .profile-menu-page .so-container {
+            width: min(1180px, calc(100% - 48px)) !important;
+            margin: 0 auto !important;
+        }
+
+        .profile-menu-page .about-layout {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1.18fr) minmax(320px, .82fr) !important;
+            gap: 26px !important;
+            align-items: stretch !important;
+        }
+
+        .profile-menu-page .about-main-card,
+        .profile-menu-page .about-points-card,
+        .profile-menu-page .sambutan-card,
+        .profile-menu-page .visi-misi-card,
+        .profile-menu-page .structure-card,
+        .profile-menu-page .empty-card,
+        .profile-menu-page .empty-state-card {
+            border-radius: 26px !important;
             background: #fff !important;
-            border: 1px solid #e2e8f0 !important;
-            box-shadow: 0 16px 42px rgba(15, 23, 42, .09) !important;
+            border: 1px solid rgba(226, 232, 240, .95) !important;
+            box-shadow: 0 18px 46px rgba(15, 23, 42, .09) !important;
+            overflow: hidden !important;
         }
 
-        .contact-page .hero-info-card {
-            background: rgba(255, 255, 255, .14) !important;
-            border: 1px solid rgba(255, 255, 255, .22) !important;
-            box-shadow: none !important;
-            backdrop-filter: blur(10px) !important;
+        .profile-menu-page .about-main-card,
+        .profile-menu-page .about-points-card,
+        .profile-menu-page .empty-card,
+        .profile-menu-page .empty-state-card {
+            padding: clamp(24px, 3vw, 34px) !important;
+        }
+
+        .profile-menu-page .about-main-card h2,
+        .profile-menu-page .sambutan-title h2,
+        .profile-menu-page .points-header h3,
+        .profile-menu-page .card-header h2,
+        .profile-menu-page .empty-card h2,
+        .profile-menu-page .empty-card h3,
+        .profile-menu-page .empty-state-card h3 {
+            color: #062e62 !important;
+            letter-spacing: -.35px !important;
+        }
+
+        .profile-menu-page .about-desc,
+        .profile-menu-page .card-content,
+        .profile-menu-page .sambutan-text {
+            color: #334155 !important;
+            font-size: 15px !important;
+            line-height: 1.9 !important;
+        }
+
+        .profile-menu-page .section-kicker {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            margin-bottom: 14px !important;
+            padding: 8px 12px !important;
+            border-radius: 999px !important;
+            color: #062e62 !important;
+            background: rgba(6, 46, 98, .07) !important;
+            border: 1px solid rgba(6, 46, 98, .10) !important;
+            font-size: 12px !important;
+            font-weight: 900 !important;
+            text-transform: uppercase !important;
+        }
+
+        .profile-menu-page .section-kicker i,
+        .profile-menu-page .card-icon,
+        .profile-menu-page .point-icon,
+        .profile-menu-page .empty-icon,
+        .profile-menu-page .empty-state-icon {
+            color: #f7b500 !important;
+        }
+
+        .profile-menu-page .about-points {
+            display: grid !important;
+            gap: 14px !important;
+        }
+
+        .profile-menu-page .point-card {
+            display: grid !important;
+            grid-template-columns: 52px minmax(0, 1fr) !important;
+            gap: 14px !important;
+            align-items: start !important;
+            padding: 16px !important;
+            border-radius: 18px !important;
+            background: #f8fbff !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+
+        .profile-menu-page .point-icon,
+        .profile-menu-page .card-icon {
+            width: 52px !important;
+            height: 52px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 16px !important;
+            background: rgba(247, 181, 0, .12) !important;
+            border: 1px solid rgba(247, 181, 0, .20) !important;
+            overflow: hidden !important;
+        }
+
+        .profile-menu-page .point-icon img {
+            width: 30px !important;
+            height: 30px !important;
+            object-fit: contain !important;
+        }
+
+        .profile-menu-page .point-text h3 {
+            margin: 0 0 6px !important;
+            color: #062e62 !important;
+            font-size: 15px !important;
+            line-height: 1.35 !important;
+            font-weight: 900 !important;
+        }
+
+        .profile-menu-page .point-text p,
+        .profile-menu-page .points-header p {
+            margin: 0 !important;
+            color: #64748b !important;
+            font-size: 13px !important;
+            line-height: 1.7 !important;
+            font-weight: 600 !important;
+        }
+
+        .profile-menu-page .sambutan-section {
+            margin-top: 34px !important;
+        }
+
+        .profile-menu-page .sambutan-title {
+            max-width: 820px !important;
+            margin-bottom: 20px !important;
+        }
+
+        .profile-menu-page .sambutan-card {
+            display: grid !important;
+            grid-template-columns: minmax(260px, 340px) minmax(0, 1fr) !important;
+            gap: 0 !important;
+            align-items: stretch !important;
+        }
+
+        .profile-menu-page .sambutan-img {
+            min-height: 360px !important;
+            background: #eaf2fb !important;
+        }
+
+        .profile-menu-page .sambutan-img img,
+        .profile-menu-page .director-placeholder {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        .profile-menu-page .sambutan-content {
+            padding: clamp(24px, 4vw, 42px) !important;
+        }
+
+        .profile-menu-page .visi-misi-wrapper {
+            max-width: 1100px !important;
+            margin: 0 auto !important;
+        }
+
+        .profile-menu-page .visi-misi-grid {
+            display: grid !important;
+            grid-template-columns: 1fr !important;
+            gap: 20px !important;
+        }
+
+        .profile-menu-page .visi-misi-card {
+            display: grid !important;
+            grid-template-columns: 96px minmax(0, 1fr) !important;
+            align-items: stretch !important;
+        }
+
+        .profile-menu-page .card-side {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background: linear-gradient(180deg, #062e62, #0b5f9f) !important;
+        }
+
+        .profile-menu-page .card-number {
+            color: rgba(255, 255, 255, .86) !important;
+            font-size: 28px !important;
+            font-weight: 900 !important;
+        }
+
+        .profile-menu-page .card-main {
+            padding: clamp(22px, 3vw, 34px) !important;
+        }
+
+        .profile-menu-page .card-header {
+            display: flex !important;
+            align-items: center !important;
+            gap: 14px !important;
+            margin-bottom: 14px !important;
+        }
+
+        .profile-menu-page .structure-card {
+            padding: clamp(18px, 3vw, 30px) !important;
+        }
+
+        .profile-menu-page .structure-image-box {
+            padding: clamp(12px, 2vw, 20px) !important;
+            border-radius: 22px !important;
+            background: linear-gradient(180deg, #f8fbff, #eef5fb) !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+
+        .profile-menu-page .structure-image-inner {
+            overflow: auto !important;
+            border-radius: 18px !important;
+            background: #fff !important;
+            box-shadow: inset 0 0 0 1px #e2e8f0 !important;
+        }
+
+        .profile-menu-page .structure-image {
+            display: block !important;
+            width: 100% !important;
+            height: auto !important;
+            max-height: 78vh !important;
+            object-fit: contain !important;
+            margin: 0 auto !important;
+        }
+
+        @media (max-width: 900px) {
+            .profile-menu-page .about-layout,
+            .profile-menu-page .sambutan-card,
+            .profile-menu-page .visi-misi-card {
+                grid-template-columns: 1fr !important;
+            }
+
+            .profile-menu-page .card-side {
+                min-height: 72px !important;
+            }
         }
 
         @media (max-width: 768px) {
-            .page-hero,
-            .about-hero,
-            .news-hero,
-            .rd-hero,
-            .contact-hero,
-            .academic-page .page-hero,
-            .profile-page .profile-hero {
-                min-height: 310px !important;
+            .profile-menu-page .page-hero,
+            .profile-menu-page .about-hero {
+                min-height: 318px !important;
                 align-items: flex-start !important;
-                padding: 42px 0 86px !important;
+                padding: 38px 0 92px !important;
             }
 
-            .page-hero::after,
-            .about-hero::after,
-            .news-hero::after,
-            .rd-hero::after,
-            .contact-hero::after,
-            .academic-page .page-hero::after,
-            .profile-page .profile-hero::after {
-                bottom: -64px !important;
-                height: 116px !important;
+            .profile-menu-page .hero-wave {
+                height: 78px !important;
             }
 
-            .contact-page .contact-hero .hero-inner {
-                grid-template-columns: 1fr !important;
-                gap: 22px !important;
+            .profile-menu-page .about-container,
+            .profile-menu-page .vm-container,
+            .profile-menu-page .so-container {
+                width: min(100% - 28px, 1180px) !important;
             }
 
-            .page-title,
-            .about-title,
-            .rd-title,
-            .news-title-page,
-            .contact-title,
-            .title-page,
-            .profile-hero-title {
+            .profile-menu-page .page-title,
+            .profile-menu-page .about-title {
                 font-size: clamp(28px, 8.5vw, 40px) !important;
                 line-height: 1.08 !important;
                 letter-spacing: -.6px !important;
             }
 
-            .page-desc,
-            .about-subtitle,
-            .rd-desc,
-            .contact-subtitle {
+            .profile-menu-page .page-desc,
+            .profile-menu-page .about-subtitle {
                 font-size: 14px !important;
                 line-height: 1.65 !important;
             }
 
-            .content-section,
-            .about-section,
-            .vm-section,
-            .so-section,
-            .news-section,
-            .rd-section,
-            .contact-section,
-            .news-content-section,
-            .visi-misi-section {
-                margin-top: -34px !important;
+            .profile-menu-page .about-section,
+            .profile-menu-page .visi-misi-section,
+            .profile-menu-page .content-section {
+                margin-top: -36px !important;
                 padding-bottom: 68px !important;
+            }
+
+            .profile-menu-page .about-main-card,
+            .profile-menu-page .about-points-card,
+            .profile-menu-page .sambutan-card,
+            .profile-menu-page .visi-misi-card,
+            .profile-menu-page .structure-card,
+            .profile-menu-page .empty-card,
+            .profile-menu-page .empty-state-card {
+                border-radius: 22px !important;
             }
         }
     </style>

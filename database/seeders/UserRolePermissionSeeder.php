@@ -29,7 +29,7 @@ class UserRolePermissionSeeder extends Seeder
                 'password' => Hash::make('SUPERadminpasca1^'),
             ]);
         }
-        if (!User::where('email', 'admin@mail.co')->first()) {
+        if (!User::where('email', 'admin@mail.com')->first()) {
             DB::table('users')->insert([
                 'name' => 'admin',
                 'email' => 'admin@mail.com',
