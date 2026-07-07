@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use App\Models\Contacts;
+use App\Models\Contact;
 use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Foundation\Auth\User as AuthUser;
 
-class ContactsPolicy
+class ContactPolicy
 {
     use HandlesAuthorization;
 
@@ -17,7 +17,7 @@ class ContactsPolicy
         return $this->allows($authUser, 'ViewAny');
     }
 
-    public function view(AuthUser $authUser, Contacts $contacts): bool
+    public function view(AuthUser $authUser, Contact $contact): bool
     {
         return $this->allows($authUser, 'View');
     }
@@ -27,12 +27,12 @@ class ContactsPolicy
         return $this->allows($authUser, 'Create');
     }
 
-    public function update(AuthUser $authUser, Contacts $contacts): bool
+    public function update(AuthUser $authUser, Contact $contact): bool
     {
         return $this->allows($authUser, 'Update');
     }
 
-    public function delete(AuthUser $authUser, Contacts $contacts): bool
+    public function delete(AuthUser $authUser, Contact $contact): bool
     {
         return $this->allows($authUser, 'Delete');
     }
@@ -42,12 +42,12 @@ class ContactsPolicy
         return $this->allows($authUser, 'DeleteAny');
     }
 
-    public function restore(AuthUser $authUser, Contacts $contacts): bool
+    public function restore(AuthUser $authUser, Contact $contact): bool
     {
         return $this->allows($authUser, 'Restore');
     }
 
-    public function forceDelete(AuthUser $authUser, Contacts $contacts): bool
+    public function forceDelete(AuthUser $authUser, Contact $contact): bool
     {
         return $this->allows($authUser, 'ForceDelete');
     }
@@ -62,7 +62,7 @@ class ContactsPolicy
         return $this->allows($authUser, 'RestoreAny');
     }
 
-    public function replicate(AuthUser $authUser, Contacts $contacts): bool
+    public function replicate(AuthUser $authUser, Contact $contact): bool
     {
         return $this->allows($authUser, 'Replicate');
     }
