@@ -363,8 +363,13 @@ function setupWhatsAppAdminModal() {
     const modal = document.getElementById('waAdminModal');
     if (!modal) return;
 
+    const dialog = modal.querySelector('.wa-admin-modal__dialog');
+    const closeButtons = modal.querySelectorAll('[data-wa-modal-close]');
     const primaryAdminJson = modal.querySelector('[data-primary-admin-json]')?.textContent;
+    const contactCards = Array.from(document.querySelectorAll('[data-wa-contact-card]'));
+    const floatingButton = document.querySelector('.wa-floating');
     let primaryAdmin = null;
+    let lastFocusedElement = null;
 
     try {
         primaryAdmin = primaryAdminJson ? JSON.parse(primaryAdminJson) : null;
@@ -372,61 +377,101 @@ function setupWhatsAppAdminModal() {
         primaryAdmin = null;
     }
 
+    const getFocusableElements = () => Array.from(modal.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'))
+        .filter((element) => !element.hasAttribute('disabled') && element.offsetParent !== null);
+
     const openModal = () => {
+        lastFocusedElement = document.activeElement;
         modal.classList.add('is-open');
         modal.setAttribute('aria-hidden', 'false');
         document.body.classList.add('wa-modal-open');
-        modal.querySelector('.wa-admin-modal__close')?.focus();
+        document.documentElement.classList.add('wa-modal-open');
+        requestAnimationFrame(() => {
+            dialog?.focus();
+            modal.querySelector('.wa-admin-option, .wa-admin-modal__close')?.focus();
+        });
     };
 
     const closeModal = () => {
         modal.classList.remove('is-open');
         modal.setAttribute('aria-hidden', 'true');
         document.body.classList.remove('wa-modal-open');
+        document.documentElement.classList.remove('wa-modal-open');
+
+        if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+            lastFocusedElement.focus({ preventScroll: true });
+        }
     };
 
-    document.querySelectorAll('[data-wa-modal-close]').forEach((button) => button.addEventListener('click', closeModal));
+    const openFromTrigger = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        openModal();
+    };
 
-    document.querySelectorAll('.contact-card').forEach((card) => {
-        if (!card.querySelector('.fa-whatsapp')) return;
+    closeButtons.forEach((button) => button.addEventListener('click', closeModal));
 
+    contactCards.forEach((card) => {
         card.classList.add('whatsapp-contact-card');
         card.setAttribute('role', 'button');
         card.setAttribute('tabindex', '0');
         card.setAttribute('aria-label', 'Pilih Admin WhatsApp');
 
         const title = card.querySelector('.contact-info h2');
-        const number = card.querySelector('.contact-info a, .contact-info p');
+        const link = card.querySelector('.contact-info a');
+        const number = primaryAdmin?.number || card.dataset.waAdminNumber || '';
 
         if (title) title.textContent = 'Admin WhatsApp';
-        if (number && primaryAdmin) {
-            number.innerHTML = `${primaryAdmin.number} <i class="fas fa-chevron-right"></i>`;
-            number.setAttribute('href', '#waAdminModal');
+        if (link) {
+            link.innerHTML = `${number || 'Pilih Admin'} <i class="fas fa-chevron-right"></i>`;
+            link.setAttribute('href', '#waAdminModal');
+            link.setAttribute('aria-label', 'Pilih Admin WhatsApp');
+            link.addEventListener('click', openFromTrigger);
         }
 
-        card.addEventListener('click', (event) => {
+        card.addEventListener('click', openFromTrigger);
+        card.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
             event.preventDefault();
             openModal();
-        });
-        card.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                openModal();
-            }
         });
     });
 
-    const floatingButton = document.querySelector('.wa-floating');
     if (floatingButton) {
         floatingButton.setAttribute('href', '#waAdminModal');
-        floatingButton.addEventListener('click', (event) => {
-            event.preventDefault();
-            openModal();
-        });
+        floatingButton.setAttribute('aria-label', 'Pilih Admin WhatsApp');
+        floatingButton.addEventListener('click', openFromTrigger);
     }
 
+    modal.querySelectorAll('.wa-admin-option').forEach((option) => {
+        option.addEventListener('click', () => {
+            setTimeout(closeModal, 120);
+        });
+    });
+
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && modal.classList.contains('is-open')) closeModal();
+        if (!modal.classList.contains('is-open')) return;
+
+        if (event.key === 'Escape') {
+            closeModal();
+            return;
+        }
+
+        if (event.key !== 'Tab') return;
+
+        const focusable = getFocusableElements();
+        if (!focusable.length) return;
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+        }
     });
 }
 
@@ -660,55 +705,3 @@ pascaReady(() => {
     setActive(activeIndex);
     scheduleNext();
 });
-
-
-
-// ==== Digabung dari resources/js/contact-whatsapp-fix.js ====
-
-function pascaContactReady(callback) {
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', callback);
-        return;
-    }
-
-    callback();
-}
-
-pascaContactReady(() => {
-    const modal = document.getElementById('waAdminModal');
-    const contactCard = document.querySelector('[data-wa-contact-card]');
-    const floatingButton = document.querySelector('.wa-floating');
-
-    let primaryAdmin = null;
-
-    try {
-        const json = modal?.querySelector('[data-primary-admin-json]')?.textContent || '';
-        primaryAdmin = json ? JSON.parse(json) : null;
-    } catch (error) {
-        primaryAdmin = null;
-    }
-
-    const name = primaryAdmin?.name || contactCard?.dataset.waAdminName || floatingButton?.dataset.waAdminName || 'Admin WhatsApp';
-    const number = primaryAdmin?.number || contactCard?.dataset.waAdminNumber || floatingButton?.dataset.waAdminNumber || '';
-    const url = primaryAdmin?.url || contactCard?.dataset.waAdminUrl || floatingButton?.dataset.waAdminUrl || '#waAdminModal';
-
-    if (contactCard) {
-        const title = contactCard.querySelector('.contact-info h2');
-        const link = contactCard.querySelector('.contact-info a');
-
-        if (title) title.textContent = name;
-        if (link) {
-            link.innerHTML = `${number || 'Nomor WhatsApp belum tersedia'} <i class="fas fa-chevron-right"></i>`;
-            link.setAttribute('href', url);
-            link.setAttribute('aria-label', `Chat WhatsApp ${name}`);
-        }
-
-        contactCard.setAttribute('aria-label', `Pilih ${name}`);
-    }
-
-    if (floatingButton) {
-        floatingButton.setAttribute('href', url);
-        floatingButton.setAttribute('aria-label', `Chat WhatsApp ${name}`);
-    }
-});
-
