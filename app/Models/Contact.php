@@ -7,7 +7,7 @@ use Illuminate\Support\Str;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
-class Contacts extends Model
+class Contact extends Model
 {
     use LogsActivity;
 
