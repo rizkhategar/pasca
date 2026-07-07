@@ -22,8 +22,13 @@
             background: linear-gradient(180deg, #f8fbff 0%, #f4f8fc 48%, #eef5fb 100%) !important;
         }
 
-        .profile-menu-page .page-hero,
-        .profile-menu-page .about-hero {
+        .page-hero,
+        .about-hero,
+        .news-hero,
+        .rd-hero,
+        .contact-hero,
+        .academic-page .page-hero,
+        .profile-page .profile-hero {
             position: relative !important;
             isolation: isolate !important;
             overflow: hidden !important;
@@ -37,10 +42,20 @@
             box-shadow: none !important;
         }
 
-        .profile-menu-page .page-hero::before,
-        .profile-menu-page .about-hero::before,
-        .profile-menu-page .page-hero::after,
-        .profile-menu-page .about-hero::after {
+        .page-hero::before,
+        .about-hero::before,
+        .news-hero::before,
+        .rd-hero::before,
+        .contact-hero::before,
+        .academic-page .page-hero::before,
+        .profile-page .profile-hero::before,
+        .page-hero::after,
+        .about-hero::after,
+        .news-hero::after,
+        .rd-hero::after,
+        .contact-hero::after,
+        .academic-page .page-hero::after,
+        .profile-page .profile-hero::after {
             content: none !important;
             display: none !important;
             background: none !important;
@@ -48,28 +63,56 @@
             box-shadow: none !important;
         }
 
-        .profile-menu-page .page-hero [class*="spotlight"],
-        .profile-menu-page .about-hero [class*="spotlight"],
-        .profile-menu-page .page-hero [class*="dots"],
-        .profile-menu-page .about-hero [class*="dots"],
-        .profile-menu-page .page-hero [class*="line"],
-        .profile-menu-page .about-hero [class*="line"],
-        .profile-menu-page .page-hero [class*="glow"],
-        .profile-menu-page .about-hero [class*="glow"],
-        .profile-menu-page .page-hero [class*="orb"],
-        .profile-menu-page .about-hero [class*="orb"],
-        .profile-menu-page .page-hero [class*="pattern"],
-        .profile-menu-page .about-hero [class*="pattern"],
-        .profile-menu-page .page-hero [class*="decor"],
-        .profile-menu-page .about-hero [class*="decor"],
-        .profile-menu-page .page-hero [aria-hidden="true"],
-        .profile-menu-page .about-hero [aria-hidden="true"] {
+        .page-hero [class*="spotlight"],
+        .about-hero [class*="spotlight"],
+        .news-hero [class*="spotlight"],
+        .rd-hero [class*="spotlight"],
+        .contact-hero [class*="spotlight"],
+        .profile-hero [class*="spotlight"],
+        .page-hero [class*="dots"],
+        .about-hero [class*="dots"],
+        .news-hero [class*="dots"],
+        .rd-hero [class*="dots"],
+        .contact-hero [class*="dots"],
+        .profile-hero [class*="dots"],
+        .page-hero [class*="line"],
+        .about-hero [class*="line"],
+        .news-hero [class*="line"],
+        .rd-hero [class*="line"],
+        .contact-hero [class*="line"],
+        .profile-hero [class*="line"],
+        .page-hero [class*="glow"],
+        .about-hero [class*="glow"],
+        .news-hero [class*="glow"],
+        .rd-hero [class*="glow"],
+        .contact-hero [class*="glow"],
+        .profile-hero [class*="glow"],
+        .page-hero [class*="orb"],
+        .about-hero [class*="orb"],
+        .news-hero [class*="orb"],
+        .rd-hero [class*="orb"],
+        .contact-hero [class*="orb"],
+        .profile-hero [class*="orb"],
+        .page-hero [class*="pattern"],
+        .about-hero [class*="pattern"],
+        .news-hero [class*="pattern"],
+        .rd-hero [class*="pattern"],
+        .contact-hero [class*="pattern"],
+        .profile-hero [class*="pattern"],
+        .page-hero [class*="decor"],
+        .about-hero [class*="decor"],
+        .news-hero [class*="decor"],
+        .rd-hero [class*="decor"],
+        .contact-hero [class*="decor"],
+        .profile-hero [class*="decor"] {
             display: none !important;
             opacity: 0 !important;
             visibility: hidden !important;
         }
 
-        .profile-menu-page .hero-wave {
+        .hero-wave,
+        .rd-hero-wave,
+        .hero-shape {
             position: absolute !important;
             left: 0 !important;
             right: 0 !important;
@@ -78,23 +121,36 @@
             height: clamp(86px, 8vw, 124px) !important;
             display: block !important;
             opacity: 1 !important;
+            visibility: visible !important;
             pointer-events: none !important;
         }
 
-        .profile-menu-page .hero-wave svg {
+        .hero-wave svg,
+        .rd-hero-wave svg,
+        .hero-shape svg {
             width: 100% !important;
             height: 100% !important;
             display: block !important;
+            opacity: 1 !important;
+            visibility: visible !important;
         }
 
-        .profile-menu-page .hero-inner {
+        .hero-inner,
+        .rd-hero-inner,
+        .academic-page .hero-inner,
+        .profile-page .hero-inner {
             position: relative !important;
             z-index: 5 !important;
             max-width: 920px !important;
             width: min(920px, 100%) !important;
         }
 
-        .profile-menu-page .hero-kicker {
+        .hero-kicker,
+        .rd-kicker,
+        .news-category-pill,
+        .category-pill,
+        .profile-tag,
+        .hero-badge {
             width: fit-content !important;
             display: inline-flex !important;
             align-items: center !important;
@@ -114,8 +170,13 @@
             backdrop-filter: blur(8px) !important;
         }
 
-        .profile-menu-page .page-title,
-        .profile-menu-page .about-title {
+        .page-title,
+        .about-title,
+        .rd-title,
+        .news-title-page,
+        .contact-title,
+        .title-page,
+        .profile-hero-title {
             max-width: 860px !important;
             margin: 0 0 16px !important;
             color: #fff !important;
@@ -127,8 +188,10 @@
             text-wrap: balance !important;
         }
 
-        .profile-menu-page .page-desc,
-        .profile-menu-page .about-subtitle {
+        .page-desc,
+        .about-subtitle,
+        .rd-desc,
+        .contact-subtitle {
             max-width: 760px !important;
             margin: 0 !important;
             color: rgba(255, 255, 255, .91) !important;
@@ -138,14 +201,22 @@
             text-wrap: pretty !important;
         }
 
-        .profile-menu-page .hero-meta {
+        .hero-meta,
+        .rd-hero-meta,
+        .news-meta,
+        .page-meta,
+        .profile-meta {
             display: flex !important;
             flex-wrap: wrap !important;
             gap: 10px !important;
             margin-top: 22px !important;
         }
 
-        .profile-menu-page .hero-meta span {
+        .hero-meta span,
+        .rd-hero-meta span,
+        .news-meta span,
+        .page-meta span,
+        .profile-meta span {
             min-height: 38px !important;
             display: inline-flex !important;
             align-items: center !important;
@@ -161,8 +232,12 @@
             backdrop-filter: blur(8px) !important;
         }
 
-        .profile-menu-page .hero-meta i,
-        .profile-menu-page .hero-kicker i {
+        .hero-meta i,
+        .rd-hero-meta i,
+        .news-meta i,
+        .page-meta i,
+        .profile-meta i,
+        .hero-kicker i {
             color: #f7b500 !important;
         }
 
@@ -420,34 +495,48 @@
         }
 
         @media (max-width: 768px) {
-            .profile-menu-page .page-hero,
-            .profile-menu-page .about-hero {
+            .page-hero,
+            .about-hero,
+            .news-hero,
+            .rd-hero,
+            .contact-hero,
+            .academic-page .page-hero,
+            .profile-page .profile-hero {
                 min-height: 318px !important;
                 align-items: flex-start !important;
                 padding: 38px 0 92px !important;
             }
 
-            .profile-menu-page .hero-wave {
+            .hero-wave,
+            .rd-hero-wave,
+            .hero-shape {
                 height: 78px !important;
+            }
+
+            .page-title,
+            .about-title,
+            .rd-title,
+            .news-title-page,
+            .contact-title,
+            .title-page,
+            .profile-hero-title {
+                font-size: clamp(28px, 8.5vw, 40px) !important;
+                line-height: 1.08 !important;
+                letter-spacing: -.6px !important;
+            }
+
+            .page-desc,
+            .about-subtitle,
+            .rd-desc,
+            .contact-subtitle {
+                font-size: 14px !important;
+                line-height: 1.65 !important;
             }
 
             .profile-menu-page .about-container,
             .profile-menu-page .vm-container,
             .profile-menu-page .so-container {
                 width: min(100% - 28px, 1180px) !important;
-            }
-
-            .profile-menu-page .page-title,
-            .profile-menu-page .about-title {
-                font-size: clamp(28px, 8.5vw, 40px) !important;
-                line-height: 1.08 !important;
-                letter-spacing: -.6px !important;
-            }
-
-            .profile-menu-page .page-desc,
-            .profile-menu-page .about-subtitle {
-                font-size: 14px !important;
-                line-height: 1.65 !important;
             }
 
             .profile-menu-page .about-section,
