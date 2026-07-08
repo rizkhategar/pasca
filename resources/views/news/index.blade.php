@@ -283,9 +283,15 @@
 
                 if (isMobile) {
                     pagination.innerHTML = `
-                        <button class="page-btn !h-8 !min-w-8 !rounded-lg !px-2 !text-xs" data-page="${current - 1}" ${current <= 1 ? 'disabled' : ''}>‹</button>
-                        <span class="inline-flex h-8 items-center rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-black text-[#062e62] shadow-sm">${current} / ${last}</span>
-                        <button class="page-btn !h-8 !min-w-8 !rounded-lg !px-2 !text-xs" data-page="${current + 1}" ${current >= last ? 'disabled' : ''}>›</button>
+                        <div class="flex w-full flex-wrap items-center justify-center gap-2">
+                            <button class="page-btn !h-8 !min-w-8 !rounded-lg !px-2 !text-xs" data-page="${current - 1}" ${current <= 1 ? 'disabled' : ''}>‹</button>
+                            <span class="inline-flex h-8 items-center rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-black text-[#062e62] shadow-sm">${current} / ${last}</span>
+                            <button class="page-btn !h-8 !min-w-8 !rounded-lg !px-2 !text-xs" data-page="${current + 1}" ${current >= last ? 'disabled' : ''}>›</button>
+                            <div class="page-jump !mt-0 !w-auto !gap-1">
+                                <input class="!h-8 !w-14 !rounded-lg !text-xs" type="number" min="1" max="${last}" value="${current}" aria-label="Pilih halaman">
+                                <button class="!h-8 !min-w-8 !rounded-lg !px-2 !text-xs" type="button" aria-label="Cari halaman"><i class="fas fa-magnifying-glass"></i></button>
+                            </div>
+                        </div>
                     `;
                 } else {
                     const visiblePages = 5;
