@@ -278,16 +278,29 @@
                 const last = Math.max(1, state.lastPage);
                 const current = Math.min(state.page, last);
                 if (last <= 1) { pagination.innerHTML = ''; return; }
-                const visiblePages = window.innerWidth <= 480 ? 3 : 5;
-                let start = Math.max(1, current - Math.floor(visiblePages / 2));
-                let end = Math.min(last, start + visiblePages - 1);
-                if (end - start < visiblePages - 1) start = Math.max(1, end - visiblePages + 1);
-                let html = `<button class="page-btn" data-page="${current - 1}" ${current <= 1 ? 'disabled' : ''}>‹</button>`;
-                for (let page = start; page <= end; page++) html += `<button class="page-btn ${page === current ? 'active' : ''}" data-page="${page}">${page}</button>`;
-                if (end < last) html += `<span class="page-dots">...</span><button class="page-btn" data-page="${last}">${last}</button>`;
-                html += `<button class="page-btn" data-page="${current + 1}" ${current >= last ? 'disabled' : ''}>›</button><div class="page-jump"><input type="number" min="1" max="${last}" value="${current}" aria-label="Pilih halaman"><button type="button" aria-label="Cari halaman"><i class="fas fa-magnifying-glass"></i></button></div>`;
-                pagination.innerHTML = html;
+
+                const isMobile = window.innerWidth <= 560;
+
+                if (isMobile) {
+                    pagination.innerHTML = `
+                        <button class="page-btn !h-8 !min-w-8 !rounded-lg !px-2 !text-xs" data-page="${current - 1}" ${current <= 1 ? 'disabled' : ''}>‹</button>
+                        <span class="inline-flex h-8 items-center rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-black text-[#062e62] shadow-sm">${current} / ${last}</span>
+                        <button class="page-btn !h-8 !min-w-8 !rounded-lg !px-2 !text-xs" data-page="${current + 1}" ${current >= last ? 'disabled' : ''}>›</button>
+                    `;
+                } else {
+                    const visiblePages = 5;
+                    let start = Math.max(1, current - Math.floor(visiblePages / 2));
+                    let end = Math.min(last, start + visiblePages - 1);
+                    if (end - start < visiblePages - 1) start = Math.max(1, end - visiblePages + 1);
+                    let html = `<button class="page-btn" data-page="${current - 1}" ${current <= 1 ? 'disabled' : ''}>‹</button>`;
+                    for (let page = start; page <= end; page++) html += `<button class="page-btn ${page === current ? 'active' : ''}" data-page="${page}">${page}</button>`;
+                    if (end < last) html += `<span class="page-dots">...</span><button class="page-btn" data-page="${last}">${last}</button>`;
+                    html += `<button class="page-btn" data-page="${current + 1}" ${current >= last ? 'disabled' : ''}>›</button><div class="page-jump"><input type="number" min="1" max="${last}" value="${current}" aria-label="Pilih halaman"><button type="button" aria-label="Cari halaman"><i class="fas fa-magnifying-glass"></i></button></div>`;
+                    pagination.innerHTML = html;
+                }
+
                 pagination.querySelectorAll('[data-page]').forEach(function(button) { button.onclick = function() { const page = Number(button.dataset.page); if (page >= 1 && page <= last && page !== current) { state.page = page; load(); } }; });
+
                 const input = pagination.querySelector('.page-jump input');
                 const button = pagination.querySelector('.page-jump button');
                 function jump() { const page = Number(input.value); if (page >= 1 && page <= last && page !== current) { state.page = page; load(); } }
