@@ -34,10 +34,25 @@
 
     <main class="news-content-section">
         <div class="news-detail-shell">
-            <article class="news-card-detail" id="newsCard">
-                <div class="loading-news">
-                    <div class="detail-loader"></div>
-                    <span>Memuat berita...</span>
+            <article class="news-card-detail news-detail-skeleton" id="newsCard" aria-busy="true">
+                <div class="skeleton-block news-detail-skeleton-cover"></div>
+                <div class="news-detail-skeleton-body">
+                    <div class="news-detail-skeleton-topbar">
+                        <div class="news-detail-skeleton-left">
+                            <div class="skeleton-block news-detail-skeleton-icon"></div>
+                            <div>
+                                <div class="skeleton-block news-detail-skeleton-line-title"></div>
+                                <div class="skeleton-block news-detail-skeleton-line-date"></div>
+                            </div>
+                        </div>
+                        <div class="skeleton-block news-detail-skeleton-button"></div>
+                    </div>
+                    <div class="skeleton-block news-detail-skeleton-excerpt"></div>
+                    <div class="skeleton-block news-detail-skeleton-line w-95"></div>
+                    <div class="skeleton-block news-detail-skeleton-line w-88"></div>
+                    <div class="skeleton-block news-detail-skeleton-line w-95"></div>
+                    <div class="skeleton-block news-detail-skeleton-line w-76"></div>
+                    <div class="skeleton-block news-detail-skeleton-line w-64"></div>
                 </div>
             </article>
         </div>
@@ -124,6 +139,8 @@
             }
 
             function renderEmpty() {
+                newsCard.classList.remove('news-detail-skeleton');
+                newsCard.removeAttribute('aria-busy');
                 newsCard.innerHTML = `
                     <div class="empty-news">
                         <i class="fas fa-folder-open"></i>
@@ -157,6 +174,8 @@
                     <span><i class="fas fa-university"></i>Pascasarjana UNW</span>
                 `;
 
+                newsCard.classList.remove('news-detail-skeleton');
+                newsCard.removeAttribute('aria-busy');
                 newsCard.innerHTML = `
                     ${cover ? `<div class="news-cover-wrap"><img class="news-cover" src="${esc(cover)}" alt="${esc(title)}" onerror="this.closest('.news-cover-wrap').remove()"></div>` : '<div class="news-no-cover"><i class="fas fa-newspaper"></i></div>'}
                     <div class="news-topbar">
