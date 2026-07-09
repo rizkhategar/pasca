@@ -1,3 +1,5 @@
+import '../css/research-lecturers.css';
+
 function ready(callback) {
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', callback);
@@ -262,29 +264,22 @@ function setupHomeLatestNews() {
     };
 
     const renderCategories = (categories) => {
-        if (!filters || !categories.length) {
-            filters?.querySelectorAll('.cat-pill').forEach((pill, index) => {
-                pill.dataset.categoryId = index === 0 ? 'all' : (pill.dataset.categoryId || pill.textContent.trim());
-                if (!pill.querySelector('i')) pill.insertAdjacentHTML('afterbegin', '<i class="fas fa-tag"></i> ');
-            });
-            attachFilterEvents();
-            return;
+        const validCategories = categories
+            .map(normalizeCategory)
+            .filter((item) => item.id && item.label);
+
+        if (validCategories.length) {
+            filters.innerHTML = `
+                <button class="cat-pill active" type="button" data-category-id="all">
+                    <i class="fas fa-tag" aria-hidden="true"></i><span>Semua</span>
+                </button>
+                ${validCategories.map((item) => `
+                    <button class="cat-pill" type="button" data-category-id="${escapeHtml(item.id)}">
+                        <i class="fas fa-tag" aria-hidden="true"></i><span>${escapeHtml(item.label)}</span>
+                    </button>
+                `).join('')}
+            `;
         }
-
-        const options = [
-            { id: 'all', label: 'Semua' },
-            ...categories
-                .map(normalizeCategory)
-                .filter((category) => category.id && category.label)
-                .filter((category, index, source) => source.findIndex((item) => item.id === category.id) === index),
-        ];
-
-        filters.innerHTML = options.map((category, index) => `
-            <button class="cat-pill ${index === 0 ? 'active' : ''}" type="button" data-category-id="${escapeHtml(category.id)}">
-                <i class="fas fa-tag"></i>
-                <span>${escapeHtml(category.label)}</span>
-            </button>
-        `).join('');
 
         attachFilterEvents();
     };
@@ -292,161 +287,83 @@ function setupHomeLatestNews() {
     fetch(categoryApiUrl, { headers: { Accept: 'application/json' } })
         .then((response) => response.ok ? response.json() : Promise.reject())
         .then((payload) => renderCategories(toArray(payload)))
-        .catch(() => renderCategories([]));
-
-    if (pagination) pagination.style.display = 'none';
-    loadNews();
+        .catch(() => attachFilterEvents())
+        .finally(loadNews);
 }
 
 function setupStudentServiceCards() {
-    const serviceCards = Array.from(document.querySelectorAll('.service-grid .service-card'));
-    let learningIndex = 0;
-
-    serviceCards.forEach((card) => {
-        const labelElement = card.querySelector('span');
-        const rawLabel = (labelElement?.innerText || card.innerText || '').replace(/\s+/g, ' ').trim().toLowerCase();
-        let url = null;
-        let label = null;
-
-        if (rawLabel.includes('e-learning') || rawLabel.includes('siakad') || rawLabel.includes('sipolin')) {
-            learningIndex += 1;
-            if (rawLabel.includes('siakad') || learningIndex === 1) {
-                label = 'SIAKAD';
-                url = 'https://siakad.unw.ac.id';
-            } else {
-                label = 'SIPOLIN';
-                url = 'https://sipolin.unw.ac.id';
+    const serviceButtons = document.querySelectorAll('.service-card');
+    serviceButtons.forEach((button) => {
+        const label = button.querySelector('.service-label')?.textContent?.toLowerCase() || '';
+        button.addEventListener('click', () => {
+            if (label.includes('siakad')) {
+                openExternal('https://siakad.unw.ac.id/');
+                return;
             }
-        }
-
-        if (rawLabel.includes('perpustakaan')) {
-            label = 'PERPUSTAKAAN<br>DIGITAL';
-            url = 'https://play.google.com/store/apps/details?id=id.kubuku.kbk50635ea&hl=id&pli=1';
-        }
-
-        if (!url) return;
-        if (labelElement && label) labelElement.innerHTML = label;
-
-        card.setAttribute('role', 'link');
-        card.setAttribute('tabindex', '0');
-        card.setAttribute('aria-label', `Buka ${labelElement?.innerText || label || rawLabel}`);
-        card.addEventListener('click', (event) => {
-            event.preventDefault();
-            openExternal(url);
-        });
-        card.addEventListener('keydown', (event) => {
-            if (event.key !== 'Enter' && event.key !== ' ') return;
-            event.preventDefault();
-            openExternal(url);
+            if (label.includes('perpustakaan')) {
+                openExternal('https://perpus.unw.ac.id/');
+                return;
+            }
+            if (label.includes('sipolin')) {
+                openExternal('https://sipolin.unw.ac.id/');
+                return;
+            }
+            if (label.includes('login')) {
+                openExternal('https://siakad.unw.ac.id/');
+            }
         });
     });
 }
 
 function setupFooterAboutLinks() {
-    const quickLinks = document.querySelector('.footer .footer-links');
-    if (!quickLinks) return;
-
-    const aboutUrl = document.querySelector('meta[name="pasca-about-url"]')?.getAttribute('content') || '/tentang-pascasarjana';
+    const aboutUrl = document.querySelector('meta[name="pasca-about-url"]')?.getAttribute('content') || '/tentang';
     const visionUrl = document.querySelector('meta[name="pasca-vision-mission-url"]')?.getAttribute('content') || '/visi-misi';
-    const footerHeading = quickLinks.closest('.footer-column')?.querySelector('h3');
 
-    if (footerHeading) footerHeading.textContent = 'TENTANG UNW';
-
-    quickLinks.innerHTML = `
-        <li><a href="${aboutUrl}">Pascasarjana</a></li>
-        <li><a href="${visionUrl}">Visi dan Misi</a></li>
-        <li><a href="https://www.youtube.com/@UNWTV" target="_blank" rel="noopener noreferrer">Video Profil</a></li>
-    `;
+    document.querySelectorAll('a[href="#"]').forEach((link) => {
+        const text = stripHtml(link.textContent).toLowerCase();
+        if (text.includes('tentang pascasarjana')) link.setAttribute('href', aboutUrl);
+        if (text.includes('visi') || text.includes('misi')) link.setAttribute('href', visionUrl);
+    });
 }
 
 function setupWhatsAppAdminModal() {
-    const modal = document.getElementById('waAdminModal');
+    const modal = document.getElementById('contactWhatsappModal');
     if (!modal) return;
 
-    const dialog = modal.querySelector('.wa-admin-modal__dialog');
-    const closeButtons = modal.querySelectorAll('[data-wa-modal-close]');
-    const primaryAdminJson = modal.querySelector('[data-primary-admin-json]')?.textContent;
-    const contactCards = Array.from(document.querySelectorAll('[data-wa-contact-card]'));
-    const floatingButton = document.querySelector('.wa-floating');
-    let primaryAdmin = null;
-    let lastFocusedElement = null;
+    const dialog = modal.querySelector('.wa-modal-dialog');
+    const closeButtons = modal.querySelectorAll('[data-wa-close]');
+    const openButtons = document.querySelectorAll('[data-wa-modal-trigger], .whatsapp-float');
+    let previousFocus = null;
 
-    try {
-        primaryAdmin = primaryAdminJson ? JSON.parse(primaryAdminJson) : null;
-    } catch (error) {
-        primaryAdmin = null;
-    }
+    const focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-    const getFocusableElements = () => Array.from(modal.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'))
-        .filter((element) => !element.hasAttribute('disabled') && element.offsetParent !== null);
-
-    const openModal = () => {
-        lastFocusedElement = document.activeElement;
+    function openModal(event) {
+        if (event) event.preventDefault();
+        previousFocus = document.activeElement;
         modal.classList.add('is-open');
         modal.setAttribute('aria-hidden', 'false');
         document.body.classList.add('wa-modal-open');
-        document.documentElement.classList.add('wa-modal-open');
-        requestAnimationFrame(() => {
-            dialog?.focus();
-            modal.querySelector('.wa-admin-option, .wa-admin-modal__close')?.focus();
+        window.requestAnimationFrame(() => {
+            modal.querySelector(focusableSelector)?.focus();
         });
-    };
+    }
 
-    const closeModal = () => {
+    function closeModal() {
         modal.classList.remove('is-open');
         modal.setAttribute('aria-hidden', 'true');
         document.body.classList.remove('wa-modal-open');
-        document.documentElement.classList.remove('wa-modal-open');
-
-        if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
-            lastFocusedElement.focus({ preventScroll: true });
+        if (previousFocus && typeof previousFocus.focus === 'function') {
+            previousFocus.focus();
         }
-    };
-
-    const openFromTrigger = (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        openModal();
-    };
-
-    closeButtons.forEach((button) => button.addEventListener('click', closeModal));
-
-    contactCards.forEach((card) => {
-        card.classList.add('whatsapp-contact-card');
-        card.setAttribute('role', 'button');
-        card.setAttribute('tabindex', '0');
-        card.setAttribute('aria-label', 'Pilih Admin WhatsApp');
-
-        const title = card.querySelector('.contact-info h2');
-        const link = card.querySelector('.contact-info a');
-        const number = primaryAdmin?.number || card.dataset.waAdminNumber || '';
-
-        if (title) title.textContent = 'Admin WhatsApp';
-        if (link) {
-            link.innerHTML = `${number || 'Pilih Admin'} <i class="fas fa-chevron-right"></i>`;
-            link.setAttribute('href', '#waAdminModal');
-            link.setAttribute('aria-label', 'Pilih Admin WhatsApp');
-            link.addEventListener('click', openFromTrigger);
-        }
-
-        card.addEventListener('click', openFromTrigger);
-        card.addEventListener('keydown', (event) => {
-            if (event.key !== 'Enter' && event.key !== ' ') return;
-            event.preventDefault();
-            openModal();
-        });
-    });
-
-    if (floatingButton) {
-        floatingButton.setAttribute('href', '#waAdminModal');
-        floatingButton.setAttribute('aria-label', 'Pilih Admin WhatsApp');
-        floatingButton.addEventListener('click', openFromTrigger);
     }
 
-    modal.querySelectorAll('.wa-admin-option').forEach((option) => {
-        option.addEventListener('click', () => {
-            setTimeout(closeModal, 120);
-        });
+    openButtons.forEach((button) => button.addEventListener('click', openModal));
+    closeButtons.forEach((button) => button.addEventListener('click', closeModal));
+
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal || event.target.dataset.waClose !== undefined) {
+            closeModal();
+        }
     });
 
     document.addEventListener('keydown', (event) => {
@@ -457,9 +374,11 @@ function setupWhatsAppAdminModal() {
             return;
         }
 
-        if (event.key !== 'Tab') return;
+        if (event.key !== 'Tab' || !dialog) return;
 
-        const focusable = getFocusableElements();
+        const focusable = Array.from(dialog.querySelectorAll(focusableSelector))
+            .filter((item) => !item.hasAttribute('disabled') && item.offsetParent !== null);
+
         if (!focusable.length) return;
 
         const first = focusable[0];
@@ -476,232 +395,41 @@ function setupWhatsAppAdminModal() {
 }
 
 function setupHeroSlider() {
-    const sliderDataElement = document.getElementById('pascaHeroSlidersData');
-    if (!sliderDataElement) return;
-
-    let items = [];
-    try {
-        items = JSON.parse(sliderDataElement.dataset.sliders || '[]');
-    } catch (error) {
-        items = [];
-    }
-
-    if (!items.length) return;
-
     const hero = document.querySelector('.hero');
-    const oldPrev = document.getElementById('prevSlide');
-    const oldNext = document.getElementById('nextSlide');
-    const dotsWrapper = document.getElementById('heroDots');
-    const titleEl = document.querySelector('.hero-title');
-    const subtitleEl = document.querySelector('.hero-subtitle');
+    const slides = Array.from(document.querySelectorAll('.hero-slide'));
+    const dots = Array.from(document.querySelectorAll('.hero-dot'));
+    if (!hero || slides.length <= 1 || dots.length <= 1) return;
 
-    if (!hero || !dotsWrapper || !oldPrev || !oldNext) return;
-
-    const prev = oldPrev.cloneNode(true);
-    const next = oldNext.cloneNode(true);
-
-    oldPrev.replaceWith(prev);
-    oldNext.replaceWith(next);
-    hero.querySelectorAll('.hero-slide, .hero-slider-track').forEach((element) => element.remove());
-    dotsWrapper.innerHTML = '';
-
-    const track = document.createElement('div');
-    track.className = 'hero-slider-track no-transition';
-
-    const createSlide = (item) => {
-        const slide = document.createElement('div');
-        slide.className = 'hero-slide';
-        slide.style.backgroundImage = `url("${item.image}")`;
-        return slide;
-    };
-
-    track.appendChild(createSlide(items[items.length - 1]));
-    items.forEach((item, index) => {
-        track.appendChild(createSlide(item));
-        const dot = document.createElement('button');
-        dot.className = index === 0 ? 'hero-dot active' : 'hero-dot';
-        dot.type = 'button';
-        dot.setAttribute('aria-label', `Slider ${index + 1}`);
-        dotsWrapper.appendChild(dot);
-    });
-    track.appendChild(createSlide(items[0]));
-    hero.insertBefore(track, prev);
-
-    const dots = Array.from(dotsWrapper.querySelectorAll('.hero-dot'));
-    let trackIndex = 1;
-    let realIndex = 0;
-    let pendingIndex = null;
-    let isMoving = false;
+    let index = 0;
     let timer = null;
 
-    const applyTransform = () => {
-        track.style.transform = `translateX(-${trackIndex * 100}%)`;
-    };
-    const setDots = (index) => dots.forEach((dot, dotIndex) => dot.classList.toggle('active', dotIndex === index));
-    const setText = (index) => {
-        const data = items[index] || items[0];
-        if (titleEl) titleEl.innerHTML = String(data.title || '').replace(/\n/g, '<br>');
-        if (subtitleEl) subtitleEl.textContent = data.subtitle || '';
-    };
-    const safeDuration = (index) => Math.min(30000, Math.max(1400, Number(items[index]?.duration || 3000)));
-
-    const normalizePositionAfterClone = () => {
-        if (trackIndex === 0) {
-            track.classList.add('no-transition');
-            trackIndex = items.length;
-            applyTransform();
-            track.offsetHeight;
-            track.classList.remove('no-transition');
-        }
-
-        if (trackIndex === items.length + 1) {
-            track.classList.add('no-transition');
-            trackIndex = 1;
-            applyTransform();
-            track.offsetHeight;
-            track.classList.remove('no-transition');
-        }
+    const activate = (nextIndex) => {
+        index = nextIndex;
+        slides.forEach((slide, slideIndex) => slide.classList.toggle('active', slideIndex === index));
+        dots.forEach((dot, dotIndex) => dot.classList.toggle('active', dotIndex === index));
     };
 
-    const scheduleNext = () => {
-        clearTimeout(timer);
-        if (items.length <= 1) return;
-        timer = setTimeout(() => move(1), safeDuration(realIndex));
+    const next = () => activate((index + 1) % slides.length);
+
+    const start = () => {
+        stop();
+        const duration = Number(slides[index]?.dataset.duration || 3000);
+        timer = window.setTimeout(() => {
+            next();
+            start();
+        }, duration);
     };
 
-    function move(direction, targetIndex = null) {
-        if (isMoving || items.length <= 1) return;
-        isMoving = true;
-        clearTimeout(timer);
-        pendingIndex = targetIndex === null ? (realIndex + direction + items.length) % items.length : targetIndex;
-        trackIndex = targetIndex === null ? trackIndex + direction : targetIndex + 1;
-        applyTransform();
-    }
+    const stop = () => {
+        if (timer) window.clearTimeout(timer);
+    };
 
-    track.addEventListener('transitionend', (event) => {
-        if (event.propertyName !== 'transform') return;
-        if (pendingIndex !== null) {
-            realIndex = pendingIndex;
-            pendingIndex = null;
-            setText(realIndex);
-            setDots(realIndex);
-        }
-        normalizePositionAfterClone();
-        isMoving = false;
-        scheduleNext();
-    });
-
-    prev.addEventListener('click', (event) => {
-        event.preventDefault();
-        move(-1);
-    });
-    next.addEventListener('click', (event) => {
-        event.preventDefault();
-        move(1);
-    });
-    dots.forEach((dot, index) => dot.addEventListener('click', () => {
-        if (isMoving || index === realIndex) return;
-        const direction = index > realIndex ? 1 : -1;
-        move(direction, index);
+    dots.forEach((dot, dotIndex) => dot.addEventListener('click', () => {
+        activate(dotIndex);
+        start();
     }));
 
-    setText(0);
-    setDots(0);
-    applyTransform();
-    requestAnimationFrame(() => track.classList.remove('no-transition'));
-    scheduleNext();
+    hero.addEventListener('mouseenter', stop);
+    hero.addEventListener('mouseleave', start);
+    start();
 }
-
-
-// ==== Digabung dari resources/js/hero-slider-fix.js ====
-
-function pascaReady(callback) {
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', callback);
-        return;
-    }
-
-    callback();
-}
-
-pascaReady(() => {
-    const hero = document.querySelector('body.home-page .hero');
-    const titleEl = hero?.querySelector('.hero-title');
-    const subtitleEl = hero?.querySelector('.hero-subtitle');
-    const slides = Array.from(hero?.querySelectorAll('.hero-slide') || []);
-    const dots = Array.from(hero?.querySelectorAll('.hero-dot') || []);
-    const dataElement = document.getElementById('pascaHeroSlidersData');
-
-    if (!hero || !slides.length) return;
-
-    let items = [];
-
-    try {
-        items = JSON.parse(dataElement?.dataset?.sliders || '[]');
-    } catch (error) {
-        items = [];
-    }
-
-    if (!items.length) {
-        items = slides.map((slide) => ({
-            title: slide.dataset.title || titleEl?.textContent || '',
-            subtitle: slide.dataset.subtitle || subtitleEl?.textContent || '',
-            duration: Number(slide.dataset.duration || 3000),
-        }));
-    }
-
-    let activeIndex = Math.max(0, slides.findIndex((slide) => slide.classList.contains('active')));
-    let timer = null;
-
-    const safeDuration = (index) => Math.min(30000, Math.max(1400, Number(items[index]?.duration || slides[index]?.dataset.duration || 3000)));
-
-    const setText = (index) => {
-        const item = items[index] || items[0] || {};
-        const title = String(item.title || '').trim();
-        const subtitle = String(item.subtitle || '').trim();
-
-        if (titleEl && title) {
-            titleEl.innerHTML = title.replace(/\n/g, '<br>');
-        }
-
-        if (subtitleEl) {
-            subtitleEl.textContent = subtitle;
-            subtitleEl.style.display = subtitle ? '' : 'none';
-        }
-    };
-
-    const setActive = (index) => {
-        activeIndex = (index + slides.length) % slides.length;
-
-        slides.forEach((slide, slideIndex) => {
-            slide.classList.toggle('active', slideIndex === activeIndex);
-        });
-
-        dots.forEach((dot, dotIndex) => {
-            dot.classList.toggle('active', dotIndex === activeIndex);
-        });
-
-        setText(activeIndex);
-    };
-
-    const scheduleNext = () => {
-        clearTimeout(timer);
-
-        if (slides.length <= 1) return;
-
-        timer = setTimeout(() => {
-            setActive(activeIndex + 1);
-            scheduleNext();
-        }, safeDuration(activeIndex));
-    };
-
-    dots.forEach((dot, index) => {
-        dot.addEventListener('click', () => {
-            setActive(index);
-            scheduleNext();
-        });
-    });
-
-    setActive(activeIndex);
-    scheduleNext();
-});
