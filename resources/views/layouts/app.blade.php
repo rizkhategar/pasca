@@ -32,10 +32,10 @@
             position: relative !important;
             isolation: isolate !important;
             overflow: hidden !important;
-            min-height: clamp(78px, 7vw, 112px) !important;
+            min-height: clamp(58px, 5.2vw, 86px) !important;
             display: flex !important;
             align-items: center !important;
-            padding: clamp(8px, 1vw, 14px) 0 clamp(12px, 1.4vw, 20px) !important;
+            padding: clamp(5px, .8vw, 10px) 0 clamp(7px, 1vw, 14px) !important;
             color: #fff !important;
             background: linear-gradient(135deg, #062e62 0%, #0b5f9f 63%, #2389cf 100%) !important;
             background-image: linear-gradient(135deg, #062e62 0%, #0b5f9f 63%, #2389cf 100%) !important;
@@ -118,7 +118,7 @@
             right: 0 !important;
             bottom: -1px !important;
             z-index: 3 !important;
-            height: clamp(8px, 1.2vw, 18px) !important;
+            height: clamp(4px, .7vw, 10px) !important;
             display: block !important;
             opacity: 1 !important;
             visibility: visible !important;
@@ -154,19 +154,19 @@
             width: fit-content !important;
             display: inline-flex !important;
             align-items: center !important;
-            gap: 5px !important;
-            margin: 0 0 4px !important;
-            padding: 4px 8px !important;
+            gap: 4px !important;
+            margin: 0 0 3px !important;
+            padding: 3px 7px !important;
             border-radius: 999px !important;
             color: #fff !important;
             background: rgba(255, 255, 255, .14) !important;
             border: 1px solid rgba(255, 255, 255, .20) !important;
             box-shadow: none !important;
-            font-size: 8.5px !important;
-            line-height: 1.05 !important;
-            font-weight: 650 !important;
+            font-size: 8px !important;
+            line-height: 1 !important;
+            font-weight: 600 !important;
             text-transform: uppercase !important;
-            letter-spacing: .18px !important;
+            letter-spacing: .12px !important;
             backdrop-filter: blur(8px) !important;
         }
 
@@ -180,10 +180,10 @@
             max-width: 860px !important;
             margin: 0 !important;
             color: #fff !important;
-            font-size: clamp(19px, 2.4vw, 30px) !important;
-            line-height: 1.02 !important;
-            font-weight: 650 !important;
-            letter-spacing: -.25px !important;
+            font-size: clamp(17px, 2vw, 26px) !important;
+            line-height: 1 !important;
+            font-weight: 620 !important;
+            letter-spacing: -.18px !important;
             text-shadow: none !important;
             text-wrap: balance !important;
         }
@@ -205,11 +205,22 @@
         .page-meta,
         .profile-meta {
             display: flex !important;
-            flex-wrap: wrap !important;
-            gap: 5px !important;
-            margin-top: 6px !important;
+            flex-wrap: nowrap !important;
+            gap: 4px !important;
+            margin-top: 4px !important;
             height: auto !important;
-            overflow: visible !important;
+            max-width: 100% !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            scrollbar-width: none !important;
+        }
+
+        .hero-meta::-webkit-scrollbar,
+        .rd-hero-meta::-webkit-scrollbar,
+        .news-meta::-webkit-scrollbar,
+        .page-meta::-webkit-scrollbar,
+        .profile-meta::-webkit-scrollbar {
+            display: none !important;
         }
 
         .hero-meta span,
@@ -217,18 +228,19 @@
         .news-meta span,
         .page-meta span,
         .profile-meta span {
-            min-height: 20px !important;
+            min-height: 16px !important;
             display: inline-flex !important;
             align-items: center !important;
-            gap: 4px !important;
-            padding: 3px 7px !important;
+            flex: 0 0 auto !important;
+            gap: 3px !important;
+            padding: 2px 5px !important;
             border-radius: 999px !important;
             color: #fff !important;
             background: rgba(255, 255, 255, .13) !important;
             border: 1px solid rgba(255, 255, 255, .18) !important;
             box-shadow: none !important;
-            font-size: 8.8px !important;
-            line-height: 1.05 !important;
+            font-size: 7.5px !important;
+            line-height: 1 !important;
             font-weight: 600 !important;
             white-space: nowrap !important;
             backdrop-filter: blur(6px) !important;
@@ -248,7 +260,7 @@
         .profile-menu-page .content-section {
             position: relative !important;
             z-index: 6 !important;
-            margin-top: -8px !important;
+            margin-top: -4px !important;
             padding-bottom: 90px !important;
         }
 
@@ -504,15 +516,17 @@
             .contact-hero,
             .academic-page .page-hero,
             .profile-page .profile-hero {
-                min-height: 74px !important;
+                min-height: 0 !important;
+                height: auto !important;
                 align-items: center !important;
-                padding: 6px 0 10px !important;
+                padding: 4px 0 5px !important;
             }
 
             .hero-wave,
             .rd-hero-wave,
             .hero-shape {
-                height: 7px !important;
+                height: 0 !important;
+                display: none !important;
             }
 
             .hero-kicker,
@@ -521,11 +535,12 @@
             .category-pill,
             .profile-tag,
             .hero-badge {
-                margin-bottom: 3px !important;
-                padding: 3px 7px !important;
-                font-size: 8px !important;
+                margin-bottom: 2px !important;
+                padding: 2px 6px !important;
+                font-size: 7px !important;
                 font-weight: 600 !important;
-                letter-spacing: .12px !important;
+                letter-spacing: .08px !important;
+                line-height: 1 !important;
             }
 
             .page-title,
@@ -535,10 +550,10 @@
             .contact-title,
             .title-page,
             .profile-hero-title {
-                font-size: clamp(17px, 5.2vw, 22px) !important;
-                line-height: 1 !important;
-                font-weight: 650 !important;
-                letter-spacing: -.18px !important;
+                font-size: clamp(15px, 4.6vw, 19px) !important;
+                line-height: .98 !important;
+                font-weight: 620 !important;
+                letter-spacing: -.12px !important;
             }
 
             .page-desc,
@@ -554,11 +569,13 @@
             .page-meta,
             .profile-meta {
                 display: flex !important;
-                flex-wrap: wrap !important;
-                gap: 4px !important;
-                margin-top: 4px !important;
-                height: auto !important;
-                overflow: visible !important;
+                flex-wrap: nowrap !important;
+                gap: 3px !important;
+                margin-top: 2px !important;
+                max-width: 100% !important;
+                overflow-x: auto !important;
+                overflow-y: hidden !important;
+                scrollbar-width: none !important;
             }
 
             .hero-meta span,
@@ -566,11 +583,12 @@
             .news-meta span,
             .page-meta span,
             .profile-meta span {
-                min-height: 17px !important;
+                min-height: 14px !important;
                 display: inline-flex !important;
-                gap: 3px !important;
-                padding: 2px 5px !important;
-                font-size: 7.5px !important;
+                flex: 0 0 auto !important;
+                gap: 2px !important;
+                padding: 1px 4px !important;
+                font-size: 6.5px !important;
                 line-height: 1 !important;
                 font-weight: 600 !important;
             }
@@ -584,7 +602,7 @@
             .profile-menu-page .about-section,
             .profile-menu-page .visi-misi-section,
             .profile-menu-page .content-section {
-                margin-top: -6px !important;
+                margin-top: 0 !important;
                 padding-bottom: 68px !important;
             }
 
