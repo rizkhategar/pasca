@@ -32,10 +32,10 @@
             position: relative !important;
             isolation: isolate !important;
             overflow: hidden !important;
-            min-height: clamp(330px, 32vw, 430px) !important;
+            min-height: clamp(250px, 23vw, 340px) !important;
             display: flex !important;
             align-items: center !important;
-            padding: clamp(54px, 6vw, 82px) 0 clamp(108px, 8vw, 132px) !important;
+            padding: clamp(36px, 4.2vw, 58px) 0 clamp(70px, 5.5vw, 96px) !important;
             color: #fff !important;
             background: linear-gradient(135deg, #062e62 0%, #0b5f9f 63%, #2389cf 100%) !important;
             background-image: linear-gradient(135deg, #062e62 0%, #0b5f9f 63%, #2389cf 100%) !important;
@@ -118,7 +118,7 @@
             right: 0 !important;
             bottom: -1px !important;
             z-index: 3 !important;
-            height: clamp(86px, 8vw, 124px) !important;
+            height: clamp(58px, 5.5vw, 86px) !important;
             display: block !important;
             opacity: 1 !important;
             visibility: visible !important;
@@ -502,15 +502,15 @@
             .contact-hero,
             .academic-page .page-hero,
             .profile-page .profile-hero {
-                min-height: 318px !important;
+                min-height: 238px !important;
                 align-items: flex-start !important;
-                padding: 38px 0 92px !important;
+                padding: 28px 0 58px !important;
             }
 
             .hero-wave,
             .rd-hero-wave,
             .hero-shape {
-                height: 78px !important;
+                height: 52px !important;
             }
 
             .page-title,
@@ -520,7 +520,7 @@
             .contact-title,
             .title-page,
             .profile-hero-title {
-                font-size: clamp(28px, 8.5vw, 40px) !important;
+                font-size: clamp(26px, 7.5vw, 36px) !important;
                 line-height: 1.08 !important;
                 letter-spacing: -.6px !important;
             }
@@ -530,7 +530,26 @@
             .rd-desc,
             .contact-subtitle {
                 font-size: 14px !important;
-                line-height: 1.65 !important;
+                line-height: 1.58 !important;
+            }
+
+            .hero-meta,
+            .rd-hero-meta,
+            .news-meta,
+            .page-meta,
+            .profile-meta {
+                gap: 8px !important;
+                margin-top: 16px !important;
+            }
+
+            .hero-meta span,
+            .rd-hero-meta span,
+            .news-meta span,
+            .page-meta span,
+            .profile-meta span {
+                min-height: 34px !important;
+                padding: 7px 11px !important;
+                font-size: 11px !important;
             }
 
             .profile-menu-page .about-container,
@@ -542,7 +561,7 @@
             .profile-menu-page .about-section,
             .profile-menu-page .visi-misi-section,
             .profile-menu-page .content-section {
-                margin-top: -36px !important;
+                margin-top: -26px !important;
                 padding-bottom: 68px !important;
             }
 
