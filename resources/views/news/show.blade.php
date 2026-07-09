@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Detail Berita - Pascasarjana UNW')
+@section('title', 'Berita - Pascasarjana UNW')
 @section('body_class', 'news-detail-page')
 
 @section('content')
@@ -17,10 +17,10 @@
 
                 <div class="news-category-pill" id="newsCategory">
                     <i class="fas fa-tag"></i>
-                    <span>Berita</span>
+                    <span></span>
                 </div>
 
-                <h1 class="news-title-page" id="newsTitle">Detail Berita</h1>
+                <h1 class="news-title-page" id="newsTitle" aria-live="polite"></h1>
                 <div class="news-meta" id="newsMeta"></div>
             </div>
         </div>
@@ -37,7 +37,7 @@
             <article class="news-card-detail" id="newsCard">
                 <div class="loading-news">
                     <div class="detail-loader"></div>
-                    <span>Memuat detail berita...</span>
+                    <span>Memuat berita...</span>
                 </div>
             </article>
         </div>
@@ -139,7 +139,7 @@
                     return;
                 }
 
-                const title = item.title || 'Detail Berita';
+                const title = item.title || 'Berita';
                 const categoryName = item.category?.name || item.category_name || 'Berita';
                 const date = formatDate(item.publishedAt || item.published_at || item.createdAt || item.created_at);
                 const author = item.author?.name || item.user?.name || item.created_by || '';
