@@ -716,6 +716,189 @@
                 padding-top: 8px !important;
             }
         }
+
+        body:not(.home-page) .page-hero,
+        body:not(.home-page) .about-hero,
+        body:not(.home-page) .news-hero,
+        body:not(.home-page) .rd-hero,
+        body:not(.home-page) .contact-hero,
+        body:not(.home-page) .profile-hero {
+            min-height: 0 !important;
+            height: auto !important;
+            display: block !important;
+            padding: 10px 0 12px !important;
+        }
+
+        body:not(.home-page) .page-hero .container,
+        body:not(.home-page) .about-hero .container,
+        body:not(.home-page) .news-hero .container,
+        body:not(.home-page) .rd-hero .container,
+        body:not(.home-page) .contact-hero .container,
+        body:not(.home-page) .profile-hero .container,
+        body:not(.home-page) .page-hero .hero-inner,
+        body:not(.home-page) .about-hero .hero-inner,
+        body:not(.home-page) .news-hero .hero-inner,
+        body:not(.home-page) .rd-hero .hero-inner,
+        body:not(.home-page) .contact-hero .hero-inner,
+        body:not(.home-page) .profile-hero .hero-inner,
+        body:not(.home-page) .rd-hero .rd-hero-inner {
+            min-height: 0 !important;
+            height: auto !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+        }
+
+        body:not(.home-page) .page-hero .page-title,
+        body:not(.home-page) .about-hero .about-title,
+        body:not(.home-page) .news-hero .page-title,
+        body:not(.home-page) .news-hero .news-title-page,
+        body:not(.home-page) .rd-hero .rd-title,
+        body:not(.home-page) .contact-hero .contact-title,
+        body:not(.home-page) .profile-hero .profile-hero-title,
+        body:not(.home-page) .title-page {
+            margin: 0 !important;
+            font-size: clamp(22px, 2.8vw, 34px) !important;
+            line-height: 1.05 !important;
+            font-weight: 650 !important;
+            letter-spacing: -.18px !important;
+        }
+
+        body:not(.home-page) .page-desc,
+        body:not(.home-page) .about-subtitle,
+        body:not(.home-page) .rd-desc,
+        body:not(.home-page) .contact-subtitle,
+        body:not(.home-page) .hero-wave,
+        body:not(.home-page) .rd-hero-wave,
+        body:not(.home-page) .hero-shape {
+            display: none !important;
+        }
+
+        body:not(.home-page) .hero-kicker,
+        body:not(.home-page) .rd-kicker,
+        body:not(.home-page) .news-category-pill,
+        body:not(.home-page) .category-pill,
+        body:not(.home-page) .profile-tag,
+        body:not(.home-page) .hero-badge,
+        body:not(.home-page) .back-link {
+            margin-bottom: 5px !important;
+            padding: 5px 10px !important;
+            font-size: 9px !important;
+            line-height: 1 !important;
+            font-weight: 650 !important;
+        }
+
+        body:not(.home-page) .hero-meta,
+        body:not(.home-page) .rd-hero-meta,
+        body:not(.home-page) .news-meta,
+        body:not(.home-page) .page-meta,
+        body:not(.home-page) .profile-meta {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            gap: 5px !important;
+            margin-top: 7px !important;
+            max-width: 100% !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            scrollbar-width: none !important;
+        }
+
+        body:not(.home-page) .hero-meta span,
+        body:not(.home-page) .rd-hero-meta span,
+        body:not(.home-page) .news-meta span,
+        body:not(.home-page) .page-meta span,
+        body:not(.home-page) .profile-meta span {
+            min-height: 20px !important;
+            flex: 0 0 auto !important;
+            padding: 3px 7px !important;
+            font-size: 8.8px !important;
+            line-height: 1 !important;
+            font-weight: 600 !important;
+        }
+
+        body:not(.home-page) .news-section,
+        body:not(.home-page) .news-content-section,
+        body:not(.home-page) .about-section,
+        body:not(.home-page) .visi-misi-section,
+        body:not(.home-page) .content-section,
+        body:not(.home-page) .contact-section,
+        body:not(.home-page) .rd-section {
+            margin-top: 0 !important;
+            padding-top: 12px !important;
+        }
+
+        @media (max-width: 768px) {
+            body:not(.home-page) .page-hero,
+            body:not(.home-page) .about-hero,
+            body:not(.home-page) .news-hero,
+            body:not(.home-page) .rd-hero,
+            body:not(.home-page) .contact-hero,
+            body:not(.home-page) .profile-hero {
+                min-height: 0 !important;
+                height: auto !important;
+                padding: 7px 0 8px !important;
+            }
+
+            body:not(.home-page) .page-hero .page-title,
+            body:not(.home-page) .about-hero .about-title,
+            body:not(.home-page) .news-hero .page-title,
+            body:not(.home-page) .news-hero .news-title-page,
+            body:not(.home-page) .rd-hero .rd-title,
+            body:not(.home-page) .contact-hero .contact-title,
+            body:not(.home-page) .profile-hero .profile-hero-title,
+            body:not(.home-page) .title-page {
+                max-width: 280px !important;
+                font-size: 21px !important;
+                line-height: 1.03 !important;
+                font-weight: 650 !important;
+                letter-spacing: -.12px !important;
+            }
+
+            body:not(.home-page) .hero-kicker,
+            body:not(.home-page) .rd-kicker,
+            body:not(.home-page) .news-category-pill,
+            body:not(.home-page) .category-pill,
+            body:not(.home-page) .profile-tag,
+            body:not(.home-page) .hero-badge,
+            body:not(.home-page) .back-link {
+                margin-bottom: 4px !important;
+                padding: 3px 8px !important;
+                font-size: 7.5px !important;
+                line-height: 1 !important;
+                font-weight: 650 !important;
+            }
+
+            body:not(.home-page) .hero-meta,
+            body:not(.home-page) .rd-hero-meta,
+            body:not(.home-page) .news-meta,
+            body:not(.home-page) .page-meta,
+            body:not(.home-page) .profile-meta {
+                gap: 4px !important;
+                margin-top: 5px !important;
+            }
+
+            body:not(.home-page) .hero-meta span,
+            body:not(.home-page) .rd-hero-meta span,
+            body:not(.home-page) .news-meta span,
+            body:not(.home-page) .page-meta span,
+            body:not(.home-page) .profile-meta span {
+                min-height: 18px !important;
+                padding: 2px 5px !important;
+                font-size: 7.5px !important;
+            }
+
+            body:not(.home-page) .news-section,
+            body:not(.home-page) .news-content-section,
+            body:not(.home-page) .about-section,
+            body:not(.home-page) .visi-misi-section,
+            body:not(.home-page) .content-section,
+            body:not(.home-page) .contact-section,
+            body:not(.home-page) .rd-section {
+                margin-top: 0 !important;
+                padding-top: 8px !important;
+            }
+        }
     </style>
 </head>
 <body class="@yield('body_class')">
