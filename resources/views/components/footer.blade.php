@@ -26,7 +26,7 @@
                 <div class="footer-item">
                     <i class="fas fa-globe"></i>
                     <a href="https://pascasarjana.unw.ac.id" target="_blank" rel="noopener">
-                        pascasasarjana.unw.ac.id
+                        pascasarjana.unw.ac.id
                     </a>
                 </div>
             </div>
