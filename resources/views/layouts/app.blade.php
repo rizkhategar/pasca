@@ -32,10 +32,10 @@
             position: relative !important;
             isolation: isolate !important;
             overflow: hidden !important;
-            min-height: clamp(250px, 23vw, 340px) !important;
+            min-height: clamp(170px, 16vw, 245px) !important;
             display: flex !important;
             align-items: center !important;
-            padding: clamp(36px, 4.2vw, 58px) 0 clamp(70px, 5.5vw, 96px) !important;
+            padding: clamp(26px, 3vw, 40px) 0 clamp(44px, 3.8vw, 62px) !important;
             color: #fff !important;
             background: linear-gradient(135deg, #062e62 0%, #0b5f9f 63%, #2389cf 100%) !important;
             background-image: linear-gradient(135deg, #062e62 0%, #0b5f9f 63%, #2389cf 100%) !important;
@@ -118,7 +118,7 @@
             right: 0 !important;
             bottom: -1px !important;
             z-index: 3 !important;
-            height: clamp(58px, 5.5vw, 86px) !important;
+            height: clamp(36px, 3.8vw, 60px) !important;
             display: block !important;
             opacity: 1 !important;
             visibility: visible !important;
@@ -155,14 +155,14 @@
             display: inline-flex !important;
             align-items: center !important;
             gap: 8px !important;
-            margin: 0 0 16px !important;
-            padding: 9px 15px !important;
+            margin: 0 0 12px !important;
+            padding: 8px 13px !important;
             border-radius: 999px !important;
             color: #fff !important;
             background: rgba(255, 255, 255, .15) !important;
             border: 1px solid rgba(255, 255, 255, .24) !important;
             box-shadow: none !important;
-            font-size: 12px !important;
+            font-size: 11px !important;
             line-height: 1.15 !important;
             font-weight: 900 !important;
             text-transform: uppercase !important;
@@ -178,9 +178,9 @@
         .title-page,
         .profile-hero-title {
             max-width: 860px !important;
-            margin: 0 0 16px !important;
+            margin: 0 !important;
             color: #fff !important;
-            font-size: clamp(34px, 5vw, 58px) !important;
+            font-size: clamp(30px, 4.5vw, 48px) !important;
             line-height: 1.05 !important;
             font-weight: 900 !important;
             letter-spacing: -1px !important;
@@ -192,13 +192,11 @@
         .about-subtitle,
         .rd-desc,
         .contact-subtitle {
-            max-width: 760px !important;
+            display: none !important;
+            max-width: 0 !important;
             margin: 0 !important;
-            color: rgba(255, 255, 255, .91) !important;
-            font-size: clamp(14px, 1.7vw, 17px) !important;
-            line-height: 1.75 !important;
-            font-weight: 600 !important;
-            text-wrap: pretty !important;
+            height: 0 !important;
+            overflow: hidden !important;
         }
 
         .hero-meta,
@@ -208,8 +206,8 @@
         .profile-meta {
             display: flex !important;
             flex-wrap: wrap !important;
-            gap: 10px !important;
-            margin-top: 22px !important;
+            gap: 8px !important;
+            margin-top: 14px !important;
         }
 
         .hero-meta span,
@@ -217,17 +215,17 @@
         .news-meta span,
         .page-meta span,
         .profile-meta span {
-            min-height: 38px !important;
+            min-height: 34px !important;
             display: inline-flex !important;
             align-items: center !important;
-            gap: 8px !important;
-            padding: 8px 13px !important;
+            gap: 7px !important;
+            padding: 7px 11px !important;
             border-radius: 999px !important;
             color: #fff !important;
             background: rgba(255, 255, 255, .14) !important;
             border: 1px solid rgba(255, 255, 255, .20) !important;
             box-shadow: none !important;
-            font-size: 12px !important;
+            font-size: 11px !important;
             font-weight: 800 !important;
             backdrop-filter: blur(8px) !important;
         }
@@ -246,7 +244,7 @@
         .profile-menu-page .content-section {
             position: relative !important;
             z-index: 6 !important;
-            margin-top: -46px !important;
+            margin-top: -34px !important;
             padding-bottom: 90px !important;
         }
 
@@ -502,15 +500,26 @@
             .contact-hero,
             .academic-page .page-hero,
             .profile-page .profile-hero {
-                min-height: 238px !important;
+                min-height: 156px !important;
                 align-items: flex-start !important;
-                padding: 28px 0 58px !important;
+                padding: 20px 0 34px !important;
             }
 
             .hero-wave,
             .rd-hero-wave,
             .hero-shape {
-                height: 52px !important;
+                height: 34px !important;
+            }
+
+            .hero-kicker,
+            .rd-kicker,
+            .news-category-pill,
+            .category-pill,
+            .profile-tag,
+            .hero-badge {
+                margin-bottom: 9px !important;
+                padding: 7px 11px !important;
+                font-size: 10px !important;
             }
 
             .page-title,
@@ -520,8 +529,8 @@
             .contact-title,
             .title-page,
             .profile-hero-title {
-                font-size: clamp(26px, 7.5vw, 36px) !important;
-                line-height: 1.08 !important;
+                font-size: clamp(24px, 7vw, 32px) !important;
+                line-height: 1.06 !important;
                 letter-spacing: -.6px !important;
             }
 
@@ -529,8 +538,7 @@
             .about-subtitle,
             .rd-desc,
             .contact-subtitle {
-                font-size: 14px !important;
-                line-height: 1.58 !important;
+                display: none !important;
             }
 
             .hero-meta,
@@ -538,8 +546,8 @@
             .news-meta,
             .page-meta,
             .profile-meta {
-                gap: 8px !important;
-                margin-top: 16px !important;
+                gap: 6px !important;
+                margin-top: 11px !important;
             }
 
             .hero-meta span,
@@ -547,9 +555,9 @@
             .news-meta span,
             .page-meta span,
             .profile-meta span {
-                min-height: 34px !important;
-                padding: 7px 11px !important;
-                font-size: 11px !important;
+                min-height: 30px !important;
+                padding: 6px 9px !important;
+                font-size: 10px !important;
             }
 
             .profile-menu-page .about-container,
@@ -561,7 +569,7 @@
             .profile-menu-page .about-section,
             .profile-menu-page .visi-misi-section,
             .profile-menu-page .content-section {
-                margin-top: -26px !important;
+                margin-top: -20px !important;
                 padding-bottom: 68px !important;
             }
 
