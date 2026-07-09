@@ -32,10 +32,10 @@
             position: relative !important;
             isolation: isolate !important;
             overflow: hidden !important;
-            min-height: clamp(106px, 9vw, 152px) !important;
+            min-height: clamp(78px, 7vw, 112px) !important;
             display: flex !important;
             align-items: center !important;
-            padding: clamp(14px, 1.8vw, 24px) 0 clamp(22px, 2.4vw, 34px) !important;
+            padding: clamp(8px, 1vw, 14px) 0 clamp(12px, 1.4vw, 20px) !important;
             color: #fff !important;
             background: linear-gradient(135deg, #062e62 0%, #0b5f9f 63%, #2389cf 100%) !important;
             background-image: linear-gradient(135deg, #062e62 0%, #0b5f9f 63%, #2389cf 100%) !important;
@@ -118,7 +118,7 @@
             right: 0 !important;
             bottom: -1px !important;
             z-index: 3 !important;
-            height: clamp(18px, 2.2vw, 34px) !important;
+            height: clamp(8px, 1.2vw, 18px) !important;
             display: block !important;
             opacity: 1 !important;
             visibility: visible !important;
@@ -154,19 +154,19 @@
             width: fit-content !important;
             display: inline-flex !important;
             align-items: center !important;
-            gap: 6px !important;
-            margin: 0 0 6px !important;
-            padding: 5px 9px !important;
+            gap: 5px !important;
+            margin: 0 0 4px !important;
+            padding: 4px 8px !important;
             border-radius: 999px !important;
             color: #fff !important;
             background: rgba(255, 255, 255, .14) !important;
             border: 1px solid rgba(255, 255, 255, .20) !important;
             box-shadow: none !important;
-            font-size: 9.5px !important;
-            line-height: 1.1 !important;
-            font-weight: 700 !important;
+            font-size: 8.5px !important;
+            line-height: 1.05 !important;
+            font-weight: 650 !important;
             text-transform: uppercase !important;
-            letter-spacing: .28px !important;
+            letter-spacing: .18px !important;
             backdrop-filter: blur(8px) !important;
         }
 
@@ -180,10 +180,10 @@
             max-width: 860px !important;
             margin: 0 !important;
             color: #fff !important;
-            font-size: clamp(24px, 3.2vw, 36px) !important;
-            line-height: 1.04 !important;
-            font-weight: 700 !important;
-            letter-spacing: -.45px !important;
+            font-size: clamp(19px, 2.4vw, 30px) !important;
+            line-height: 1.02 !important;
+            font-weight: 650 !important;
+            letter-spacing: -.25px !important;
             text-shadow: none !important;
             text-wrap: balance !important;
         }
@@ -204,10 +204,12 @@
         .news-meta,
         .page-meta,
         .profile-meta {
-            display: none !important;
-            margin: 0 !important;
-            height: 0 !important;
-            overflow: hidden !important;
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 5px !important;
+            margin-top: 6px !important;
+            height: auto !important;
+            overflow: visible !important;
         }
 
         .hero-meta span,
@@ -215,7 +217,21 @@
         .news-meta span,
         .page-meta span,
         .profile-meta span {
-            display: none !important;
+            min-height: 20px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            padding: 3px 7px !important;
+            border-radius: 999px !important;
+            color: #fff !important;
+            background: rgba(255, 255, 255, .13) !important;
+            border: 1px solid rgba(255, 255, 255, .18) !important;
+            box-shadow: none !important;
+            font-size: 8.8px !important;
+            line-height: 1.05 !important;
+            font-weight: 600 !important;
+            white-space: nowrap !important;
+            backdrop-filter: blur(6px) !important;
         }
 
         .hero-meta i,
@@ -232,7 +248,7 @@
         .profile-menu-page .content-section {
             position: relative !important;
             z-index: 6 !important;
-            margin-top: -14px !important;
+            margin-top: -8px !important;
             padding-bottom: 90px !important;
         }
 
@@ -488,15 +504,15 @@
             .contact-hero,
             .academic-page .page-hero,
             .profile-page .profile-hero {
-                min-height: 96px !important;
+                min-height: 74px !important;
                 align-items: center !important;
-                padding: 10px 0 18px !important;
+                padding: 6px 0 10px !important;
             }
 
             .hero-wave,
             .rd-hero-wave,
             .hero-shape {
-                height: 16px !important;
+                height: 7px !important;
             }
 
             .hero-kicker,
@@ -505,11 +521,11 @@
             .category-pill,
             .profile-tag,
             .hero-badge {
-                margin-bottom: 5px !important;
-                padding: 4px 8px !important;
-                font-size: 8.8px !important;
-                font-weight: 700 !important;
-                letter-spacing: .2px !important;
+                margin-bottom: 3px !important;
+                padding: 3px 7px !important;
+                font-size: 8px !important;
+                font-weight: 600 !important;
+                letter-spacing: .12px !important;
             }
 
             .page-title,
@@ -519,22 +535,44 @@
             .contact-title,
             .title-page,
             .profile-hero-title {
-                font-size: clamp(20px, 6vw, 25px) !important;
-                line-height: 1.06 !important;
-                font-weight: 700 !important;
-                letter-spacing: -.25px !important;
+                font-size: clamp(17px, 5.2vw, 22px) !important;
+                line-height: 1 !important;
+                font-weight: 650 !important;
+                letter-spacing: -.18px !important;
             }
 
             .page-desc,
             .about-subtitle,
             .rd-desc,
-            .contact-subtitle,
+            .contact-subtitle {
+                display: none !important;
+            }
+
             .hero-meta,
             .rd-hero-meta,
             .news-meta,
             .page-meta,
             .profile-meta {
-                display: none !important;
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 4px !important;
+                margin-top: 4px !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+
+            .hero-meta span,
+            .rd-hero-meta span,
+            .news-meta span,
+            .page-meta span,
+            .profile-meta span {
+                min-height: 17px !important;
+                display: inline-flex !important;
+                gap: 3px !important;
+                padding: 2px 5px !important;
+                font-size: 7.5px !important;
+                line-height: 1 !important;
+                font-weight: 600 !important;
             }
 
             .profile-menu-page .about-container,
@@ -546,7 +584,7 @@
             .profile-menu-page .about-section,
             .profile-menu-page .visi-misi-section,
             .profile-menu-page .content-section {
-                margin-top: -10px !important;
+                margin-top: -6px !important;
                 padding-bottom: 68px !important;
             }
 
