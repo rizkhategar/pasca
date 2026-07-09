@@ -616,6 +616,106 @@
                 border-radius: 22px !important;
             }
         }
+
+        .news-page .news-hero {
+            min-height: 0 !important;
+            height: auto !important;
+            display: block !important;
+            padding: 10px 0 12px !important;
+        }
+
+        .news-page .news-hero .container,
+        .news-page .news-hero .hero-inner {
+            min-height: 0 !important;
+            height: auto !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+        }
+
+        .news-page .news-hero .page-title {
+            margin: 0 !important;
+            font-size: clamp(22px, 2.8vw, 34px) !important;
+            line-height: 1.05 !important;
+            font-weight: 650 !important;
+            letter-spacing: -.18px !important;
+        }
+
+        .news-page .news-hero .page-desc,
+        .news-page .news-hero .hero-wave {
+            display: none !important;
+        }
+
+        .news-page .news-hero .hero-kicker {
+            margin-bottom: 5px !important;
+            padding: 5px 10px !important;
+            font-size: 9px !important;
+            font-weight: 650 !important;
+        }
+
+        .news-page .news-hero .hero-meta {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            gap: 5px !important;
+            margin-top: 7px !important;
+            max-width: 100% !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            scrollbar-width: none !important;
+        }
+
+        .news-page .news-hero .hero-meta span {
+            min-height: 20px !important;
+            flex: 0 0 auto !important;
+            padding: 3px 7px !important;
+            font-size: 8.8px !important;
+            line-height: 1 !important;
+            font-weight: 600 !important;
+        }
+
+        .news-page .news-section {
+            margin-top: 0 !important;
+            padding-top: 12px !important;
+        }
+
+        @media (max-width: 768px) {
+            .news-page .news-hero {
+                min-height: 0 !important;
+                height: auto !important;
+                padding: 7px 0 8px !important;
+            }
+
+            .news-page .news-hero .hero-kicker {
+                margin-bottom: 4px !important;
+                padding: 3px 8px !important;
+                font-size: 7.5px !important;
+                line-height: 1 !important;
+            }
+
+            .news-page .news-hero .page-title {
+                max-width: 260px !important;
+                font-size: 21px !important;
+                line-height: 1.03 !important;
+                font-weight: 650 !important;
+            }
+
+            .news-page .news-hero .hero-meta {
+                gap: 4px !important;
+                margin-top: 5px !important;
+            }
+
+            .news-page .news-hero .hero-meta span {
+                min-height: 18px !important;
+                padding: 2px 5px !important;
+                font-size: 7.5px !important;
+            }
+
+            .news-page .news-section {
+                margin-top: 0 !important;
+                padding-top: 8px !important;
+            }
+        }
     </style>
 </head>
 <body class="@yield('body_class')">
