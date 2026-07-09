@@ -899,6 +899,28 @@
                 padding-top: 8px !important;
             }
         }
+
+        .app-main :where(
+            h1, h2, h3, h4, h5, h6,
+            p, span, a, li, label, small,
+            strong, b, em, blockquote,
+            button, input, textarea, select,
+            td, th, dd, dt,
+            .card-title, .section-title, .content-title,
+            .news-page-title, .news-page-excerpt,
+            .news-content-html, .news-excerpt-detail,
+            .contact-info, .contact-info *,
+            .about-desc, .card-content, .sambutan-text,
+            .point-text, .point-text *,
+            .service-card, .service-card *,
+            .dropdown-option, .selected-text
+        ) {
+            font-weight: 600 !important;
+        }
+
+        .app-main :where(p, li, dd, dt, small, .news-page-excerpt, .news-content-html, .news-excerpt-detail, .about-desc, .card-content, .sambutan-text) {
+            line-height: 1.72 !important;
+        }
     </style>
 </head>
 <body class="@yield('body_class')">
