@@ -32,10 +32,10 @@
             position: relative !important;
             isolation: isolate !important;
             overflow: hidden !important;
-            min-height: clamp(170px, 16vw, 245px) !important;
+            min-height: clamp(106px, 9vw, 152px) !important;
             display: flex !important;
             align-items: center !important;
-            padding: clamp(26px, 3vw, 40px) 0 clamp(44px, 3.8vw, 62px) !important;
+            padding: clamp(14px, 1.8vw, 24px) 0 clamp(22px, 2.4vw, 34px) !important;
             color: #fff !important;
             background: linear-gradient(135deg, #062e62 0%, #0b5f9f 63%, #2389cf 100%) !important;
             background-image: linear-gradient(135deg, #062e62 0%, #0b5f9f 63%, #2389cf 100%) !important;
@@ -118,7 +118,7 @@
             right: 0 !important;
             bottom: -1px !important;
             z-index: 3 !important;
-            height: clamp(36px, 3.8vw, 60px) !important;
+            height: clamp(18px, 2.2vw, 34px) !important;
             display: block !important;
             opacity: 1 !important;
             visibility: visible !important;
@@ -154,19 +154,19 @@
             width: fit-content !important;
             display: inline-flex !important;
             align-items: center !important;
-            gap: 8px !important;
-            margin: 0 0 12px !important;
-            padding: 8px 13px !important;
+            gap: 6px !important;
+            margin: 0 0 6px !important;
+            padding: 5px 9px !important;
             border-radius: 999px !important;
             color: #fff !important;
-            background: rgba(255, 255, 255, .15) !important;
-            border: 1px solid rgba(255, 255, 255, .24) !important;
+            background: rgba(255, 255, 255, .14) !important;
+            border: 1px solid rgba(255, 255, 255, .20) !important;
             box-shadow: none !important;
-            font-size: 11px !important;
-            line-height: 1.15 !important;
-            font-weight: 900 !important;
+            font-size: 9.5px !important;
+            line-height: 1.1 !important;
+            font-weight: 700 !important;
             text-transform: uppercase !important;
-            letter-spacing: .45px !important;
+            letter-spacing: .28px !important;
             backdrop-filter: blur(8px) !important;
         }
 
@@ -180,10 +180,10 @@
             max-width: 860px !important;
             margin: 0 !important;
             color: #fff !important;
-            font-size: clamp(30px, 4.5vw, 48px) !important;
-            line-height: 1.05 !important;
-            font-weight: 900 !important;
-            letter-spacing: -1px !important;
+            font-size: clamp(24px, 3.2vw, 36px) !important;
+            line-height: 1.04 !important;
+            font-weight: 700 !important;
+            letter-spacing: -.45px !important;
             text-shadow: none !important;
             text-wrap: balance !important;
         }
@@ -204,10 +204,10 @@
         .news-meta,
         .page-meta,
         .profile-meta {
-            display: flex !important;
-            flex-wrap: wrap !important;
-            gap: 8px !important;
-            margin-top: 14px !important;
+            display: none !important;
+            margin: 0 !important;
+            height: 0 !important;
+            overflow: hidden !important;
         }
 
         .hero-meta span,
@@ -215,19 +215,7 @@
         .news-meta span,
         .page-meta span,
         .profile-meta span {
-            min-height: 34px !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            gap: 7px !important;
-            padding: 7px 11px !important;
-            border-radius: 999px !important;
-            color: #fff !important;
-            background: rgba(255, 255, 255, .14) !important;
-            border: 1px solid rgba(255, 255, 255, .20) !important;
-            box-shadow: none !important;
-            font-size: 11px !important;
-            font-weight: 800 !important;
-            backdrop-filter: blur(8px) !important;
+            display: none !important;
         }
 
         .hero-meta i,
@@ -244,7 +232,7 @@
         .profile-menu-page .content-section {
             position: relative !important;
             z-index: 6 !important;
-            margin-top: -34px !important;
+            margin-top: -14px !important;
             padding-bottom: 90px !important;
         }
 
@@ -500,15 +488,15 @@
             .contact-hero,
             .academic-page .page-hero,
             .profile-page .profile-hero {
-                min-height: 156px !important;
-                align-items: flex-start !important;
-                padding: 20px 0 34px !important;
+                min-height: 96px !important;
+                align-items: center !important;
+                padding: 10px 0 18px !important;
             }
 
             .hero-wave,
             .rd-hero-wave,
             .hero-shape {
-                height: 34px !important;
+                height: 16px !important;
             }
 
             .hero-kicker,
@@ -517,9 +505,11 @@
             .category-pill,
             .profile-tag,
             .hero-badge {
-                margin-bottom: 9px !important;
-                padding: 7px 11px !important;
-                font-size: 10px !important;
+                margin-bottom: 5px !important;
+                padding: 4px 8px !important;
+                font-size: 8.8px !important;
+                font-weight: 700 !important;
+                letter-spacing: .2px !important;
             }
 
             .page-title,
@@ -529,35 +519,22 @@
             .contact-title,
             .title-page,
             .profile-hero-title {
-                font-size: clamp(24px, 7vw, 32px) !important;
+                font-size: clamp(20px, 6vw, 25px) !important;
                 line-height: 1.06 !important;
-                letter-spacing: -.6px !important;
+                font-weight: 700 !important;
+                letter-spacing: -.25px !important;
             }
 
             .page-desc,
             .about-subtitle,
             .rd-desc,
-            .contact-subtitle {
-                display: none !important;
-            }
-
+            .contact-subtitle,
             .hero-meta,
             .rd-hero-meta,
             .news-meta,
             .page-meta,
             .profile-meta {
-                gap: 6px !important;
-                margin-top: 11px !important;
-            }
-
-            .hero-meta span,
-            .rd-hero-meta span,
-            .news-meta span,
-            .page-meta span,
-            .profile-meta span {
-                min-height: 30px !important;
-                padding: 6px 9px !important;
-                font-size: 10px !important;
+                display: none !important;
             }
 
             .profile-menu-page .about-container,
@@ -569,7 +546,7 @@
             .profile-menu-page .about-section,
             .profile-menu-page .visi-misi-section,
             .profile-menu-page .content-section {
-                margin-top: -20px !important;
+                margin-top: -10px !important;
                 padding-bottom: 68px !important;
             }
 
