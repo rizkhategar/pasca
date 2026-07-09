@@ -72,6 +72,33 @@
 @section('title', 'Pascasarjana Universitas Ngudi Waluyo')
 @section('body_class', 'home-page')
 
+@push('styles')
+    <style>
+        .home-page .info-section :where(
+            .section-title,
+            .service-title,
+            .cat-pill,
+            .cat-pill span,
+            .news-category,
+            .news-title,
+            .news-excerpt,
+            .news-date,
+            .news-more-link,
+            .service-card,
+            .service-label,
+            .edom-popover,
+            .edom-popover *,
+            .small-label
+        ) {
+            font-weight: 600 !important;
+        }
+
+        .home-page .info-section :where(.news-title, .service-title, .section-title) {
+            letter-spacing: -.15px !important;
+        }
+    </style>
+@endpush
+
 @section('content')
     <section class="hero">
         @if (isset($sliders) && $sliders->count() > 0)

@@ -88,6 +88,17 @@
     </main>
 @endsection
 
+@push('styles')
+    <style>
+        .news-page .news-page-date,
+        .news-page .read-more,
+        .news-page .news-page-date *,
+        .news-page .read-more * {
+            font-weight: 600 !important;
+        }
+    </style>
+@endpush
+
 @push('scripts')
     <script>
         (function() {
