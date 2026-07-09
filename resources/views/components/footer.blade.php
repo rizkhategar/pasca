@@ -95,8 +95,8 @@
             </div>
         </div>
 
-        <div class="footer-bottom">
-            © {{ date('Y') }} <strong>Universitas Ngudi Waluyo</strong>. All Rights Reserved
+        <div class="footer-bottom copyright-text">
+            © {{ date('Y') }} Universitas Ngudi Waluyo. All Rights Reserved
         </div>
     </div>
 </footer>
