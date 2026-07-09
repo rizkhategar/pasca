@@ -18,7 +18,7 @@
             'slug' => $resolveProgramSlug(['s2-keperawatan', 'magister-keperawatan']),
             'desc' => 'Mendukung peningkatan profesionalisme keperawatan melalui kajian lanjut, praktik, dan riset kesehatan.',
             'tag' => 'Nursing Leadership',
-            'icon' => 'M12 2 6 4v5c0 3.7 2.5 7.1 6 8 3.5-.9 6-4.3 6-8V4l-6-2Zm1 3v2h2v2h-2v2h-2V9H9V7h2V5h2Zm-8 14c0-2.2 4.7-3.4 7-3.4s7 1.2 7 3.4V22H5v-3Z',
+            'icon' => 'M20 6h-4.18C15.4 4.84 14.3 4 13 4h-2C9.7 4 8.6 4.84 8.18 6H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2Zm-9-1h2c.55 0 1 .45 1 1h-4c0-.55.45-1 1-1Zm7 9h-3v3h-6v-3H6v-4h3V7h6v3h3v4Z',
         ],
         [
             'number' => '02',
@@ -27,7 +27,7 @@
             'slug' => $resolveProgramSlug(['s2-kesehatan-masyarakat', 'magister-kesehatan-masyarakat']),
             'desc' => 'Fokus pada pengembangan ilmu kesehatan masyarakat, kebijakan kesehatan, dan peningkatan kualitas layanan.',
             'tag' => 'Public Health',
-            'icon' => 'M12 21s-7.5-4.6-9.7-9.2C.6 8.2 2.6 4 6.5 4c2.2 0 3.7 1.2 4.5 2.6C11.8 5.2 13.3 4 15.5 4c3.9 0 5.9 4.2 4.2 7.8C17.5 16.4 12 21 12 21Zm-1.3-7.7h2.6v-2.1h2.1V8.6h-2.1V6.5h-2.6v2.1H8.6v2.6h2.1v2.1Z',
+            'icon' => 'M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3Zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3Zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13Zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5Z',
         ],
         [
             'number' => '03',
@@ -36,7 +36,7 @@
             'slug' => $resolveProgramSlug(['s2-manajemen-pendidikan', 'magister-manajemen-pendidikan']),
             'desc' => 'Mengembangkan kepemimpinan, manajemen, dan inovasi pendidikan yang adaptif terhadap kebutuhan zaman.',
             'tag' => 'Education Management',
-            'icon' => 'M12 3 1 9l11 6 9-4.91V17h2V9L12 3Zm0 14.2 7-3.8V17l-7 4v-3.6l7 3.8Z',
+            'icon' => 'M12 3 1 9l11 6 9-4.91V17h2V9L12 3Zm0 14.2L5 13.4V17l7 4 7-4v-3.6l-7 3.8ZM5 20v-2.2l7 3.8 7-3.8V20l-7 4-7-4Zm15-5h2v6h-2v-6Z',
         ],
         [
             'number' => '04',
@@ -45,7 +45,7 @@
             'slug' => $resolveProgramSlug(['s2-hukum', 'magister-hukum']),
             'desc' => 'Program lanjutan untuk penguatan kompetensi hukum, tata kelola, dan penyelesaian persoalan hukum modern.',
             'tag' => 'Legal Governance',
-            'icon' => 'M12 2a1 1 0 0 1 1 1v2h5a1 1 0 1 1 0 2h-1l2.5 5a3.5 3.5 0 0 1-7 0L15 7h-2v11h4a1 1 0 1 1 0 2H7a1 1 0 1 1 0-2h4V7H9l2.5 5a3.5 3.5 0 0 1-7 0L7 7H6a1 1 0 1 1 0-2h5V3a1 1 0 0 1 1-1Zm-4 6-1.6 3h3.2L8 8Zm8 0-1.6 3h3.2L16 8Z',
+            'icon' => 'M12 2a1 1 0 0 1 1 1v2h5a1 1 0 1 1 0 2h-.38l2.14 5.35A3.5 3.5 0 0 1 13.27 14L15.68 7H13v12h3a1 1 0 1 1 0 2H8a1 1 0 1 1 0-2h3V7H8.32l2.41 7A3.5 3.5 0 0 1 4.24 12.35L6.38 7H6a1 1 0 1 1 0-2h5V3a1 1 0 0 1 1-1ZM8 8.12 6.18 12h3.64L8 8.12Zm8 0L14.18 12h3.64L16 8.12Z',
         ],
     ];
 
@@ -74,27 +74,40 @@
 
 @push('styles')
     <style>
-        .home-page .info-section :where(
-            .section-title,
-            .service-title,
-            .cat-pill,
-            .cat-pill span,
-            .news-category,
-            .news-title,
-            .news-excerpt,
-            .news-date,
-            .news-more-link,
-            .service-card,
-            .service-label,
-            .edom-popover,
-            .edom-popover *,
-            .small-label
-        ) {
+        .home-page .info-section .section-title,
+        .home-page .info-section .service-title {
+            font-weight: 600 !important;
+            letter-spacing: -.12px !important;
+        }
+
+        .home-page .info-section .category-filters .cat-pill,
+        .home-page .info-section .category-filters .cat-pill span,
+        .home-page .info-section .news-list .news-item .news-category,
+        .home-page .info-section .news-list .news-item .news-date,
+        .home-page .info-section .news-more-link,
+        .home-page .info-section .service-grid .service-card,
+        .home-page .info-section .service-grid .service-card .service-label,
+        .home-page .info-section .edom-popover,
+        .home-page .info-section .edom-popover *,
+        .home-page .info-section .small-label {
             font-weight: 600 !important;
         }
 
-        .home-page .info-section :where(.news-title, .service-title, .section-title) {
-            letter-spacing: -.15px !important;
+        .home-page .info-section .news-list .news-item .news-title,
+        .home-page .info-section .news-list .news-item .news-title a,
+        .home-page .info-section .news-list .news-item-link .news-title {
+            font-weight: 600 !important;
+            letter-spacing: -.08px !important;
+        }
+
+        .home-page .info-section .news-list .news-item .news-excerpt,
+        .home-page .info-section .news-list .news-item-link .news-excerpt {
+            font-weight: 500 !important;
+        }
+
+        .home-page .program-section .program-card .program-icon svg {
+            width: 30px !important;
+            height: 30px !important;
         }
     </style>
 @endpush
