@@ -1,5 +1,3 @@
-import '../css/research-lecturers.css';
-
 function ready(callback) {
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', callback);
