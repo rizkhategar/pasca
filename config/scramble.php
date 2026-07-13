@@ -40,18 +40,18 @@ return [
         /*
          * Description rendered on the home page of the API documentation (`/docs/api`).
          */
-        'description' => 'Lecturer SINTA API documentation. This API provides master lecturer data from sinta_lecturers, optional postgraduate registration data, full SINTA details, and module-specific publication/yearly statistics endpoints without category filtering.',
+        'description' => 'Pasca API documentation for lecturer data and protected system integrations, including Moodle account synchronization.',
     ],
 
     'ui' => [
-        'title' => 'Lecturer SINTA API Docs',
+        'title' => 'Pasca API Documentation',
     ],
 
     'renderer' => 'elements',
 
     'renderers' => [
         /*
-         * Stoplight Elements config options: https://docs.stoplight.io/docs/elements/b074dc47b2826-elements-configuration-options
+         * Stoplight Elements config options: https://stoplight.io/docs/elements/b074dc47b2826-elements-configuration-options
          */
         'elements' => [
             'view' => 'scramble::docs',
@@ -100,7 +100,7 @@ return [
      * - 'description' – Case descriptions are stored as the enum schema's description using table formatting.
      * - 'extension' – Case descriptions are stored in the `x-enumDescriptions` enum schema extension.
      *
-     *    @see https://redocly.com/docs-legacy/api-reference-docs/specification-extensions/x-enum-descriptions
+     *    @see https://redocly.com/docs-legacy/api-reference-docs/specification-extensions
      * - false - Case descriptions are ignored.
      */
     'enum_cases_description_strategy' => 'description',
@@ -110,7 +110,7 @@ return [
      * Available options:
      * - 'names' – Case names are stored in the `x-enumNames` enum schema extension.
      * - 'varnames' - Case names are stored in the `x-enum-varnames` enum schema extension.
-     * - false - Case names are not stored.
+     * - false - Case names are ignored.
      */
     'enum_cases_names_strategy' => false,
 
