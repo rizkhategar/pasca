@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\DosenApiV2Controller;
+use App\Http\Controllers\Api\MoodleUserSyncController;
 use Illuminate\Support\Facades\Route;
+use Laravel\Sanctum\Http\Middleware\CheckAbilities;
 
 Route::prefix('dosen')
     ->name('api.dosen.')
@@ -24,4 +26,15 @@ Route::prefix('dosen')
             ->where('module', 'garuda|scopus|scholar|book|books|research|researches|service|services|lecturer-details|lecturer-detail|details|detail')
             ->where('mode', 'index|yearly')
             ->name('module.mode');
+    });
+
+Route::prefix('integrations/moodle')
+    ->name('api.integrations.moodle.')
+    ->middleware([
+        'auth:sanctum',
+        CheckAbilities::class.':moodle-users:read',
+    ])
+    ->group(function () {
+        Route::get('/users', [MoodleUserSyncController::class, 'index'])
+            ->name('users.index');
     });
