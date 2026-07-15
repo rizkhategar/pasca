@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'python_scraper' => [
+        'url' => env('PYTHON_SCRAPER_URL', 'http://127.0.0.1:8000'),
+    ],
+
 ];
