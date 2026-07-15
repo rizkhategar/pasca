@@ -42,6 +42,36 @@ class ScrapController extends Controller
         flush();
     }
 
+    /**
+     * Attach a curl progress callback that emits an SSE comment line every few
+     * seconds. libcurl fires this even while the upstream transfer is idle, so
+     * bytes keep trickling during the scraper's silent gaps (e.g. Selenium page
+     * loads). This keeps the connection under Cloudflare's ~100s idle timeout,
+     * which otherwise closes the stream and the browser reports "interrupted".
+     * Comment lines (": ...") are ignored by EventSource, so they are invisible
+     * to the terminal output.
+     */
+    private function keepAlive($ch): void
+    {
+        $lastPing = microtime(true);
+
+        curl_setopt($ch, CURLOPT_NOPROGRESS, false);
+        curl_setopt($ch, CURLOPT_XFERINFOFUNCTION, function () use (&$lastPing) {
+            if (microtime(true) - $lastPing >= 15) {
+                echo ": heartbeat\n\n";
+
+                if (ob_get_level() > 0) {
+                    ob_flush();
+                }
+
+                flush();
+                $lastPing = microtime(true);
+            }
+
+            return 0;
+        });
+    }
+
     private function normalizeRow(array|object $row): array
     {
         return array_change_key_case((array) $row, CASE_LOWER);
@@ -142,6 +172,7 @@ class ScrapController extends Controller
 
                 return strlen($chunk);
             });
+            $this->keepAlive($ch);
 
             $success = curl_exec($ch);
 
@@ -355,6 +386,7 @@ class ScrapController extends Controller
 
                 return strlen($chunk);
             });
+            $this->keepAlive($ch);
 
             $success = curl_exec($ch);
 
