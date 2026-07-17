@@ -268,8 +268,8 @@ class DosenApiV2Controller extends Controller
     private function postgraduateMembershipPayload(PostgraduateLecturer $lecturer): array
     {
         return [
-            'membership_table' => 'postgraduate_lecturers',
-            'pivot_table' => 'postgraduate_lecturer_study_programs',
+            'membership_table' => 'lecturers',
+            'pivot_table' => 'lecturer_study_programs',
             'id' => $lecturer->id,
             'sinta_id' => $lecturer->sinta_id,
             'name' => $lecturer->name,
