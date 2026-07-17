@@ -50,7 +50,7 @@ class StudyProgram extends Model
     {
         return $this->belongsToMany(
             PostgraduateLecturer::class,
-            'postgraduate_lecturer_study_programs',
+            'lecturer_study_programs',
             'study_program_id',
             'postgraduate_lecturer_id',
             'id',
