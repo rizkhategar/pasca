@@ -95,7 +95,7 @@ class DosenApiV2Controller extends Controller
      * | `scholar` | Scholar publication list and Scholar yearly statistics. |
      * | `book` | Book publication list. Yearly returns an empty array. |
      * | `research` | Research list and research yearly statistics. |
-     * | `service` | Community service list and service yearly statistics. |
+     * | `service` | Community service data and service yearly statistics. |
      * | `lecturer-details` | Main SINTA lecturer detail. Yearly returns an empty array. |
      *
      * @group Lecturer API
@@ -203,7 +203,7 @@ class DosenApiV2Controller extends Controller
             'scholar' => 'Scholar publication list and Scholar yearly statistics.',
             'book' => 'Book publication list. Yearly returns an empty array.',
             'research' => 'Research list and research yearly statistics.',
-            'service' => 'Community service list and service yearly statistics.',
+            'service' => 'Community service data and service yearly statistics.',
             'lecturer-details' => 'Main SINTA lecturer detail. Yearly returns an empty array.',
         ];
     }
@@ -299,7 +299,7 @@ class DosenApiV2Controller extends Controller
             'sinta_score' => $lecturer->sinta_score,
             'affiliation_score_3yr' => $lecturer->affiliation_score_3yr,
             'affiliation_score' => $lecturer->affiliation_score,
-            'profile_url' => $lecturer->profile_url,
+            'profile_photo_url' => $this->photoUrl($lecturer->postgraduateLecturer?->profile_photo),
             'has_sinta_detail' => (bool) $lecturer->detail,
             'registered_as' => [
                 'postgraduate' => (bool) $lecturer->postgraduateLecturer,
