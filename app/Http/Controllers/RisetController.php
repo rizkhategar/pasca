@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\SintaLecturerDetail;
 use App\Models\StudyProgram;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
@@ -14,8 +15,15 @@ class RisetController extends Controller
     {
         $academicProgramsNav = AcademicController::getNavigationData();
 
-        $query = SintaLecturerDetail::with('postgraduateLecturer.studyPrograms')
-            ->whereHas('postgraduateLecturer');
+        $query = SintaLecturerDetail::with([
+            'postgraduateLecturer.studyPrograms' => function ($subQuery): void {
+                $this->applyMagisterStudyProgramFilter($subQuery);
+                $subQuery->orderBy('jenjang')->orderBy('nama');
+            },
+        ])
+            ->whereHas('postgraduateLecturer.studyPrograms', function ($subQuery): void {
+                $this->applyMagisterStudyProgramFilter($subQuery);
+            });
 
         if ($request->has('search') && $request->search != '') {
             $query->where(function ($q) use ($request) {
@@ -30,9 +38,12 @@ class RisetController extends Controller
         }
 
         if ($request->has('jurusan') && $request->jurusan != '') {
-            $query->whereHas('postgraduateLecturer.studyPrograms', function ($subQuery) use ($request) {
-                $subQuery->where('study_programs.id', $request->jurusan)
-                    ->orWhere('study_programs.id_unw_program_studi', $request->jurusan);
+            $query->whereHas('postgraduateLecturer.studyPrograms', function ($subQuery) use ($request): void {
+                $this->applyMagisterStudyProgramFilter($subQuery);
+                $subQuery->where(function ($programQuery) use ($request): void {
+                    $programQuery->where('study_programs.id', $request->jurusan)
+                        ->orWhere('study_programs.id_unw_program_studi', $request->jurusan);
+                });
             });
         }
 
@@ -77,9 +88,11 @@ class RisetController extends Controller
         $dosen->nama = $dosen->postgraduateLecturer->name ?? $dosen->name;
         $dosen->profile_photo = $this->resolveLecturerPhotoPath($dosen);
 
-        $studyProgramMap = Cache::remember('study_programs_select_import', now()->addHours(12), function () {
+        $studyProgramMap = Cache::remember('magister_study_programs_select', now()->addHours(12), function () {
             return StudyProgram::query()
-                ->where('unw_fakultas_nama', 'Pascasarjana')
+                ->where(function ($query): void {
+                    $this->applyMagisterStudyProgramFilter($query);
+                })
                 ->orderBy('jenjang')
                 ->orderBy('nama')
                 ->get()
@@ -190,6 +203,19 @@ class RisetController extends Controller
         }
 
         return $dosen;
+    }
+
+    private function applyMagisterStudyProgramFilter(Builder $query): void
+    {
+        $query->where(function (Builder $subQuery): void {
+            $subQuery->whereRaw('LOWER(study_programs.jenjang) LIKE ?', ['%magister%'])
+                ->orWhereRaw('LOWER(study_programs.jenjang) IN (?, ?, ?)', ['s2', 's-2', 'strata 2'])
+                ->orWhereRaw('LOWER(study_programs.jenjang_nama_singkat) IN (?, ?)', ['s2', 's-2'])
+                ->orWhereRaw('LOWER(study_programs.slug) LIKE ?', ['magister-%'])
+                ->orWhereRaw('LOWER(study_programs.slug) LIKE ?', ['s2-%'])
+                ->orWhereRaw('LOWER(study_programs.page_slug) LIKE ?', ['magister-%'])
+                ->orWhereRaw('LOWER(study_programs.page_slug) LIKE ?', ['s2-%']);
+        });
     }
 
     private function resolveLecturerPhotoPath($dosen): ?string
