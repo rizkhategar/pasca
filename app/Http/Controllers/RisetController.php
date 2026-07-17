@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\SintaLecturerDetail;
 use App\Models\StudyProgram;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
@@ -205,9 +204,9 @@ class RisetController extends Controller
         return $dosen;
     }
 
-    private function applyMagisterStudyProgramFilter(Builder $query): void
+    private function applyMagisterStudyProgramFilter($query): void
     {
-        $query->where(function (Builder $subQuery): void {
+        $query->where(function ($subQuery): void {
             $subQuery->whereRaw('LOWER(study_programs.jenjang) LIKE ?', ['%magister%'])
                 ->orWhereRaw('LOWER(study_programs.jenjang) IN (?, ?, ?)', ['s2', 's-2', 'strata 2'])
                 ->orWhereRaw('LOWER(study_programs.jenjang_nama_singkat) IN (?, ?)', ['s2', 's-2'])
