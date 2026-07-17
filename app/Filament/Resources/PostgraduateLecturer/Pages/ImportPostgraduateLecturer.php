@@ -14,7 +14,6 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Concerns\InteractsWithSchemas;
 use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\HtmlString;
 
 class ImportPostgraduateLecturer extends Page implements HasSchemas
@@ -54,23 +53,25 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
 
     public function form(Schema $schema): Schema
     {
-        $programStudis = Cache::remember('study_programs_select_import', now()->addHours(12), function () {
-            return StudyProgram::query()
-                ->where('unw_fakultas_nama', 'Pascasarjana')
-                ->orderBy('jenjang')
-                ->orderBy('nama')
-                ->get()
-                ->mapWithKeys(fn (StudyProgram $program) => [
-                    $program->id => $program->display_name,
-                ])
-                ->toArray();
-        });
+        $totalLecturers = SintaLecturer::query()->count();
+        $statusSintaLecturersHtml = "<div style='padding: 0.75rem; border-radius: 0.5rem; background-color: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: #059669; font-weight: 500;'>✅ Total SINTA lecturer records in database: <b>{$totalLecturers}</b></div>";
 
+        $programStudis = StudyProgram::query()
+            ->orderBy('jenjang')
+            ->orderBy('nama')
+            ->get()
+            ->mapWithKeys(fn (StudyProgram $program) => [
+                $program->id => $program->display_name,
+            ])
+            ->toArray();
+
+        $urlPerbarui = route('scrap.perbaruiDosen');
         $urlAmbilDetail = route('scrap.ambilDetail', ':id');
         $urlImport = route('scrap.importData', ':id');
         $urlSyncProgramStudi = route('scrap.syncStudyPrograms');
 
         $buttonBaseStyle = 'width: 100%; display: inline-flex; align-items: center; justify-content: center; border-radius: 0.5rem; padding: 0.625rem 0.875rem; font-weight: 600; color: #ffffff; border: none; cursor: pointer;';
+        $syncSintaLecturerButtonHtml = '<button type="button" id="btn-perbarui" style="' . $buttonBaseStyle . ' background-color: #525252;">Sync SINTA Lecturers</button>';
         $extractButtonHtml = '<button type="button" id="btn-ambil-detail" style="' . $buttonBaseStyle . ' background-color: #2563eb;">Fetch SINTA Lecturer Detail</button>';
         $syncStudyProgramButtonHtml = '<button type="button" id="btn-sync-program-studi" style="' . $buttonBaseStyle . ' background-color: #7c3aed;">Sync Study Programs</button>';
         $importButtonHtml = '<button type="button" id="btn-import" style="' . $buttonBaseStyle . ' background-color: #16a34a;">Import to Postgraduate</button>';
@@ -162,6 +163,20 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
                 };
 
                 document.addEventListener('click', (event) => {
+                    const btnPerbarui = event.target.closest('#btn-perbarui');
+                    if (!btnPerbarui) return;
+                    event.preventDefault();
+                    resetTerminal('>>> Starting SINTA lecturer master sync...' + NL);
+                    toggleLoading(btnPerbarui, true, 'Sync SINTA Lecturers');
+                    openStream('{$urlPerbarui}', () => {
+                        appendTerminal(NL + '[SUCCESS] SINTA lecturer data has been updated. Reloading page...' + NL);
+                        setTimeout(() => { window.location.reload(); }, 2000);
+                    }, NL + '[ERROR] Lecturer sync connection was interrupted. Check route scrap.perbaruiDosen or Laravel logs.', 'SINTA lecturers synced', 'SINTA lecturer data has been updated successfully.', 'SINTA lecturer sync failed', () => {
+                        toggleLoading(btnPerbarui, false, 'Sync SINTA Lecturers');
+                    });
+                });
+
+                document.addEventListener('click', (event) => {
                     const btnAmbilDetail = event.target.closest('#btn-ambil-detail');
                     if (!btnAmbilDetail) return;
                     event.preventDefault();
@@ -185,12 +200,12 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
                     const btnSyncProgramStudi = event.target.closest('#btn-sync-program-studi');
                     if (!btnSyncProgramStudi) return;
                     event.preventDefault();
-                    resetTerminal('>>> Starting postgraduate study program sync from UNW API...' + NL + NL);
+                    resetTerminal('>>> Starting study program sync from UNW API...' + NL + NL);
                     toggleLoading(btnSyncProgramStudi, true, 'Sync Study Programs');
                     openStream('{$urlSyncProgramStudi}', () => {
                         appendTerminal(NL + '[SUCCESS] Study programs have been synced. Reloading dropdown...' + NL);
                         setTimeout(() => { window.location.reload(); }, 1500);
-                    }, NL + '[ERROR] Study program sync was interrupted. Check route scrap.syncStudyPrograms or Laravel logs.', 'Study programs synced', 'Postgraduate study programs have been synced successfully.', 'Study program sync failed', () => {
+                    }, NL + '[ERROR] Study program sync was interrupted. Check route scrap.syncStudyPrograms or Laravel logs.', 'Study programs synced', 'All study programs have been synced successfully.', 'Study program sync failed', () => {
                         toggleLoading(btnSyncProgramStudi, false, 'Sync Study Programs');
                     });
                 });
@@ -202,21 +217,21 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
                     const sintaId = livewire.get('data.sinta_id');
                     const programStudi = livewire.get('data.program_studi');
                     if (!sintaId) {
-                        notify('warning', 'SINTA ID was not found', 'Please select a lecturer in Step 1.');
+                        notify('warning', 'SINTA ID was not found', 'Please select a lecturer in Step 2.');
                         return;
                     }
                     if (!programStudi || (Array.isArray(programStudi) && programStudi.length === 0)) {
-                        notify('warning', 'Study program is required', 'Please select at least one Postgraduate Study Program.');
+                        notify('warning', 'Study program is required', 'Please select at least one Study Program.');
                         return;
                     }
                     const programStudiString = Array.isArray(programStudi) ? programStudi.join(',') : programStudi;
-                    resetTerminal('>>> Importing lecturer into postgraduate_lecturers for SINTA ID: ' + sintaId + ' (study_program_id: ' + programStudiString + ')...' + NL);
+                    resetTerminal('>>> Importing lecturer into lecturers for SINTA ID: ' + sintaId + ' (study_program_id: ' + programStudiString + ')...' + NL);
                     toggleLoading(btnImport, true, 'Import to Postgraduate');
                     let targetUrl = '{$urlImport}'.replace(':id', sintaId);
                     targetUrl += '?jurusan=' + encodeURIComponent(programStudiString);
                     openStream(targetUrl, () => {
                         toggleLoading(btnImport, false, 'Import to Postgraduate');
-                    }, NL + '[ERROR] Database import stream was interrupted. Check route scrap.importData or Laravel logs.', 'Postgraduate lecturer imported', 'The lecturer has been imported into postgraduate lecturers successfully.', 'Postgraduate lecturer import failed', () => {
+                    }, NL + '[ERROR] Database import stream was interrupted. Check route scrap.importData or Laravel logs.', 'Postgraduate lecturer imported', 'The lecturer has been imported into lecturers successfully.', 'Postgraduate lecturer import failed', () => {
                         toggleLoading(btnImport, false, 'Import to Postgraduate');
                     });
                 });
@@ -224,7 +239,7 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
         }" style="background-color: #0a0a0a; border-radius: 0.75rem; border: 1px solid #262626; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; height: 450px; overflow: hidden; margin-top: 1.5rem;">
             <div style="background-color: #171717; padding: 0.75rem 1rem; border-bottom: 1px solid #262626; display: flex; justify-content: space-between; align-items: center;">
                 <div style="display: flex; align-items: center; gap: 0.75rem;">
-                    <span style="color: #a3a3a3; font-family: ui-monospace, monospace; font-size: 0.75rem; letter-spacing: 0.05em;">Real-time Postgraduate Import Output</span>
+                    <span style="color: #a3a3a3; font-family: ui-monospace, monospace; font-size: 0.75rem; letter-spacing: 0.05em;">Real-time Lecturer Import Output</span>
                 </div>
                 <button type="button" onclick="document.getElementById('output-box').innerHTML='Waiting for command...' + String.fromCharCode(10)" style="color: #a3a3a3; font-family: ui-monospace, monospace; font-size: 0.75rem; background: none; border: none; cursor: pointer;">Clear Log</button>
             </div>
@@ -236,9 +251,22 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
 
         return $schema
             ->schema([
-                Grid::make(2)
+                Grid::make(3)
                     ->schema([
-                        Section::make('Step 1: Fetch SINTA Lecturer Detail')
+                        Section::make('Step 1: Sync SINTA Lecturers')
+                            ->description('Fetch master lecturer data from SINTA and store it in the sinta_lecturers table.')
+                            ->icon('heroicon-o-arrow-path')
+                            ->schema([
+                                Placeholder::make('status_sinta_lecturers')
+                                    ->label('SINTA Lecturer Data Status')
+                                    ->content(new HtmlString($statusSintaLecturersHtml)),
+                                Placeholder::make('button_sync_sinta_lecturers')
+                                    ->hiddenLabel()
+                                    ->content(new HtmlString($syncSintaLecturerButtonHtml)),
+                            ])
+                            ->columnSpan(1),
+
+                        Section::make('Step 2: Fetch SINTA Lecturer Detail')
                             ->icon('heroicon-o-arrow-down-tray')
                             ->description('Select a lecturer from the sinta_lecturers master table, then fetch the SINTA detail data needed for import.')
                             ->schema([
@@ -262,19 +290,19 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
                             ])
                             ->columnSpan(1),
 
-                        Section::make('Step 2: Import to Postgraduate')
+                        Section::make('Step 3: Import to Postgraduate')
                             ->icon('heroicon-o-server')
-                            ->description('Select postgraduate study programs, then register the lecturer into postgraduate_lecturers and postgraduate_lecturer_study_programs.')
+                            ->description('Select study programs, then register the lecturer into lecturers and lecturer_study_programs.')
                             ->schema([
                                 Placeholder::make('button_sync_program_studi')
                                     ->hiddenLabel()
                                     ->content(new HtmlString($syncStudyProgramButtonHtml)),
                                 Select::make('program_studi')
-                                    ->label('Select Postgraduate Study Programs')
+                                    ->label('Select Study Programs')
                                     ->options($programStudis)
                                     ->searchable()
                                     ->multiple()
-                                    ->placeholder('-- Select Postgraduate Study Programs --')
+                                    ->placeholder('-- Select Study Programs --')
                                     ->required()
                                     ->native(false),
                                 Placeholder::make('button_import_database')
