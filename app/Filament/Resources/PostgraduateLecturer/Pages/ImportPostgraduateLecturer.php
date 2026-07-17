@@ -14,7 +14,6 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Concerns\InteractsWithSchemas;
 use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\HtmlString;
 
 class ImportPostgraduateLecturer extends Page implements HasSchemas
@@ -54,17 +53,14 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
 
     public function form(Schema $schema): Schema
     {
-        $programStudis = Cache::remember('study_programs_select_import', now()->addHours(12), function () {
-            return StudyProgram::query()
-                ->where('unw_fakultas_nama', 'Pascasarjana')
-                ->orderBy('jenjang')
-                ->orderBy('nama')
-                ->get()
-                ->mapWithKeys(fn (StudyProgram $program) => [
-                    $program->id => $program->display_name,
-                ])
-                ->toArray();
-        });
+        $programStudis = StudyProgram::query()
+            ->orderBy('jenjang')
+            ->orderBy('nama')
+            ->get()
+            ->mapWithKeys(fn (StudyProgram $program) => [
+                $program->id => $program->display_name,
+            ])
+            ->toArray();
 
         $urlAmbilDetail = route('scrap.ambilDetail', ':id');
         $urlImport = route('scrap.importData', ':id');
@@ -185,12 +181,12 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
                     const btnSyncProgramStudi = event.target.closest('#btn-sync-program-studi');
                     if (!btnSyncProgramStudi) return;
                     event.preventDefault();
-                    resetTerminal('>>> Starting postgraduate study program sync from UNW API...' + NL + NL);
+                    resetTerminal('>>> Starting study program sync from UNW API...' + NL + NL);
                     toggleLoading(btnSyncProgramStudi, true, 'Sync Study Programs');
                     openStream('{$urlSyncProgramStudi}', () => {
                         appendTerminal(NL + '[SUCCESS] Study programs have been synced. Reloading dropdown...' + NL);
                         setTimeout(() => { window.location.reload(); }, 1500);
-                    }, NL + '[ERROR] Study program sync was interrupted. Check route scrap.syncStudyPrograms or Laravel logs.', 'Study programs synced', 'Postgraduate study programs have been synced successfully.', 'Study program sync failed', () => {
+                    }, NL + '[ERROR] Study program sync was interrupted. Check route scrap.syncStudyPrograms or Laravel logs.', 'Study programs synced', 'All study programs have been synced successfully.', 'Study program sync failed', () => {
                         toggleLoading(btnSyncProgramStudi, false, 'Sync Study Programs');
                     });
                 });
@@ -206,7 +202,7 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
                         return;
                     }
                     if (!programStudi || (Array.isArray(programStudi) && programStudi.length === 0)) {
-                        notify('warning', 'Study program is required', 'Please select at least one Postgraduate Study Program.');
+                        notify('warning', 'Study program is required', 'Please select at least one Study Program.');
                         return;
                     }
                     const programStudiString = Array.isArray(programStudi) ? programStudi.join(',') : programStudi;
@@ -264,17 +260,17 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
 
                         Section::make('Step 2: Import to Postgraduate')
                             ->icon('heroicon-o-server')
-                            ->description('Select postgraduate study programs, then register the lecturer into postgraduate_lecturers and postgraduate_lecturer_study_programs.')
+                            ->description('Select study programs, then register the lecturer into postgraduate_lecturers and postgraduate_lecturer_study_programs.')
                             ->schema([
                                 Placeholder::make('button_sync_program_studi')
                                     ->hiddenLabel()
                                     ->content(new HtmlString($syncStudyProgramButtonHtml)),
                                 Select::make('program_studi')
-                                    ->label('Select Postgraduate Study Programs')
+                                    ->label('Select Study Programs')
                                     ->options($programStudis)
                                     ->searchable()
                                     ->multiple()
-                                    ->placeholder('-- Select Postgraduate Study Programs --')
+                                    ->placeholder('-- Select Study Programs --')
                                     ->required()
                                     ->native(false),
                                 Placeholder::make('button_import_database')
