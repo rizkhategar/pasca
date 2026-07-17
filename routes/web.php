@@ -3,6 +3,7 @@
 use App\Filament\Resources\SintaLecturer\SintaLecturerResource;
 use App\Http\Controllers\AboutController;
 use App\Http\Controllers\AcademicController;
+use App\Http\Controllers\BulkSintaLecturerController;
 use App\Http\Controllers\ContactsController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NewsController;
@@ -84,7 +85,6 @@ Route::get('/organization-structures/{organizationStructure}/image', function (O
     $path = normalizePublicStoragePath($organizationStructure->image_path);
 
     abort_unless($path && Storage::disk('public')->exists($path), 404);
-
     return response()->file(Storage::disk('public')->path($path), ['Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0', 'Pragma' => 'no-cache', 'Expires' => '0']);
 })->name('organization-structures.image');
 
@@ -114,6 +114,13 @@ Route::get('/scrap/perbarui-dosen', [ScrapController::class, 'perbaruiDosen'])->
 Route::get('/scrap/sinkronisasi-program-studi', [ScrapController::class, 'syncStudyPrograms'])->name('scrap.syncStudyPrograms');
 Route::get('/scrap/ambil-detail/{sinta_id}', [ScrapController::class, 'ambilDetail'])->name('scrap.ambilDetail');
 Route::get('/scrap/import/{sinta_id}', [ScrapController::class, 'importData'])->name('scrap.importData');
+Route::get('/scrap/sinta-fetch-batches/fetch-all', [BulkSintaLecturerController::class, 'fetchAll'])->name('scrap.sintaFetchBatches.fetchAll');
+Route::get('/scrap/sinta-fetch-batches/resume', [BulkSintaLecturerController::class, 'resume'])->name('scrap.sintaFetchBatches.resume');
+Route::get('/scrap/sinta-fetch-batches/retry-failed', [BulkSintaLecturerController::class, 'retryFailed'])->name('scrap.sintaFetchBatches.retryFailed');
+Route::get('/scrap/sinta-fetch-batches/reset', [BulkSintaLecturerController::class, 'reset'])->name('scrap.sintaFetchBatches.reset');
+Route::get('/scrap/sinta-fetch-batches/import-all', [BulkSintaLecturerController::class, 'importAll'])->name('scrap.sintaFetchBatches.importAll');
+Route::get('/scrap/sinta-fetch-batches/study-program-settings', [BulkSintaLecturerController::class, 'studyProgramSettings'])->name('scrap.sintaFetchBatches.studyProgramSettings');
+Route::post('/scrap/sinta-fetch-batches/study-program-settings', [BulkSintaLecturerController::class, 'saveStudyProgramSettings'])->name('scrap.sintaFetchBatches.saveStudyProgramSettings');
 Route::get('/riset-dosen', [RisetController::class, 'listDosen'])->name('riset.dosen');
 Route::get('/riset-dosen/detail/{sinta_id}', [RisetController::class, 'detailDosen'])->name('riset.detail');
 
