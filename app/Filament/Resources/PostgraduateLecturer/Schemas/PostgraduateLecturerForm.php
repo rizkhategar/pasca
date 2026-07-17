@@ -68,7 +68,7 @@ class PostgraduateLecturerForm
                             return;
                         }
 
-                        $associatedPrograms = DB::table('postgraduate_lecturer_study_programs')
+                        $associatedPrograms = DB::table('lecturer_study_programs')
                             ->where('postgraduate_lecturer_id', $postgraduateLecturer->id)
                             ->pluck('study_program_id')
                             ->toArray();
@@ -87,7 +87,7 @@ class PostgraduateLecturerForm
                             return;
                         }
 
-                        DB::table('postgraduate_lecturer_study_programs')
+                        DB::table('lecturer_study_programs')
                             ->where('postgraduate_lecturer_id', $postgraduateLecturer->id)
                             ->delete();
 
@@ -107,7 +107,7 @@ class PostgraduateLecturerForm
                                 ->toArray();
 
                             if (! empty($pivotData)) {
-                                DB::table('postgraduate_lecturer_study_programs')->insert($pivotData);
+                                DB::table('lecturer_study_programs')->insert($pivotData);
                             }
                         }
                     })
