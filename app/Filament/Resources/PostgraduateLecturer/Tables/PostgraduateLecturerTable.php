@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\PostgraduateLecturer\Tables;
 
 use App\Filament\Resources\PostgraduateLecturer\PostgraduateLecturerResource;
-use App\Models\PostgraduateLecturer;
+use App\Models\PostgraduateLecturer as Lecturer;
 use App\Models\StudyProgram;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -38,7 +38,7 @@ class PostgraduateLecturerTable
                     ->searchable(),
 
                 TextColumn::make('study_program_names')
-                    ->label('Postgraduate Study Programs')
+                    ->label('Lecturer Study Programs')
                     ->getStateUsing(fn ($record): string => self::resolveStudyProgramNames($record))
                     ->wrap(),
 
@@ -67,17 +67,17 @@ class PostgraduateLecturerTable
                     ->url(fn ($record) => PostgraduateLecturerResource::getUrl('edit', ['record' => $record])),
 
                 DeleteAction::make()
-                    ->label('Remove from Postgraduate')
+                    ->label('Remove from Lecturers')
                     ->action(function ($record): void {
-                        PostgraduateLecturer::where('sinta_id', $record->sinta_id)->delete();
+                        Lecturer::where('sinta_id', $record->sinta_id)->delete();
                     }),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
-                        ->label('Remove selected from Postgraduate')
+                        ->label('Remove selected from Lecturers')
                         ->action(function ($records): void {
-                            PostgraduateLecturer::whereIn('sinta_id', $records->pluck('sinta_id')->filter()->all())->delete();
+                            Lecturer::whereIn('sinta_id', $records->pluck('sinta_id')->filter()->all())->delete();
                         }),
                 ]),
             ]);
@@ -96,14 +96,14 @@ class PostgraduateLecturerTable
             return '-';
         }
 
-        $studyProgramMap = self::getPascasarjanaStudyProgramMap();
+        $studyProgramMap = self::getLecturerStudyProgramMap();
 
         return $studyProgramIds
             ->map(fn (string $id): string => $studyProgramMap[$id] ?? $id)
             ->implode(', ');
     }
 
-    private static function getPascasarjanaStudyProgramMap(): array
+    private static function getLecturerStudyProgramMap(): array
     {
         return Cache::remember('study_programs_select_import', now()->addHours(12), function () {
             return StudyProgram::query()
