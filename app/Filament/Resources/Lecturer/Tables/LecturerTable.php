@@ -105,9 +105,8 @@ class LecturerTable
 
     private static function getLecturerStudyProgramMap(): array
     {
-        return Cache::remember('study_programs_select_import', now()->addHours(12), function () {
+        return Cache::remember('lecturer_study_programs_all_select', now()->addHours(12), function () {
             return StudyProgram::query()
-                ->where('unw_fakultas_nama', 'Pascasarjana')
                 ->orderBy('jenjang')
                 ->orderBy('nama')
                 ->get()
