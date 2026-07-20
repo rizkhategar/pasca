@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\PostgraduateLecturer\Schemas;
 
-use App\Models\PostgraduateLecturer;
+use App\Models\PostgraduateLecturer as Lecturer;
 use App\Models\StudyProgram;
 use App\Support\FilamentImageUpload;
 use Filament\Forms\Components\FileUpload;
@@ -40,7 +40,7 @@ class PostgraduateLecturerForm
                     ->default(null),
 
                 Select::make('department')
-                    ->label('Program Studi Pascasarjana')
+                    ->label('Program Studi')
                     ->options(function () {
                         return Cache::remember('study_programs_select_import', now()->addHours(12), function () {
                             return StudyProgram::query()
@@ -61,15 +61,15 @@ class PostgraduateLecturerForm
                             return;
                         }
 
-                        $postgraduateLecturer = PostgraduateLecturer::where('sinta_id', $record->sinta_id)->first();
+                        $lecturer = Lecturer::where('sinta_id', $record->sinta_id)->first();
 
-                        if (! $postgraduateLecturer) {
+                        if (! $lecturer) {
                             $component->state([]);
                             return;
                         }
 
                         $associatedPrograms = DB::table('lecturer_study_programs')
-                            ->where('postgraduate_lecturer_id', $postgraduateLecturer->id)
+                            ->where('postgraduate_lecturer_id', $lecturer->id)
                             ->pluck('study_program_id')
                             ->toArray();
 
@@ -81,23 +81,23 @@ class PostgraduateLecturerForm
                             return;
                         }
 
-                        $postgraduateLecturer = PostgraduateLecturer::where('sinta_id', $sintaId)->first();
+                        $lecturer = Lecturer::where('sinta_id', $sintaId)->first();
 
-                        if (! $postgraduateLecturer) {
+                        if (! $lecturer) {
                             return;
                         }
 
                         DB::table('lecturer_study_programs')
-                            ->where('postgraduate_lecturer_id', $postgraduateLecturer->id)
+                            ->where('postgraduate_lecturer_id', $lecturer->id)
                             ->delete();
 
                         if (! empty($state)) {
                             $pivotData = collect($state)
                                 ->filter(fn ($studyProgramId) => filled($studyProgramId))
                                 ->unique()
-                                ->map(function ($studyProgramId) use ($postgraduateLecturer) {
+                                ->map(function ($studyProgramId) use ($lecturer) {
                                     return [
-                                        'postgraduate_lecturer_id' => $postgraduateLecturer->id,
+                                        'postgraduate_lecturer_id' => $lecturer->id,
                                         'study_program_id' => $studyProgramId,
                                         'created_at' => now(),
                                         'updated_at' => now(),
@@ -122,8 +122,8 @@ class PostgraduateLecturerForm
                             return new HtmlString('<span class="text-gray-500 text-sm">SINTA ID belum diisi</span>');
                         }
 
-                        $postgraduateLecturer = PostgraduateLecturer::where('sinta_id', $sintaId)->first();
-                        $photoHtml = self::profilePhotoHtml($sintaId, $postgraduateLecturer?->profile_photo);
+                        $lecturer = Lecturer::where('sinta_id', $sintaId)->first();
+                        $photoHtml = self::profilePhotoHtml($sintaId, $lecturer?->profile_photo);
 
                         if ($photoHtml !== '-') {
                             return new HtmlString($photoHtml);
@@ -164,7 +164,7 @@ class PostgraduateLecturerForm
 
                         $savedPath = FilamentImageUpload::saveToPublicDisk($file, 'sinta-lecturers', $customFileName);
 
-                        PostgraduateLecturer::updateOrCreate(
+                        Lecturer::updateOrCreate(
                             ['sinta_id' => $sintaId],
                             ['profile_photo' => $savedPath]
                         );
@@ -196,14 +196,14 @@ class PostgraduateLecturerForm
 
         if (filled($profilePhoto)) {
             if (filter_var($profilePhoto, FILTER_VALIDATE_URL)) {
-                return self::imageHtml((string) $profilePhoto, 'Foto Profil Pascasarjana');
+                return self::imageHtml((string) $profilePhoto, 'Foto Profil Dosen');
             }
 
             $normalizedPath = trim(str_replace('\\', '/', (string) $profilePhoto), '/');
 
             if (Storage::disk('public')->exists($normalizedPath)) {
                 $caption = basename($normalizedPath) === "{$safeSintaId}_PL.jpg"
-                    ? 'Foto Resmi Admin (_PL)'
+                    ? 'Foto Resmi Admin'
                     : 'Foto Bawaan SINTA';
 
                 return self::imageHtml(Storage::disk('public')->url($normalizedPath) . '?v=' . time(), $caption);
@@ -211,18 +211,18 @@ class PostgraduateLecturerForm
         }
 
         if (Storage::disk('public')->exists($officialPath)) {
-            PostgraduateLecturer::where('sinta_id', $safeSintaId)
+            Lecturer::where('sinta_id', $safeSintaId)
                 ->where(function ($query): void {
                     $query->whereNull('profile_photo')
                         ->orWhere('profile_photo', 'not like', '%_PL.jpg');
                 })
                 ->update(['profile_photo' => $officialPath]);
 
-            return self::imageHtml(Storage::disk('public')->url($officialPath) . '?v=' . time(), 'Foto Resmi Admin (_PL)');
+            return self::imageHtml(Storage::disk('public')->url($officialPath) . '?v=' . time(), 'Foto Resmi Admin');
         }
 
         if (Storage::disk('public')->exists($defaultPath)) {
-            PostgraduateLecturer::where('sinta_id', $safeSintaId)
+            Lecturer::where('sinta_id', $safeSintaId)
                 ->whereNull('profile_photo')
                 ->update(['profile_photo' => $defaultPath]);
 
