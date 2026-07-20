@@ -5,7 +5,6 @@ namespace App\Filament\Resources\Lecturer;
 use App\Filament\Resources\Lecturer\Infolists\LecturerInfolist;
 use App\Filament\Resources\Lecturer\Pages\CreateLecturer;
 use App\Filament\Resources\Lecturer\Pages\EditLecturer;
-use App\Filament\Resources\Lecturer\Pages\ImportLecturer;
 use App\Filament\Resources\Lecturer\Pages\ListLecturers;
 use App\Filament\Resources\Lecturer\Pages\ViewLecturer;
 use App\Filament\Resources\Lecturer\RelationManagers\GarudaYearlyStatsRelationManager;
@@ -82,7 +81,6 @@ class LecturerResource extends Resource
     {
         return [
             'index' => Pages\ListLecturers::route('/'),
-            'import' => Pages\ImportLecturer::route('/import'),
             'view' => Pages\ViewLecturer::route('/{record}'),
             'edit' => Pages\EditLecturer::route('/{record}/edit'),
         ];
