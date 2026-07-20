@@ -11,7 +11,7 @@ class ViewPostgraduateLecturer extends ViewRecord
 
     public function getTitle(): string
     {
-        return 'Detail Lecturers';
+        return 'Detail Lecturer';
     }
 
     public function hasCombinedRelationManagerTabsWithContent(): bool
