@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\PostgraduateLecturer\Pages;
 
 use App\Filament\Resources\PostgraduateLecturer\PostgraduateLecturerResource;
-use App\Models\PostgraduateLecturer;
+use App\Models\PostgraduateLecturer as Lecturer;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
@@ -17,8 +17,9 @@ class EditPostgraduateLecturer extends EditRecord
         return [
             Actions\ViewAction::make(),
             Actions\DeleteAction::make()
+                ->label('Delete Lecturer')
                 ->action(function (): void {
-                    PostgraduateLecturer::where('sinta_id', $this->record->sinta_id)->delete();
+                    Lecturer::where('sinta_id', $this->record->sinta_id)->delete();
                     $this->redirect(PostgraduateLecturerResource::getUrl('index'));
                 }),
         ];
@@ -26,24 +27,24 @@ class EditPostgraduateLecturer extends EditRecord
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
-        $postgraduateLecturer = PostgraduateLecturer::where('sinta_id', $this->record->sinta_id)->first();
+        $lecturer = Lecturer::where('sinta_id', $this->record->sinta_id)->first();
 
-        $data['sinta_id'] = $postgraduateLecturer?->sinta_id ?? $this->record->sinta_id;
-        $data['name'] = $postgraduateLecturer?->name;
-        $data['institution'] = $postgraduateLecturer?->institution;
+        $data['sinta_id'] = $lecturer?->sinta_id ?? $this->record->sinta_id;
+        $data['name'] = $lecturer?->name;
+        $data['institution'] = $lecturer?->institution;
 
         return $data;
     }
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        $postgraduateLecturer = PostgraduateLecturer::where('sinta_id', $record->sinta_id)->first();
+        $lecturer = Lecturer::where('sinta_id', $record->sinta_id)->first();
 
-        PostgraduateLecturer::updateOrCreate(
+        Lecturer::updateOrCreate(
             ['sinta_id' => $record->sinta_id],
             [
-                'name' => $postgraduateLecturer?->name,
-                'institution' => $data['institution'] ?? $postgraduateLecturer?->institution,
+                'name' => $lecturer?->name,
+                'institution' => $data['institution'] ?? $lecturer?->institution,
             ]
         );
 
