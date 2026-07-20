@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\PostgraduateLecturer\Infolists;
 
-use App\Models\PostgraduateLecturer;
+use App\Models\PostgraduateLecturer as Lecturer;
 use App\Models\SintaLecturer;
 use App\Models\SintaLecturerDetail;
 use App\Models\StudyProgram;
@@ -33,15 +33,15 @@ class PostgraduateLecturerInfolist
                                     ->html()
                                     ->columnSpan(2),
 
-                                ImageEntry::make('postgraduate_profile_photo')
+                                ImageEntry::make('lecturer_profile_photo')
                                     ->hiddenLabel()
                                     ->disk('public')
                                     ->getStateUsing(fn ($record): ?string => self::profilePhotoPath($record))
                                     ->columnSpan(2),
 
-                                TextEntry::make('postgraduate_sinta_id')
+                                TextEntry::make('lecturer_sinta_id')
                                     ->hiddenLabel()
-                                    ->getStateUsing(fn ($record): string => self::display(self::postgraduateLecturer($record)?->sinta_id))
+                                    ->getStateUsing(fn ($record): string => self::display(self::lecturerRegistration($record)?->sinta_id))
                                     ->formatStateUsing(fn (string $state): HtmlString => self::labelValue('SINTA ID', $state))
                                     ->html(),
 
@@ -51,16 +51,16 @@ class PostgraduateLecturerInfolist
                                     ->formatStateUsing(fn (string $state): HtmlString => self::labelValue('Lecturer Name', $state))
                                     ->html(),
 
-                                TextEntry::make('postgraduate_institution')
+                                TextEntry::make('lecturer_institution')
                                     ->hiddenLabel()
-                                    ->getStateUsing(fn ($record): string => self::display(self::postgraduateLecturer($record)?->institution))
+                                    ->getStateUsing(fn ($record): string => self::display(self::lecturerRegistration($record)?->institution))
                                     ->formatStateUsing(fn (string $state): HtmlString => self::labelValue('Institution', $state))
                                     ->html(),
 
-                                TextEntry::make('postgraduate_study_programs')
+                                TextEntry::make('lecturer_study_programs')
                                     ->hiddenLabel()
                                     ->getStateUsing(fn ($record): string => self::studyPrograms($record))
-                                    ->formatStateUsing(fn (string $state): HtmlString => self::labelValue('Postgraduate Study Programs', $state))
+                                    ->formatStateUsing(fn (string $state): HtmlString => self::labelValue('Lecturer Study Programs', $state))
                                     ->html(),
 
                                 TextEntry::make('detail_study_program')
@@ -98,7 +98,7 @@ class PostgraduateLecturerInfolist
             ]);
     }
 
-    private static function postgraduateLecturer($record): ?PostgraduateLecturer
+    private static function lecturerRegistration($record): ?Lecturer
     {
         $sintaId = self::sintaId($record);
 
@@ -106,7 +106,7 @@ class PostgraduateLecturerInfolist
             return null;
         }
 
-        return PostgraduateLecturer::query()
+        return Lecturer::query()
             ->where('sinta_id', $sintaId)
             ->first();
     }
@@ -154,13 +154,13 @@ class PostgraduateLecturerInfolist
 
     private static function studyPrograms($record): string
     {
-        $postgraduateLecturer = self::postgraduateLecturer($record);
+        $lecturer = self::lecturerRegistration($record);
 
-        if (! $postgraduateLecturer?->exists) {
+        if (! $lecturer?->exists) {
             return '-';
         }
 
-        $studyPrograms = $postgraduateLecturer->studyPrograms()
+        $studyPrograms = $lecturer->studyPrograms()
             ->orderBy('jenjang')
             ->orderBy('nama')
             ->get()
@@ -178,16 +178,16 @@ class PostgraduateLecturerInfolist
 
     private static function profilePhotoPath($record): ?string
     {
-        $postgraduateLecturer = self::postgraduateLecturer($record);
-        $sintaId = $postgraduateLecturer?->sinta_id ?? self::sintaId($record);
+        $lecturer = self::lecturerRegistration($record);
+        $sintaId = $lecturer?->sinta_id ?? self::sintaId($record);
         $safeSintaId = Str::of((string) $sintaId)->trim()->replaceMatches('/[^A-Za-z0-9_-]/', '')->toString();
 
         if (! $safeSintaId) {
             return null;
         }
 
-        if (filled($postgraduateLecturer?->profile_photo)) {
-            $profilePhoto = (string) $postgraduateLecturer->profile_photo;
+        if (filled($lecturer?->profile_photo)) {
+            $profilePhoto = (string) $lecturer->profile_photo;
 
             if (! filter_var($profilePhoto, FILTER_VALIDATE_URL)) {
                 $normalizedPath = trim(str_replace('\\', '/', $profilePhoto), '/');
