@@ -14,7 +14,7 @@ class ListPostgraduateLecturers extends ListRecords
     {
         return [
             Actions\Action::make('openImportPage')
-                ->label('Import Postgraduate Lecturers')
+                ->label('Import Lecturers')
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('warning')
                 ->url(PostgraduateLecturerResource::getUrl('import')),
