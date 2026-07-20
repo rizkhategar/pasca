@@ -302,7 +302,7 @@ class DosenApiV2Controller extends Controller
             'profile_photo_url' => $this->photoUrl($lecturer->postgraduateLecturer?->profile_photo),
             'has_sinta_detail' => (bool) $lecturer->detail,
             'registered_as' => [
-                'lecturer' => (bool) $lecturer->postgraduateLecturer,
+                'lecturer_detail' => (bool) $lecturer->postgraduateLecturer,
             ],
         ];
     }
