@@ -24,7 +24,7 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
 
     protected string $view = 'filament.resources.postgraduate-lecturer.pages.import-postgraduate-lecturer';
 
-    protected static ?string $title = 'Import Postgraduate Lecturers';
+    protected static ?string $title = 'Import Lecturers';
 
     public ?array $data = [];
 
@@ -99,42 +99,42 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
 
         $terminalHtml = <<<HTML
         <div wire:ignore>
-            <div id="bulk-prodi-modal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
-                <div style="background:#fff;border-radius:0.75rem;box-shadow:0 20px 40px rgba(0,0,0,0.25);width:min(1100px,96vw);max-height:86vh;display:flex;flex-direction:column;overflow:hidden;">
-                    <div style="padding:1rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+            <div id='bulk-prodi-modal' style='display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:9999;align-items:center;justify-content:center;padding:1rem;'>
+                <div style='background:#fff;border-radius:0.75rem;box-shadow:0 20px 40px rgba(0,0,0,0.25);width:min(1100px,96vw);max-height:86vh;display:flex;flex-direction:column;overflow:hidden;'>
+                    <div style='padding:1rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;gap:1rem;'>
                         <div>
-                            <h3 style="margin:0;font-size:1rem;font-weight:800;color:#111827;">Setting Prodi Fetch All</h3>
-                            <p id="bulk-prodi-summary" style="margin:0.25rem 0 0;color:#4b5563;font-size:0.875rem;">Loading...</p>
+                            <h3 style='margin:0;font-size:1rem;font-weight:800;color:#111827;'>Setting Prodi Fetch All</h3>
+                            <p id='bulk-prodi-summary' style='margin:0.25rem 0 0;color:#4b5563;font-size:0.875rem;'>Loading...</p>
                         </div>
-                        <button type="button" id="btn-close-prodi-settings" style="border:0;background:#f3f4f6;border-radius:0.5rem;padding:0.5rem 0.75rem;cursor:pointer;font-weight:700;">Tutup</button>
+                        <button type='button' id='btn-close-prodi-settings' style='border:0;background:#f3f4f6;border-radius:0.5rem;padding:0.5rem 0.75rem;cursor:pointer;font-weight:700;'>Tutup</button>
                     </div>
-                    <div style="overflow:auto;padding:1rem;">
-                        <table style="width:100%;border-collapse:collapse;font-size:0.875rem;">
+                    <div style='overflow:auto;padding:1rem;'>
+                        <table style='width:100%;border-collapse:collapse;font-size:0.875rem;'>
                             <thead>
-                                <tr style="background:#f9fafb;text-align:left;">
-                                    <th style="padding:0.5rem;border-bottom:1px solid #e5e7eb;">SINTA ID</th>
-                                    <th style="padding:0.5rem;border-bottom:1px solid #e5e7eb;">Nama Dosen</th>
-                                    <th style="padding:0.5rem;border-bottom:1px solid #e5e7eb;">Status Fetch</th>
-                                    <th style="padding:0.5rem;border-bottom:1px solid #e5e7eb;">Program Studi</th>
-                                    <th style="padding:0.5rem;border-bottom:1px solid #e5e7eb;">Status Setting</th>
+                                <tr style='background:#f9fafb;text-align:left;'>
+                                    <th style='padding:0.5rem;border-bottom:1px solid #e5e7eb;'>SINTA ID</th>
+                                    <th style='padding:0.5rem;border-bottom:1px solid #e5e7eb;'>Nama Dosen</th>
+                                    <th style='padding:0.5rem;border-bottom:1px solid #e5e7eb;'>Status Fetch</th>
+                                    <th style='padding:0.5rem;border-bottom:1px solid #e5e7eb;'>Program Studi</th>
+                                    <th style='padding:0.5rem;border-bottom:1px solid #e5e7eb;'>Status Setting</th>
                                 </tr>
                             </thead>
-                            <tbody id="bulk-prodi-modal-body"></tbody>
+                            <tbody id='bulk-prodi-modal-body'></tbody>
                         </table>
                     </div>
-                    <div style="padding:1rem;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;gap:0.75rem;">
-                        <button type="button" id="btn-save-prodi-settings" style="background:#16a34a;color:#fff;border:0;border-radius:0.5rem;padding:0.625rem 1rem;font-weight:700;cursor:pointer;">Simpan Setting Prodi</button>
+                    <div style='padding:1rem;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;gap:0.75rem;'>
+                        <button type='button' id='btn-save-prodi-settings' style='background:#16a34a;color:#fff;border:0;border-radius:0.5rem;padding:0.625rem 1rem;font-weight:700;cursor:pointer;'>Simpan Setting Prodi</button>
                     </div>
                 </div>
             </div>
 
-            <div style="background-color:#0a0a0a;border-radius:0.75rem;border:1px solid #262626;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);display:flex;flex-direction:column;height:450px;overflow:hidden;margin-top:1.5rem;">
-                <div style="background-color:#171717;padding:0.75rem 1rem;border-bottom:1px solid #262626;display:flex;justify-content:space-between;align-items:center;">
-                    <span style="color:#a3a3a3;font-family:ui-monospace,monospace;font-size:0.75rem;letter-spacing:0.05em;">Real-time Lecturer Import Output</span>
-                    <button type="button" id="btn-clear-terminal" style="color:#a3a3a3;font-family:ui-monospace,monospace;font-size:0.75rem;background:none;border:none;cursor:pointer;">Clear Log</button>
+            <div style='background-color:#0a0a0a;border-radius:0.75rem;border:1px solid #262626;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);display:flex;flex-direction:column;height:450px;overflow:hidden;margin-top:1.5rem;'>
+                <div style='background-color:#171717;padding:0.75rem 1rem;border-bottom:1px solid #262626;display:flex;justify-content:space-between;align-items:center;'>
+                    <span style='color:#a3a3a3;font-family:ui-monospace,monospace;font-size:0.75rem;letter-spacing:0.05em;'>Real-time Lecturer Import Output</span>
+                    <button type='button' id='btn-clear-terminal' style='color:#a3a3a3;font-family:ui-monospace,monospace;font-size:0.75rem;background:none;border:none;cursor:pointer;'>Clear Log</button>
                 </div>
-                <div id="terminal-container" style="padding:1rem;overflow-y:auto;flex-grow:1;background-color:#0a0a0a;">
-                    <pre id="output-box" style="color:#4ade80;margin:0;white-space:pre-wrap;word-break:break-all;font-family:ui-monospace,monospace;font-size:0.875rem;line-height:1.5;">Waiting for command...</pre>
+                <div id='terminal-container' style='padding:1rem;overflow-y:auto;flex-grow:1;background-color:#0a0a0a;'>
+                    <pre id='output-box' style='color:#4ade80;margin:0;white-space:pre-wrap;word-break:break-all;font-family:ui-monospace,monospace;font-size:0.875rem;line-height:1.5;'>Waiting for command...</pre>
                 </div>
             </div>
 
@@ -153,6 +153,8 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
                     const prodiModalBody = document.getElementById('bulk-prodi-modal-body');
                     const prodiSummary = document.getElementById('bulk-prodi-summary');
                     const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
+                    const fatalKeywords = ['traceback', 'gagal membuka halaman', 'httperror', 'status: 403', 'status: 404', 'status: 500', 'fatal scraper pattern detected', 'import all is blocked', 'excel file was not found', 'merged detail excel was not downloaded'];
+                    const warningKeywords = ['tidak ada publikasi', 'kosong/tidak ditemukan', 'membuat sheet berisi', 'sheet contains', 'empty sheet', 'grafik garuda tidak ditemukan', 'gagal menemukan xaxis', 'gagal menemukan series', 'success_with_warning', 'empty-data warning'];
 
                     const appendTerminal = (text) => {
                         if (!outputBox || !terminalContainer) return;
@@ -173,8 +175,6 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
                     };
 
                     const stripHtml = (value) => String(value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-                    const fatalKeywords = ['traceback', 'gagal membuka halaman', 'httperror', 'status: 403', 'status: 404', 'status: 500', 'fatal scraper pattern detected', 'import all is blocked', 'excel file was not found', 'merged detail excel was not downloaded'];
-                    const warningKeywords = ['tidak ada publikasi', 'kosong/tidak ditemukan', 'membuat sheet berisi', 'sheet contains', 'empty sheet', 'grafik garuda tidak ditemukan', 'gagal menemukan xaxis', 'gagal menemukan series', 'success_with_warning', 'empty-data warning'];
 
                     const toggleLoading = (button, isLoading, originalText) => {
                         if (!button) return;
@@ -322,7 +322,7 @@ class ImportPostgraduateLecturer extends Page implements HasSchemas
                             const programStudiString = Array.isArray(programStudi) ? programStudi.join(',') : programStudi;
                             resetTerminal('>>> Importing lecturer into lecturers for SINTA ID: ' + sintaId + '...' + NL);
                             toggleLoading(btnImport, true, 'Import Selected');
-                            openStream(routes.importSelected.replace(':id', sintaId) + '?jurusan=' + encodeURIComponent(programStudiString), () => toggleLoading(btnImport, false, 'Import Selected'), NL + '[ERROR] Database import stream was interrupted.', 'Postgraduate lecturer imported', 'The lecturer has been imported into lecturers successfully.', 'Postgraduate lecturer import failed', () => toggleLoading(btnImport, false, 'Import Selected'));
+                            openStream(routes.importSelected.replace(':id', sintaId) + '?jurusan=' + encodeURIComponent(programStudiString), () => toggleLoading(btnImport, false, 'Import Selected'), NL + '[ERROR] Database import stream was interrupted.', 'Lecturer imported', 'The lecturer has been imported into lecturers successfully.', 'Lecturer import failed', () => toggleLoading(btnImport, false, 'Import Selected'));
                             return;
                         }
 
