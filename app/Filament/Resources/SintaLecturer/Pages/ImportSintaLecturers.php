@@ -3,8 +3,8 @@
 namespace App\Filament\Resources\SintaLecturer\Pages;
 
 use App\Filament\Resources\SintaLecturer\SintaLecturerResource;
-use App\Http\Controllers\SmartBulkSintaLecturerController;
 use App\Models\SintaLecturer;
+use App\Models\SintaLecturerFetchBatch;
 use App\Models\SintaLecturerStudyProgramSetting;
 use App\Models\StudyProgram;
 use Filament\Actions;
@@ -19,12 +19,22 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Concerns\InteractsWithSchemas;
 use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema as SchemaFacade;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
+use Rap2hpoutre\FastExcel\FastExcel;
 
 class ImportSintaLecturers extends Page implements HasSchemas
 {
     use InteractsWithSchemas;
+
+    private const BULK_PRODI_MODAL_DEFAULT_LIMIT = 30;
+
+    private const BULK_PRODI_MODAL_MAX_LIMIT = 100;
 
     protected static string $resource = SintaLecturerResource::class;
 
@@ -46,27 +56,29 @@ class ImportSintaLecturers extends Page implements HasSchemas
             ->icon('heroicon-o-academic-cap')
             ->color('warning')
             ->modalHeading('Setting Prodi Fetch All')
-            ->modalDescription('Gunakan search/filter untuk memilih dosen yang ingin disetting. Program studi otomatis dari Excel tetap bisa diganti atau dipilih lebih dari satu sebelum disimpan.')
+            ->modalDescription('Data awal dibatasi agar modal cepat dibuka. Gunakan search/filter untuk menampilkan dosen yang diperlukan. Program studi otomatis dari Excel tetap bisa diganti atau dipilih lebih dari satu sebelum disimpan.')
             ->modalWidth('7xl')
             ->fillForm(fn (): array => [
                 'filter_search' => null,
                 'filter_study_program_id' => null,
-                'lecturers' => $this->getBulkProdiSettingRows(),
+                'filter_limit' => self::BULK_PRODI_MODAL_DEFAULT_LIMIT,
+                'lecturers' => $this->getBulkProdiSettingRows(limit: self::BULK_PRODI_MODAL_DEFAULT_LIMIT),
             ])
             ->form([
                 Section::make('Filter Data')
-                    ->description('Filter langsung aktif saat mengetik atau memilih program studi. Pilih Belum disetting / Null untuk menampilkan dosen yang belum punya setting tersimpan.')
+                    ->description('Search langsung aktif saat mengetik. Opsi Belum disetting / Null menampilkan dosen yang belum punya setting tersimpan. Simpan dulu perubahan sebelum mengganti filter agar editan tidak hilang.')
                     ->schema([
-                        Grid::make(2)
+                        Grid::make(3)
                             ->schema([
                                 TextInput::make('filter_search')
                                     ->label('Cari Nama Dosen / SINTA ID')
                                     ->placeholder('Ketik nama atau SINTA ID...')
-                                    ->live(debounce: 300)
+                                    ->live(debounce: 500)
                                     ->afterStateUpdated(function ($set, $get, ?string $state): void {
                                         $set('lecturers', $this->getBulkProdiSettingRows(
                                             search: $state,
                                             studyProgramFilter: $get('filter_study_program_id'),
+                                            limit: $get('filter_limit'),
                                         ));
                                     }),
                                 Select::make('filter_study_program_id')
@@ -80,6 +92,24 @@ class ImportSintaLecturers extends Page implements HasSchemas
                                         $set('lecturers', $this->getBulkProdiSettingRows(
                                             search: $get('filter_search'),
                                             studyProgramFilter: $state,
+                                            limit: $get('filter_limit'),
+                                        ));
+                                    }),
+                                Select::make('filter_limit')
+                                    ->label('Jumlah Data Ditampilkan')
+                                    ->options([
+                                        30 => '30 data',
+                                        50 => '50 data',
+                                        100 => '100 data',
+                                    ])
+                                    ->native(false)
+                                    ->live()
+                                    ->default(self::BULK_PRODI_MODAL_DEFAULT_LIMIT)
+                                    ->afterStateUpdated(function ($set, $get, mixed $state): void {
+                                        $set('lecturers', $this->getBulkProdiSettingRows(
+                                            search: $get('filter_search'),
+                                            studyProgramFilter: $get('filter_study_program_id'),
+                                            limit: $state,
                                         ));
                                     }),
                             ]),
@@ -127,7 +157,6 @@ class ImportSintaLecturers extends Page implements HasSchemas
                                     ->options(fn (): array => $this->getStudyProgramOptions())
                                     ->multiple()
                                     ->searchable()
-                                    ->preload()
                                     ->native(false)
                                     ->placeholder('Pilih satu atau beberapa program studi')
                                     ->columnSpan(12),
@@ -447,53 +476,86 @@ class ImportSintaLecturers extends Page implements HasSchemas
             ->statePath('data');
     }
 
-    private function getBulkProdiSettingRows(?string $search = null, mixed $studyProgramFilter = null): array
+    private function getBulkProdiSettingRows(?string $search = null, mixed $studyProgramFilter = null, mixed $limit = self::BULK_PRODI_MODAL_DEFAULT_LIMIT): array
     {
-        $response = app(SmartBulkSintaLecturerController::class)->studyProgramSettings();
-        $payload = $response->getData(true);
-
-        if ($response->getStatusCode() >= 400) {
+        if (! $this->batchTablesReady()) {
             Notification::make()
                 ->title('Setting Prodi belum bisa dibuka')
-                ->body(data_get($payload, 'message', 'Jalankan migration dan Fetch All terlebih dahulu.'))
+                ->body('Jalankan php artisan migrate terlebih dahulu agar tabel batch tersedia.')
                 ->danger()
                 ->send();
 
             return [];
         }
 
+        $batch = SintaLecturerFetchBatch::query()->latest('id')->first();
+
+        if (! $batch) {
+            return [];
+        }
+
         $normalizedSearch = trim(strtolower((string) $search));
         $studyProgramFilter = filled($studyProgramFilter) ? (string) $studyProgramFilter : null;
+        $resolvedLimit = $this->resolveBulkProdiModalLimit($limit);
 
-        return collect(data_get($payload, 'items', []))
-            ->map(fn (array $item): array => [
-                'sinta_id' => (string) data_get($item, 'sinta_id', ''),
-                'lecturer_name' => (string) data_get($item, 'lecturer_name', '-'),
-                'fetch_status' => (string) data_get($item, 'fetch_status', '-'),
-                'detected_study_program' => (string) data_get($item, 'detected_study_program', ''),
-                'study_program_ids' => collect(data_get($item, 'study_program_ids', []))
-                    ->map(fn ($id) => (int) $id)
-                    ->filter()
-                    ->values()
-                    ->toArray(),
-                'setting_status' => (string) data_get($item, 'setting_status', 'not_set'),
-            ])
-            ->when($normalizedSearch !== '', function ($rows) use ($normalizedSearch) {
-                return $rows->filter(function (array $row) use ($normalizedSearch): bool {
-                    return str_contains(strtolower($row['lecturer_name'] ?? ''), $normalizedSearch)
-                        || str_contains(strtolower($row['sinta_id'] ?? ''), $normalizedSearch);
+        $query = $batch->items()
+            ->select(['id', 'batch_id', 'sinta_id', 'lecturer_name', 'status', 'import_status', 'warning_message', 'error_message'])
+            ->when($normalizedSearch !== '', function ($query) use ($normalizedSearch) {
+                $query->where(function ($subQuery) use ($normalizedSearch) {
+                    $subQuery->whereRaw('LOWER(lecturer_name) LIKE ?', ["%{$normalizedSearch}%"])
+                        ->orWhere('sinta_id', 'like', "%{$normalizedSearch}%");
                 });
             })
-            ->when($studyProgramFilter, function ($rows) use ($studyProgramFilter) {
-                return $rows->filter(function (array $row) use ($studyProgramFilter): bool {
-                    $selectedIds = collect($row['study_program_ids'] ?? [])->map(fn ($id) => (string) $id);
+            ->when($studyProgramFilter === '__null__', function ($query) {
+                $query->whereNotIn('sinta_id', SintaLecturerStudyProgramSetting::query()->select('sinta_id'));
+            })
+            ->when($studyProgramFilter && $studyProgramFilter !== '__null__', function ($query) use ($studyProgramFilter) {
+                $query->whereIn('sinta_id', SintaLecturerStudyProgramSetting::query()
+                    ->where('study_program_id', (int) $studyProgramFilter)
+                    ->select('sinta_id'));
+            })
+            ->orderBy('lecturer_name')
+            ->orderBy('sinta_id')
+            ->limit($resolvedLimit);
 
-                    if ($studyProgramFilter === '__null__') {
-                        return $selectedIds->isEmpty() || ($row['setting_status'] ?? 'not_set') !== 'complete';
-                    }
+        $items = $query->get();
 
-                    return $selectedIds->contains((string) $studyProgramFilter);
-                });
+        if ($items->isEmpty()) {
+            return [];
+        }
+
+        $settings = SintaLecturerStudyProgramSetting::query()
+            ->whereIn('sinta_id', $items->pluck('sinta_id')->filter()->values())
+            ->get()
+            ->groupBy('sinta_id');
+
+        $programModels = $this->getStudyProgramModels();
+
+        return $items
+            ->map(function ($item) use ($settings, $programModels): array {
+                $existing = $settings->get($item->sinta_id, collect())
+                    ->pluck('study_program_id')
+                    ->map(fn ($id) => (int) $id)
+                    ->values();
+
+                $detectedStudyProgram = $this->readStudyProgramFromMergedExcel((string) $item->sinta_id);
+                $suggested = $existing->isEmpty()
+                    ? $this->suggestStudyProgramIds($detectedStudyProgram, $programModels)
+                    : collect();
+
+                $selected = $existing->isNotEmpty() ? $existing : $suggested;
+                $canSet = in_array($item->status, ['success', 'success_with_warning'], true);
+
+                return [
+                    'sinta_id' => (string) $item->sinta_id,
+                    'lecturer_name' => (string) ($item->lecturer_name ?: '-'),
+                    'fetch_status' => (string) $item->status,
+                    'detected_study_program' => (string) ($detectedStudyProgram ?? ''),
+                    'study_program_ids' => $selected->map(fn ($id) => (int) $id)->values()->toArray(),
+                    'setting_status' => $canSet
+                        ? ($existing->isNotEmpty() ? 'complete' : ($suggested->isNotEmpty() ? 'auto_suggested' : 'not_set'))
+                        : 'blocked',
+                ];
             })
             ->values()
             ->toArray();
@@ -539,7 +601,7 @@ class ImportSintaLecturers extends Page implements HasSchemas
 
         Notification::make()
             ->title('Setting prodi berhasil disimpan')
-            ->body('Mapping program studi untuk batch fetch all sudah diperbarui.')
+            ->body('Mapping program studi untuk data yang sedang tampil sudah diperbarui.')
             ->success()
             ->send();
     }
@@ -551,14 +613,24 @@ class ImportSintaLecturers extends Page implements HasSchemas
 
     private function getStudyProgramOptions(): array
     {
+        return Cache::remember('sinta_import_study_program_options_v2', now()->addMinutes(10), function (): array {
+            return StudyProgram::query()
+                ->orderBy('jenjang')
+                ->orderBy('nama')
+                ->get()
+                ->mapWithKeys(fn (StudyProgram $program) => [
+                    $program->id => $program->display_name,
+                ])
+                ->toArray();
+        });
+    }
+
+    private function getStudyProgramModels(): Collection
+    {
         return StudyProgram::query()
             ->orderBy('jenjang')
             ->orderBy('nama')
-            ->get()
-            ->mapWithKeys(fn (StudyProgram $program) => [
-                $program->id => $program->display_name,
-            ])
-            ->toArray();
+            ->get();
     }
 
     private function getSintaLecturerOptions(?string $search = null): array
@@ -577,5 +649,191 @@ class ImportSintaLecturers extends Page implements HasSchemas
                 $lecturer->sinta_id => trim(($lecturer->name ?? '-') . ' (' . $lecturer->sinta_id . ')'),
             ])
             ->toArray();
+    }
+
+    private function resolveBulkProdiModalLimit(mixed $limit): int
+    {
+        $limit = (int) $limit;
+
+        if ($limit <= 0) {
+            return self::BULK_PRODI_MODAL_DEFAULT_LIMIT;
+        }
+
+        return min($limit, self::BULK_PRODI_MODAL_MAX_LIMIT);
+    }
+
+    private function batchTablesReady(): bool
+    {
+        return SchemaFacade::hasTable('sinta_lecturer_fetch_batches')
+            && SchemaFacade::hasTable('sinta_lecturer_fetch_batch_items')
+            && SchemaFacade::hasTable('sinta_lecturer_study_program_settings');
+    }
+
+    private function mergedDetailFilePath(string $sintaId): string
+    {
+        return base_path("scripts/output/merged_data_{$sintaId}.xlsx");
+    }
+
+    private function readStudyProgramFromMergedExcel(string $sintaId): ?string
+    {
+        $filePath = $this->mergedDetailFilePath($sintaId);
+
+        if (! file_exists($filePath)) {
+            return null;
+        }
+
+        $fileTime = (string) filemtime($filePath);
+        $cacheKey = "sinta_import_detected_study_program:{$sintaId}:{$fileTime}";
+
+        return Cache::remember($cacheKey, now()->addDays(7), fn (): ?string => $this->readStudyProgramFromMergedExcelFile($filePath));
+    }
+
+    private function readStudyProgramFromMergedExcelFile(string $filePath): ?string
+    {
+        try {
+            $sheets = (new FastExcel())->importSheets($filePath);
+            $rows = null;
+
+            foreach ($sheets as $sheetName => $sheetRows) {
+                $normalizedSheetName = Str::of((string) $sheetName)->lower()->replace([' ', '-'], '_')->toString();
+
+                if (str_contains($normalizedSheetName, 'data_dosen')) {
+                    $rows = collect($sheetRows);
+                    break;
+                }
+            }
+
+            $rows ??= collect($sheets[0] ?? reset($sheets) ?: []);
+            $firstRow = $rows->first();
+
+            if (! $firstRow) {
+                return null;
+            }
+
+            $row = array_change_key_case((array) $firstRow, CASE_LOWER);
+            $value = $row['program studi']
+                ?? $row['program_studi']
+                ?? $row['study_program']
+                ?? data_get(array_values((array) $firstRow), 2);
+            $value = is_string($value) ? trim($value) : null;
+
+            return $value !== '' ? $value : null;
+        } catch (\Throwable $exception) {
+            Log::warning("Failed to read study program from merged Excel {$filePath}: {$exception->getMessage()}");
+
+            return null;
+        }
+    }
+
+    private function suggestStudyProgramIds(?string $rawStudyProgram, Collection $programs): Collection
+    {
+        if (! $rawStudyProgram) {
+            return collect();
+        }
+
+        $parsed = $this->parseExternalStudyProgram($rawStudyProgram);
+        $externalLevel = $this->canonicalLevel($parsed['level']);
+        $externalName = $this->normalizeStudyProgramText($parsed['name']);
+        $externalTokens = $this->studyProgramTokens($externalName);
+
+        $scored = $programs->map(function (StudyProgram $program) use ($externalLevel, $externalName, $externalTokens) {
+            $programLevel = $this->canonicalLevel($program->jenjang_nama_singkat ?: $program->jenjang);
+            $programName = $this->normalizeStudyProgramText((string) $program->nama);
+            $programDisplay = $this->normalizeStudyProgramText((string) $program->display_name);
+            $programTokens = $this->studyProgramTokens($programName . ' ' . $programDisplay);
+            $score = 0;
+
+            if ($externalLevel && $programLevel && $externalLevel === $programLevel) {
+                $score += 100;
+            } elseif ($externalLevel && $programLevel && $externalLevel !== $programLevel) {
+                $score -= 40;
+            }
+
+            if ($externalName !== '' && ($externalName === $programName || $externalName === $programDisplay)) {
+                $score += 90;
+            }
+
+            if ($externalName !== '' && $programName !== '' && (str_contains($externalName, $programName) || str_contains($programName, $externalName))) {
+                $score += 70;
+            }
+
+            if ($externalName !== '' && $programDisplay !== '' && (str_contains($externalName, $programDisplay) || str_contains($programDisplay, $externalName))) {
+                $score += 50;
+            }
+
+            $score += $externalTokens->intersect($programTokens)->count() * 25;
+
+            return ['id' => (int) $program->id, 'score' => $score];
+        })->filter(fn (array $item) => $item['score'] >= 80)->sortByDesc('score')->values();
+
+        if ($scored->isEmpty()) {
+            return collect();
+        }
+
+        $bestScore = (int) $scored->first()['score'];
+
+        return $scored
+            ->filter(fn (array $item) => (int) $item['score'] === $bestScore)
+            ->pluck('id')
+            ->take(2)
+            ->values();
+    }
+
+    private function parseExternalStudyProgram(string $raw): array
+    {
+        $raw = trim($raw);
+        $level = null;
+        $name = $raw;
+
+        if (preg_match('/^\s*(.*?)\s*[-–—]\s*(.+)$/u', $raw, $matches)) {
+            $level = trim($matches[1]);
+            $name = trim($matches[2]);
+        }
+
+        if (! $level && preg_match('/\b(S1|S2|S3|D3|D4|Profesi|Sarjana|Magister|Diploma\s*3|Diploma\s*4)\b/i', $raw, $matches)) {
+            $level = $matches[1];
+        }
+
+        return ['level' => $level, 'name' => $name];
+    }
+
+    private function canonicalLevel(?string $value): ?string
+    {
+        $value = Str::of((string) $value)->lower()->ascii()->toString();
+        $value = preg_replace('/[^a-z0-9]+/', ' ', $value);
+        $value = trim($value);
+
+        return match (true) {
+            str_contains($value, 's1') || str_contains($value, 'sarjana') => 's1',
+            str_contains($value, 's2') || str_contains($value, 'magister') => 's2',
+            str_contains($value, 's3') || str_contains($value, 'doktor') => 's3',
+            str_contains($value, 'd3') || str_contains($value, 'diploma 3') => 'd3',
+            str_contains($value, 'd4') || str_contains($value, 'diploma 4') => 'd4',
+            str_contains($value, 'profesi') => 'profesi',
+            default => null,
+        };
+    }
+
+    private function normalizeStudyProgramText(string $value): string
+    {
+        $value = Str::of($value)->lower()->ascii()->toString();
+        $value = str_replace(['&', '/', '-', '_'], ' ', $value);
+        $value = preg_replace('/[^a-z0-9\s]+/', ' ', $value);
+        $value = preg_replace('/\b(s1|s2|s3|d3|d4|sarjana|magister|diploma|program|studi)\b/', ' ', $value);
+        $value = preg_replace('/\b(pendidikan\s+profesi|pendidikan|profesi)\b/', ' ', $value);
+        $value = preg_replace('/\bbidan\b/', ' kebidanan ', $value);
+        $value = preg_replace('/\bilmu\b/', ' ', $value);
+        $value = preg_replace('/\s+/', ' ', $value);
+
+        return trim($value);
+    }
+
+    private function studyProgramTokens(string $value): Collection
+    {
+        return collect(explode(' ', $value))
+            ->map(fn ($token) => trim($token))
+            ->filter(fn ($token) => $token !== '' && strlen($token) > 2)
+            ->unique()
+            ->values();
     }
 }
