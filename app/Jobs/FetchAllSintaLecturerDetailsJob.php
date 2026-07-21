@@ -78,16 +78,6 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue, ShouldBeUnique
             return true;
         }
 
-        if ($latestBatch->started_at && $latestBatch->started_at->gt(now()->subMinutes(2))) {
-            Log::warning('[SINTA FETCH ALL] Duplicate fetch-all job skipped because a batch was started recently.', [
-                'batch_id' => $latestBatch->id,
-                'status' => $latestBatch->status,
-                'started_at' => $latestBatch->started_at?->toDateTimeString(),
-            ]);
-
-            return true;
-        }
-
         return false;
     }
 
@@ -143,6 +133,9 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue, ShouldBeUnique
     private function processBatchItems(SintaLecturerFetchBatch $batch, array $statuses): void
     {
         $baseUrl = rtrim((string) config('services.python_scraper.url'), '/');
+
+        $this->requeueSuccessfulItemsWithMissingMergedFiles($batch);
+
         $items = $batch->items()
             ->whereIn('status', $statuses)
             ->orderBy('id')
@@ -229,6 +222,30 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue, ShouldBeUnique
         }
     }
 
+    private function requeueSuccessfulItemsWithMissingMergedFiles(SintaLecturerFetchBatch $batch): void
+    {
+        $items = $batch->items()
+            ->whereIn('status', ['success', 'success_with_warning'])
+            ->get(['id', 'sinta_id', 'status']);
+
+        foreach ($items as $item) {
+            if ($this->mergedDetailFileExists((string) $item->sinta_id)) {
+                continue;
+            }
+
+            $item->update([
+                'status' => 'pending',
+                'warning_message' => 'Merged detail Excel was missing from scripts/output. Item was queued for re-scraping.',
+                'error_message' => null,
+                'finished_at' => null,
+                'import_status' => 'not_ready',
+                'import_error' => null,
+            ]);
+        }
+
+        $this->refreshBatchCounters($batch);
+    }
+
     private function fetchOneLecturerDetail(string $baseUrl, string $sintaId): array
     {
         $streamUrl = $baseUrl . "/api/scrape-detail/{$sintaId}";
@@ -275,8 +292,8 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue, ShouldBeUnique
         if ($success) {
             $downloaded = $this->downloadMergedDetailExcel($baseUrl, $sintaId);
             $logOutput .= $downloaded
-                ? "[LARAVEL QUEUE] merged_data_{$sintaId}.xlsx downloaded successfully.\n"
-                : "[LARAVEL QUEUE] merged_data_{$sintaId}.xlsx could not be downloaded.\n";
+                ? "[LARAVEL QUEUE] merged_data_{$sintaId}.xlsx downloaded and verified successfully.\n"
+                : "[LARAVEL QUEUE] merged_data_{$sintaId}.xlsx could not be downloaded or verified in scripts/output.\n";
         }
 
         return $this->classifyScraperOutput($logOutput, (bool) $success && $downloaded);
@@ -299,9 +316,15 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue, ShouldBeUnique
             mkdir(dirname($excelPath), 0777, true);
         }
 
-        file_put_contents($excelPath, $fileResponse->body());
+        $bytesWritten = file_put_contents($excelPath, $fileResponse->body());
 
-        return true;
+        if ($bytesWritten === false) {
+            Log::error("[SINTA FETCH ALL] Failed to write merged detail Excel file: {$excelPath}");
+
+            return false;
+        }
+
+        return $this->mergedDetailFileExists($sintaId);
     }
 
     private function classifyScraperOutput(string $logOutput, bool $downloaded): array
@@ -323,7 +346,7 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue, ShouldBeUnique
         if (! $downloaded) {
             return [
                 'status' => 'failed',
-                'error_message' => 'Merged detail Excel was not downloaded. The scraper did not finish successfully.',
+                'error_message' => 'Merged detail Excel was not downloaded or verified in scripts/output.',
                 'warning_message' => null,
                 'log_output' => $logOutput,
             ];
@@ -368,6 +391,8 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue, ShouldBeUnique
 
     private function mergedDetailFileExists(string $sintaId): bool
     {
-        return file_exists($this->mergedDetailFilePath($sintaId));
+        $filePath = $this->mergedDetailFilePath($sintaId);
+
+        return file_exists($filePath) && is_file($filePath) && filesize($filePath) > 0;
     }
 }
