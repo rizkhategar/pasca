@@ -3,8 +3,8 @@
 namespace App\Jobs;
 
 use App\Http\Controllers\SmartBulkSintaLecturerController;
+use App\Models\SintaLecturerFetchBatch;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -12,7 +12,7 @@ use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
-class FetchAllSintaLecturerDetailsJob implements ShouldQueue, ShouldBeUnique
+class FetchAllSintaLecturerDetailsJob implements ShouldQueue
 {
     use Dispatchable;
     use InteractsWithQueue;
@@ -25,13 +25,6 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue, ShouldBeUnique
 
     public int $backoff = 10;
 
-    public int $uniqueFor = 86400;
-
-    public function uniqueId(): string
-    {
-        return 'sinta-lecturer-fetch-all';
-    }
-
     public function middleware(): array
     {
         return [(new WithoutOverlapping('sinta-lecturer-fetch-all'))->dontRelease()];
@@ -39,6 +32,11 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue, ShouldBeUnique
 
     public function handle(): void
     {
+        if ($this->hasActiveFetchBatch()) {
+            Log::warning('[SINTA FETCH ALL] Background fetch all job skipped because a batch is already active.');
+            return;
+        }
+
         Log::info('[SINTA FETCH ALL] Background fetch all job started.');
 
         app(SmartBulkSintaLecturerController::class)
@@ -46,5 +44,18 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue, ShouldBeUnique
             ->sendContent();
 
         Log::info('[SINTA FETCH ALL] Background fetch all job finished.');
+    }
+
+    private function hasActiveFetchBatch(): bool
+    {
+        $batch = SintaLecturerFetchBatch::query()->latest('id')->first();
+
+        if (! $batch || ! in_array($batch->status, ['queued', 'running'], true)) {
+            return false;
+        }
+
+        return $batch->items()
+            ->whereIn('status', ['pending', 'processing'])
+            ->exists();
     }
 }
