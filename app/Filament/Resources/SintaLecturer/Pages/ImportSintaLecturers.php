@@ -12,8 +12,6 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
 use Filament\Schemas\Components\Grid;
@@ -65,7 +63,7 @@ class ImportSintaLecturers extends Page implements HasSchemas
                                     ->label('Cari Nama Dosen / SINTA ID')
                                     ->placeholder('Ketik nama atau SINTA ID...')
                                     ->live(debounce: 300)
-                                    ->afterStateUpdated(function (Set $set, Get $get, ?string $state): void {
+                                    ->afterStateUpdated(function ($set, $get, ?string $state): void {
                                         $set('lecturers', $this->getBulkProdiSettingRows(
                                             search: $state,
                                             studyProgramFilter: $get('filter_study_program_id'),
@@ -78,7 +76,7 @@ class ImportSintaLecturers extends Page implements HasSchemas
                                     ->native(false)
                                     ->live()
                                     ->placeholder('Semua program studi')
-                                    ->afterStateUpdated(function (Set $set, Get $get, mixed $state): void {
+                                    ->afterStateUpdated(function ($set, $get, mixed $state): void {
                                         $set('lecturers', $this->getBulkProdiSettingRows(
                                             search: $get('filter_search'),
                                             studyProgramFilter: $state,
@@ -177,7 +175,6 @@ class ImportSintaLecturers extends Page implements HasSchemas
     {
         $totalLecturers = SintaLecturer::query()->count();
         $statusSintaLecturersHtml = "<div style='padding: 0.75rem; border-radius: 0.5rem; background-color: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: #059669; font-weight: 500;'>✅ Total SINTA lecturer records in database: <b>{$totalLecturers}</b></div>";
-
         $programStudis = $this->getStudyProgramOptions();
 
         $routes = [
@@ -505,8 +502,9 @@ class ImportSintaLecturers extends Page implements HasSchemas
     private function saveBulkProdiSettings(array $data): void
     {
         $rows = collect(data_get($data, 'lecturers', []));
+        $userId = auth()->user()?->getAuthIdentifier();
 
-        DB::transaction(function () use ($rows): void {
+        DB::transaction(function () use ($rows, $userId): void {
             foreach ($rows as $row) {
                 $sintaId = preg_replace('/[^0-9]/', '', (string) data_get($row, 'sinta_id'));
 
@@ -532,8 +530,8 @@ class ImportSintaLecturers extends Page implements HasSchemas
                     SintaLecturerStudyProgramSetting::create([
                         'sinta_id' => $sintaId,
                         'study_program_id' => $studyProgramId,
-                        'created_by' => auth()->id(),
-                        'updated_by' => auth()->id(),
+                        'created_by' => $userId,
+                        'updated_by' => $userId,
                     ]);
                 }
             }
