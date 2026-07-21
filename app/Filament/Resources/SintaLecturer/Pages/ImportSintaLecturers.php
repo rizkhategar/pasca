@@ -3,10 +3,15 @@
 namespace App\Filament\Resources\SintaLecturer\Pages;
 
 use App\Filament\Resources\SintaLecturer\SintaLecturerResource;
+use App\Http\Controllers\SmartBulkSintaLecturerController;
 use App\Models\SintaLecturer;
+use App\Models\SintaLecturerStudyProgramSetting;
 use App\Models\StudyProgram;
+use Filament\Actions;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
 use Filament\Schemas\Components\Grid;
@@ -14,6 +19,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Concerns\InteractsWithSchemas;
 use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
 
 class ImportSintaLecturers extends Page implements HasSchemas
@@ -31,6 +37,95 @@ class ImportSintaLecturers extends Page implements HasSchemas
     public function mount(): void
     {
         $this->form->fill();
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            $this->settingProdiFetchAllAction(),
+        ];
+    }
+
+    public function settingProdiFetchAllAction(): Actions\Action
+    {
+        return Actions\Action::make('settingProdiFetchAll')
+            ->label('Setting Prodi Fetch All')
+            ->icon('heroicon-o-academic-cap')
+            ->color('warning')
+            ->modalHeading('Setting Prodi Fetch All')
+            ->modalDescription('Periksa hasil auto-detect program studi dari file merged Excel. Program studi bisa diganti atau dipilih lebih dari satu sebelum disimpan.')
+            ->modalWidth('7xl')
+            ->fillForm(fn (): array => [
+                'lecturers' => $this->getBulkProdiSettingRows(),
+            ])
+            ->form([
+                Repeater::make('lecturers')
+                    ->label('Daftar Dosen Fetch All')
+                    ->schema([
+                        Grid::make(12)
+                            ->schema([
+                                TextInput::make('sinta_id')
+                                    ->label('SINTA ID')
+                                    ->disabled()
+                                    ->dehydrated(true)
+                                    ->columnSpan([
+                                        'default' => 12,
+                                        'md' => 2,
+                                    ]),
+                                TextInput::make('lecturer_name')
+                                    ->label('Nama Dosen')
+                                    ->disabled()
+                                    ->dehydrated(true)
+                                    ->columnSpan([
+                                        'default' => 12,
+                                        'md' => 3,
+                                    ]),
+                                TextInput::make('fetch_status')
+                                    ->label('Status Fetch')
+                                    ->disabled()
+                                    ->dehydrated(true)
+                                    ->columnSpan([
+                                        'default' => 12,
+                                        'md' => 2,
+                                    ]),
+                                TextInput::make('detected_study_program')
+                                    ->label('Prodi Terdeteksi dari Excel')
+                                    ->disabled()
+                                    ->dehydrated(true)
+                                    ->placeholder('Tidak terdeteksi')
+                                    ->columnSpan([
+                                        'default' => 12,
+                                        'md' => 5,
+                                    ]),
+                                Select::make('study_program_ids')
+                                    ->label('Program Studi')
+                                    ->options(fn (): array => $this->getStudyProgramOptions())
+                                    ->multiple()
+                                    ->searchable()
+                                    ->preload()
+                                    ->native(false)
+                                    ->placeholder('Pilih satu atau beberapa program studi')
+                                    ->columnSpan(12),
+                                TextInput::make('setting_status')
+                                    ->label('Status Setting')
+                                    ->disabled()
+                                    ->dehydrated(true)
+                                    ->columnSpan([
+                                        'default' => 12,
+                                        'md' => 3,
+                                    ]),
+                            ]),
+                    ])
+                    ->addable(false)
+                    ->deletable(false)
+                    ->reorderable(false)
+                    ->itemLabel(fn (array $state): ?string => trim(($state['lecturer_name'] ?? 'Dosen') . ' - ' . ($state['sinta_id'] ?? '')))
+                    ->columns(1),
+            ])
+            ->modalSubmitActionLabel('Simpan Setting Prodi')
+            ->action(function (array $data): void {
+                $this->saveBulkProdiSettings($data);
+            });
     }
 
     public function notifyFromBrowser(string $status, string $title, ?string $body = null): void
@@ -56,14 +151,7 @@ class ImportSintaLecturers extends Page implements HasSchemas
         $totalLecturers = SintaLecturer::query()->count();
         $statusSintaLecturersHtml = "<div style='padding: 0.75rem; border-radius: 0.5rem; background-color: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: #059669; font-weight: 500;'>✅ Total SINTA lecturer records in database: <b>{$totalLecturers}</b></div>";
 
-        $programStudis = StudyProgram::query()
-            ->orderBy('jenjang')
-            ->orderBy('nama')
-            ->get()
-            ->mapWithKeys(fn (StudyProgram $program) => [
-                $program->id => $program->display_name,
-            ])
-            ->toArray();
+        $programStudis = $this->getStudyProgramOptions();
 
         $routes = [
             'syncLecturers' => route('scrap.perbaruiDosen'),
@@ -75,8 +163,6 @@ class ImportSintaLecturers extends Page implements HasSchemas
             'retryFailed' => route('scrap.sintaFetchBatches.retryFailed'),
             'reset' => route('scrap.sintaFetchBatches.reset'),
             'importAll' => route('scrap.sintaFetchBatches.importAll'),
-            'settings' => route('scrap.sintaFetchBatches.studyProgramSettings'),
-            'saveSettings' => route('scrap.sintaFetchBatches.saveStudyProgramSettings'),
         ];
 
         $buttonBaseStyle = 'width: 100%; display: inline-flex; align-items: center; justify-content: center; border-radius: 0.5rem; padding: 0.625rem 0.875rem; font-weight: 600; color: #ffffff; border: none; cursor: pointer; margin-top: 0.375rem;';
@@ -90,7 +176,7 @@ class ImportSintaLecturers extends Page implements HasSchemas
             'retry' => '<button type="button" id="btn-retry-failed" style="' . $buttonSecondaryStyle . '">Retry Failed</button>',
             'reset' => '<button type="button" id="btn-reset-batch" style="' . $buttonSecondaryStyle . '">Reset Batch</button>',
             'syncPrograms' => '<button type="button" id="btn-sync-program-studi" style="' . $buttonBaseStyle . ' background-color: #7c3aed;">Sync Study Programs</button>',
-            'settings' => '<button type="button" id="btn-open-prodi-settings" style="' . $buttonBaseStyle . ' background-color: #ea580c;">Setting Prodi Fetch All</button>',
+            'settings' => '<button type="button" wire:click="mountAction(\'settingProdiFetchAll\')" style="' . $buttonBaseStyle . ' background-color: #ea580c;">Setting Prodi Fetch All</button>',
             'importSelected' => '<button type="button" id="btn-import" style="' . $buttonBaseStyle . ' background-color: #16a34a;">Import Selected</button>',
             'importAll' => '<button type="button" id="btn-import-all" style="' . $buttonBaseStyle . ' background-color: #15803d;">Import All to Database</button>',
         ];
@@ -108,10 +194,6 @@ class ImportSintaLecturers extends Page implements HasSchemas
                 const NL = String.fromCharCode(10);
                 const outputBox = document.getElementById('output-box');
                 const terminalContainer = document.getElementById('terminal-container');
-                const prodiModal = document.getElementById('bulk-prodi-modal');
-                const prodiModalBody = document.getElementById('bulk-prodi-modal-body');
-                const prodiSummary = document.getElementById('bulk-prodi-summary');
-                const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
                 const fatalKeywords = ['traceback', 'gagal membuka halaman', 'httperror', 'status: 403', 'status: 404', 'status: 500', 'fatal scraper pattern detected', 'import all is blocked', 'excel file was not found', 'merged detail excel was not downloaded'];
                 const warningKeywords = ['tidak ada publikasi', 'kosong/tidak ditemukan', 'membuat sheet berisi', 'sheet contains', 'empty sheet', 'grafik garuda tidak ditemukan', 'gagal menemukan xaxis', 'gagal menemukan series', 'success_with_warning', 'empty-data warning'];
 
@@ -225,66 +307,6 @@ class ImportSintaLecturers extends Page implements HasSchemas
                     return true;
                 };
 
-                const renderProdiSettings = (payload) => {
-                    const programs = payload.programs || [];
-                    const items = payload.items || [];
-                    const summary = payload.summary || {};
-                    const batch = payload.batch;
-                    prodiSummary.innerHTML = batch
-                        ? 'Batch #' + batch.id + ' | status: <b>' + batch.status + '</b> | ready: <b>' + (summary.ready_count || 0) + '</b> | belum setting: <b>' + (summary.missing_setting_count || 0) + '</b> | gagal: <b>' + (summary.failed_count || 0) + '</b> | belum fetch: <b>' + (summary.unfetched_count || 0) + '</b>'
-                        : 'Belum ada batch fetch. Jalankan Fetch All terlebih dahulu.';
-
-                    if (!items.length) {
-                        prodiModalBody.innerHTML = '<tr><td colspan="5" style="padding:0.75rem;text-align:center;color:#6b7280;">Belum ada data batch fetch.</td></tr>';
-                        return;
-                    }
-
-                    prodiModalBody.innerHTML = items.map((item) => {
-                        const disabled = item.can_set_program ? '' : 'disabled';
-                        const options = programs.map((program) => {
-                            const selected = (item.study_program_ids || []).includes(program.id) ? 'selected' : '';
-                            return '<option value="' + program.id + '" ' + selected + '>' + program.display_name + '</option>';
-                        }).join('');
-                        const statusColor = item.fetch_status === 'failed' ? '#dc2626' : (item.fetch_status === 'success_with_warning' ? '#d97706' : '#16a34a');
-                        return '<tr>'
-                            + '<td style="padding:0.5rem;border-bottom:1px solid #e5e7eb;font-family:monospace;">' + item.sinta_id + '</td>'
-                            + '<td style="padding:0.5rem;border-bottom:1px solid #e5e7eb;">' + (item.lecturer_name || '-') + '</td>'
-                            + '<td style="padding:0.5rem;border-bottom:1px solid #e5e7eb;color:' + statusColor + ';font-weight:700;">' + item.fetch_status + '</td>'
-                            + '<td style="padding:0.5rem;border-bottom:1px solid #e5e7eb;"><select data-sinta-id="' + item.sinta_id + '" multiple ' + disabled + ' style="width:100%;min-width:260px;border:1px solid #d1d5db;border-radius:0.375rem;padding:0.375rem;min-height:84px;">' + options + '</select></td>'
-                            + '<td style="padding:0.5rem;border-bottom:1px solid #e5e7eb;">' + item.setting_status + '</td>'
-                            + '</tr>';
-                    }).join('');
-                };
-
-                const loadProdiSettings = () => {
-                    prodiModal.style.display = 'flex';
-                    prodiModalBody.innerHTML = '<tr><td colspan="5" style="padding:0.75rem;text-align:center;">Loading...</td></tr>';
-                    fetch(routes.settings, { headers: { 'Accept': 'application/json' } })
-                        .then((response) => response.json())
-                        .then(renderProdiSettings)
-                        .catch((error) => notify('danger', 'Failed to load prodi settings', error.message));
-                };
-
-                const saveProdiSettings = () => {
-                    const selects = Array.from(document.querySelectorAll('#bulk-prodi-modal select[data-sinta-id]'));
-                    const settings = selects.map((select) => ({
-                        sinta_id: select.dataset.sintaId,
-                        study_program_ids: Array.from(select.selectedOptions).map((option) => option.value),
-                    }));
-                    fetch(routes.saveSettings, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-                        body: JSON.stringify({ settings }),
-                    })
-                        .then((response) => response.json())
-                        .then((payload) => {
-                            if (!payload.success) throw new Error(payload.message || 'Failed to save settings.');
-                            notify('success', 'Prodi settings saved', payload.message || 'Study program settings have been saved.');
-                            loadProdiSettings();
-                        })
-                        .catch((error) => notify('danger', 'Failed to save prodi settings', error.message));
-                };
-
                 const clickHandler = (event) => {
                     if (event.target.closest('#btn-clear-terminal')) { resetTerminal('Waiting for command...' + NL); return; }
                     if (runButtonStream(event, '#btn-perbarui', routes.syncLecturers, '>>> Starting SINTA lecturer master sync...', 'Sync SINTA Lecturers', 'SINTA lecturers synced', 'SINTA lecturer data has been updated successfully.', 'SINTA lecturer sync failed', true)) return;
@@ -317,47 +339,13 @@ class ImportSintaLecturers extends Page implements HasSchemas
                         resetTerminal('>>> Importing lecturer into lecturers for SINTA ID: ' + sintaId + '...' + NL);
                         toggleLoading(btnImport, true, 'Import Selected');
                         openStream(routes.importSelected.replace(':id', sintaId) + '?jurusan=' + encodeURIComponent(programStudiString), () => toggleLoading(btnImport, false, 'Import Selected'), NL + '[ERROR] Database import stream was interrupted.', 'Lecturer imported', 'The lecturer has been imported into lecturers successfully.', 'Lecturer import failed', () => toggleLoading(btnImport, false, 'Import Selected'));
-                        return;
                     }
-
-                    if (event.target.closest('#btn-open-prodi-settings')) { event.preventDefault(); loadProdiSettings(); return; }
-                    if (event.target.closest('#btn-close-prodi-settings')) { event.preventDefault(); prodiModal.style.display = 'none'; return; }
-                    if (event.target.closest('#btn-save-prodi-settings')) { event.preventDefault(); saveProdiSettings(); }
                 };
 
                 document.addEventListener('click', clickHandler);
                 window.__bulkSintaLecturerImportCleanup = () => document.removeEventListener('click', clickHandler);
                 appendTerminal('\n[INIT] Lecturer import controls are ready.' + NL);
             </textarea>
-
-            <div id="bulk-prodi-modal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
-                <div style="background:#fff;border-radius:0.75rem;box-shadow:0 20px 40px rgba(0,0,0,0.25);width:min(1100px,96vw);max-height:86vh;display:flex;flex-direction:column;overflow:hidden;">
-                    <div style="padding:1rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;gap:1rem;">
-                        <div>
-                            <h3 style="margin:0;font-size:1rem;font-weight:800;color:#111827;">Setting Prodi Fetch All</h3>
-                            <p id="bulk-prodi-summary" style="margin:0.25rem 0 0;color:#4b5563;font-size:0.875rem;">Loading...</p>
-                        </div>
-                        <button type="button" id="btn-close-prodi-settings" style="border:0;background:#f3f4f6;border-radius:0.5rem;padding:0.5rem 0.75rem;cursor:pointer;font-weight:700;">Tutup</button>
-                    </div>
-                    <div style="overflow:auto;padding:1rem;">
-                        <table style="width:100%;border-collapse:collapse;font-size:0.875rem;">
-                            <thead>
-                                <tr style="background:#f9fafb;text-align:left;">
-                                    <th style="padding:0.5rem;border-bottom:1px solid #e5e7eb;">SINTA ID</th>
-                                    <th style="padding:0.5rem;border-bottom:1px solid #e5e7eb;">Nama Dosen</th>
-                                    <th style="padding:0.5rem;border-bottom:1px solid #e5e7eb;">Status Fetch</th>
-                                    <th style="padding:0.5rem;border-bottom:1px solid #e5e7eb;">Program Studi</th>
-                                    <th style="padding:0.5rem;border-bottom:1px solid #e5e7eb;">Status Setting</th>
-                                </tr>
-                            </thead>
-                            <tbody id="bulk-prodi-modal-body"></tbody>
-                        </table>
-                    </div>
-                    <div style="padding:1rem;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;gap:0.75rem;">
-                        <button type="button" id="btn-save-prodi-settings" style="background:#16a34a;color:#fff;border:0;border-radius:0.5rem;padding:0.625rem 1rem;font-weight:700;cursor:pointer;">Simpan Setting Prodi</button>
-                    </div>
-                </div>
-            </div>
 
             <div style="background-color:#0a0a0a;border-radius:0.75rem;border:1px solid #262626;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);display:flex;flex-direction:column;height:450px;overflow:hidden;margin-top:1.5rem;">
                 <div style="background-color:#171717;padding:0.75rem 1rem;border-bottom:1px solid #262626;display:flex;justify-content:space-between;align-items:center;">
@@ -433,6 +421,94 @@ class ImportSintaLecturers extends Page implements HasSchemas
                 Placeholder::make('terminal_sync')->hiddenLabel()->content(new HtmlString($terminalHtml)),
             ])
             ->statePath('data');
+    }
+
+    private function getBulkProdiSettingRows(): array
+    {
+        $response = app(SmartBulkSintaLecturerController::class)->studyProgramSettings();
+        $payload = $response->getData(true);
+
+        if ($response->getStatusCode() >= 400) {
+            Notification::make()
+                ->title('Setting Prodi belum bisa dibuka')
+                ->body(data_get($payload, 'message', 'Jalankan migration dan Fetch All terlebih dahulu.'))
+                ->danger()
+                ->send();
+
+            return [];
+        }
+
+        return collect(data_get($payload, 'items', []))
+            ->map(fn (array $item): array => [
+                'sinta_id' => (string) data_get($item, 'sinta_id', ''),
+                'lecturer_name' => (string) data_get($item, 'lecturer_name', '-'),
+                'fetch_status' => (string) data_get($item, 'fetch_status', '-'),
+                'detected_study_program' => (string) data_get($item, 'detected_study_program', ''),
+                'study_program_ids' => collect(data_get($item, 'study_program_ids', []))
+                    ->map(fn ($id) => (int) $id)
+                    ->filter()
+                    ->values()
+                    ->toArray(),
+                'setting_status' => (string) data_get($item, 'setting_status', 'not_set'),
+            ])
+            ->values()
+            ->toArray();
+    }
+
+    private function saveBulkProdiSettings(array $data): void
+    {
+        $rows = collect(data_get($data, 'lecturers', []));
+
+        DB::transaction(function () use ($rows): void {
+            foreach ($rows as $row) {
+                $sintaId = preg_replace('/[^0-9]/', '', (string) data_get($row, 'sinta_id'));
+
+                if (! $sintaId) {
+                    continue;
+                }
+
+                $selectedStudyProgramIds = collect(data_get($row, 'study_program_ids', []))
+                    ->map(fn ($id) => (int) $id)
+                    ->filter()
+                    ->unique()
+                    ->values();
+
+                $validStudyProgramIds = StudyProgram::query()
+                    ->whereIn('id', $selectedStudyProgramIds)
+                    ->pluck('id')
+                    ->map(fn ($id) => (int) $id)
+                    ->values();
+
+                SintaLecturerStudyProgramSetting::where('sinta_id', $sintaId)->delete();
+
+                foreach ($validStudyProgramIds as $studyProgramId) {
+                    SintaLecturerStudyProgramSetting::create([
+                        'sinta_id' => $sintaId,
+                        'study_program_id' => $studyProgramId,
+                        'created_by' => auth()->id(),
+                        'updated_by' => auth()->id(),
+                    ]);
+                }
+            }
+        });
+
+        Notification::make()
+            ->title('Setting prodi berhasil disimpan')
+            ->body('Mapping program studi untuk batch fetch all sudah diperbarui.')
+            ->success()
+            ->send();
+    }
+
+    private function getStudyProgramOptions(): array
+    {
+        return StudyProgram::query()
+            ->orderBy('jenjang')
+            ->orderBy('nama')
+            ->get()
+            ->mapWithKeys(fn (StudyProgram $program) => [
+                $program->id => $program->display_name,
+            ])
+            ->toArray();
     }
 
     private function getSintaLecturerOptions(?string $search = null): array
