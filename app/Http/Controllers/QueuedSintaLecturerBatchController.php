@@ -92,6 +92,14 @@ class QueuedSintaLecturerBatchController extends Controller
                 return;
             }
 
+            if ($summary['missing_output_file_count'] > 0) {
+                $this->stream([
+                    'output' => "<span class='text-danger-500'>[ERROR]</span> Import All is blocked because {$summary['missing_output_file_count']} merged Excel file(s) are missing from scripts/output. Run Fetch All again first.\n",
+                    'done' => true,
+                ]);
+                return;
+            }
+
             if ($summary['missing_setting_count'] > 0) {
                 $this->stream([
                     'output' => "<span class='text-danger-500'>[ERROR]</span> Import All is blocked because {$summary['missing_setting_count']} lecturer(s) do not have study program settings. Open Setting Prodi Fetch All first.\n",
@@ -174,6 +182,7 @@ class QueuedSintaLecturerBatchController extends Controller
             ->reverse()
             ->values();
 
+        $summary = $this->batchReadinessSummary($batch);
         $isFetchActive = $this->batchHasActiveFetchWork($batch, $fetchCounts);
 
         return response()->json([
@@ -201,7 +210,7 @@ class QueuedSintaLecturerBatchController extends Controller
             'recent_fetch_items' => $recentFetchItems
                 ->map(fn (SintaLecturerFetchBatchItem $item): array => $this->fetchProgressItemPayload($item))
                 ->values(),
-            'summary' => $this->batchReadinessSummary($batch),
+            'summary' => $summary,
         ]);
     }
 
@@ -209,13 +218,17 @@ class QueuedSintaLecturerBatchController extends Controller
     {
         $sintaId = (string) $item->sinta_id;
         $isCompleted = in_array($item->status, ['success', 'success_with_warning'], true);
+        $outputFile = "merged_data_{$sintaId}.xlsx";
+        $outputFileExists = $isCompleted && $this->mergedDetailFileExists($sintaId);
 
         return [
             'id' => $item->id,
             'sinta_id' => $sintaId,
             'lecturer_name' => $item->lecturer_name,
             'status' => $item->status,
-            'output_file' => $isCompleted ? "merged_data_{$sintaId}.xlsx" : null,
+            'output_file' => $isCompleted ? $outputFile : null,
+            'output_file_exists' => $outputFileExists,
+            'output_file_path' => $isCompleted ? "scripts/output/{$outputFile}" : null,
             'warning_message' => $item->warning_message,
             'error_message' => $item->error_message,
             'started_at' => optional($item->started_at)->toDateTimeString(),
@@ -285,20 +298,36 @@ class QueuedSintaLecturerBatchController extends Controller
     {
         $batchItemIds = $batch->items()->pluck('sinta_id')->filter()->values();
         $currentMasterIds = SintaLecturer::query()->pluck('sinta_id')->filter()->values();
-        $successItems = $batch->items()->whereIn('status', ['success', 'success_with_warning'])->get();
+        $successItems = $batch->items()->whereIn('status', ['success', 'success_with_warning'])->get(['sinta_id']);
         $settingIds = SintaLecturerStudyProgramSetting::query()
             ->whereIn('sinta_id', $successItems->pluck('sinta_id'))
             ->pluck('sinta_id')
             ->unique();
+        $missingOutputFileCount = $successItems
+            ->filter(fn (SintaLecturerFetchBatchItem $item): bool => ! $this->mergedDetailFileExists((string) $item->sinta_id))
+            ->count();
 
         return [
             'ready_count' => $successItems->filter(fn ($item) => $settingIds->contains($item->sinta_id))->count(),
             'missing_setting_count' => $successItems->reject(fn ($item) => $settingIds->contains($item->sinta_id))->count(),
+            'missing_output_file_count' => $missingOutputFileCount,
             'failed_count' => $batch->items()->where('status', 'failed')->count(),
             'pending_count' => $batch->items()->where('status', 'pending')->count(),
             'processing_count' => $batch->items()->where('status', 'processing')->count(),
             'unfetched_count' => $currentMasterIds->diff($batchItemIds)->count(),
         ];
+    }
+
+    private function mergedDetailFilePath(string $sintaId): string
+    {
+        return base_path("scripts/output/merged_data_{$sintaId}.xlsx");
+    }
+
+    private function mergedDetailFileExists(string $sintaId): bool
+    {
+        $filePath = $this->mergedDetailFilePath($sintaId);
+
+        return file_exists($filePath) && is_file($filePath) && filesize($filePath) > 0;
     }
 
     private function batchTablesReady(): bool
