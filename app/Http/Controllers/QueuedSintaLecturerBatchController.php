@@ -9,7 +9,6 @@ use App\Models\SintaLecturerFetchBatch;
 use App\Models\SintaLecturerFetchBatchItem;
 use App\Models\SintaLecturerStudyProgramSetting;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -31,14 +30,6 @@ class QueuedSintaLecturerBatchController extends Controller
             if ($this->hasActiveFetchBatch()) {
                 $this->stream([
                     'output' => "<span class='text-warning-500'>[QUEUE]</span> A fetch-all batch is already running or waiting. Do not start another one. Check progress or wait until it finishes.\n",
-                    'done' => true,
-                ]);
-                return;
-            }
-
-            if (! Cache::add('sinta_lecturer_fetch_all_dispatch_lock', true, now()->addMinutes(2))) {
-                $this->stream([
-                    'output' => "<span class='text-warning-500'>[QUEUE]</span> Fetch-all dispatch is already queued. Please wait a moment.\n",
                     'done' => true,
                 ]);
                 return;
@@ -318,6 +309,13 @@ class QueuedSintaLecturerBatchController extends Controller
         ];
     }
 
+    private function batchTablesReady(): bool
+    {
+        return Schema::hasTable('sinta_lecturer_fetch_batches')
+            && Schema::hasTable('sinta_lecturer_fetch_batch_items')
+            && Schema::hasTable('sinta_lecturer_study_program_settings');
+    }
+
     private function mergedDetailFilePath(string $sintaId): string
     {
         return base_path("scripts/output/merged_data_{$sintaId}.xlsx");
@@ -325,15 +323,6 @@ class QueuedSintaLecturerBatchController extends Controller
 
     private function mergedDetailFileExists(string $sintaId): bool
     {
-        $filePath = $this->mergedDetailFilePath($sintaId);
-
-        return file_exists($filePath) && is_file($filePath) && filesize($filePath) > 0;
-    }
-
-    private function batchTablesReady(): bool
-    {
-        return Schema::hasTable('sinta_lecturer_fetch_batches')
-            && Schema::hasTable('sinta_lecturer_fetch_batch_items')
-            && Schema::hasTable('sinta_lecturer_study_program_settings');
+        return file_exists($this->mergedDetailFilePath($sintaId));
     }
 }
