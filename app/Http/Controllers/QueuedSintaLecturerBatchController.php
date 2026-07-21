@@ -113,7 +113,7 @@ class QueuedSintaLecturerBatchController extends Controller
                     'import_error' => null,
                 ]);
 
-            ImportAllSintaLecturersJob::dispatch();
+            ImportAllSintaLecturersJob::dispatch((int) $batch->id);
 
             $this->stream([
                 'output' => "<span class='text-success-400 font-bold'>[QUEUED]</span> Import All is now running in background queue. You may leave or refresh this page. Run <b>php artisan queue:work</b> if no progress appears.\n",
