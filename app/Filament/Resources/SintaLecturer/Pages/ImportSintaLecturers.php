@@ -98,7 +98,238 @@ class ImportSintaLecturers extends Page implements HasSchemas
         $routesJson = json_encode($routes, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
 
         $terminalHtml = <<<'HTML'
-        <div wire:ignore>
+        <div wire:ignore x-data x-init="new Function('livewire', $refs.runner.value)($wire)">
+            <textarea x-ref="runner" hidden>
+                if (window.__bulkSintaLecturerImportCleanup) {
+                    window.__bulkSintaLecturerImportCleanup();
+                }
+
+                const routes = __ROUTES_JSON__;
+                const NL = String.fromCharCode(10);
+                const outputBox = document.getElementById('output-box');
+                const terminalContainer = document.getElementById('terminal-container');
+                const prodiModal = document.getElementById('bulk-prodi-modal');
+                const prodiModalBody = document.getElementById('bulk-prodi-modal-body');
+                const prodiSummary = document.getElementById('bulk-prodi-summary');
+                const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
+                const fatalKeywords = ['traceback', 'gagal membuka halaman', 'httperror', 'status: 403', 'status: 404', 'status: 500', 'fatal scraper pattern detected', 'import all is blocked', 'excel file was not found', 'merged detail excel was not downloaded'];
+                const warningKeywords = ['tidak ada publikasi', 'kosong/tidak ditemukan', 'membuat sheet berisi', 'sheet contains', 'empty sheet', 'grafik garuda tidak ditemukan', 'gagal menemukan xaxis', 'gagal menemukan series', 'success_with_warning', 'empty-data warning'];
+
+                const appendTerminal = (text) => {
+                    if (!outputBox || !terminalContainer) return;
+                    outputBox.innerHTML += text;
+                    terminalContainer.scrollTop = terminalContainer.scrollHeight;
+                };
+
+                const resetTerminal = (text) => {
+                    if (!outputBox) return;
+                    outputBox.innerHTML = text;
+                    if (terminalContainer) terminalContainer.scrollTop = terminalContainer.scrollHeight;
+                };
+
+                const notify = (status, title, body = '') => {
+                    if (livewire && typeof livewire.call === 'function') {
+                        livewire.call('notifyFromBrowser', status, title, body);
+                    }
+                };
+
+                const stripHtml = (value) => String(value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+
+                const getState = (path) => {
+                    try {
+                        if (livewire && typeof livewire.get === 'function') {
+                            return livewire.get(path);
+                        }
+                    } catch (error) {
+                        return null;
+                    }
+
+                    return null;
+                };
+
+                const normalizeStateValue = (value) => {
+                    if (Array.isArray(value)) {
+                        return value.filter((item) => item !== null && item !== undefined && String(item).trim() !== '');
+                    }
+
+                    if (value === null || value === undefined) {
+                        return '';
+                    }
+
+                    return String(value).trim();
+                };
+
+                const getSelectedSintaId = () => normalizeStateValue(getState('data.sinta_id'));
+                const getSelectedStudyPrograms = () => normalizeStateValue(getState('data.program_studi'));
+
+                const toggleLoading = (button, isLoading, originalText) => {
+                    if (!button) return;
+                    button.disabled = isLoading;
+                    button.innerText = isLoading ? '⏳ Processing...' : originalText;
+                    button.style.opacity = isLoading ? '0.5' : '1';
+                };
+
+                const notifyFromOutput = (streamOutput, successTitle, successBody, errorTitle) => {
+                    const plainText = stripHtml(streamOutput);
+                    const normalized = plainText.toLowerCase();
+                    if (fatalKeywords.some((keyword) => normalized.includes(keyword))) {
+                        notify('danger', errorTitle, plainText.slice(0, 240) || 'The process failed.');
+                        return;
+                    }
+                    if (warningKeywords.some((keyword) => normalized.includes(keyword))) {
+                        notify('warning', successTitle + ' with warnings', 'The process finished, but some modules were empty. This is allowed.');
+                        return;
+                    }
+                    notify('success', successTitle, successBody);
+                };
+
+                const openStream = (url, onDone, errorText, successTitle, successBody, errorTitle, onError = null) => {
+                    let streamOutput = '';
+                    appendTerminal('[SSE] Opening connection: ' + url + NL);
+                    const eventSource = new EventSource(url);
+                    eventSource.onmessage = (event) => {
+                        try {
+                            const data = JSON.parse(event.data);
+                            if (data.output) {
+                                streamOutput += data.output + NL;
+                                appendTerminal(data.output);
+                            }
+                            if (data.done) {
+                                eventSource.close();
+                                notifyFromOutput(streamOutput, successTitle, successBody, errorTitle);
+                                if (onDone) onDone();
+                            }
+                        } catch (error) {
+                            appendTerminal(NL + '[ERROR] Failed to parse stream response: ' + error.message + NL);
+                            notify('danger', 'Failed to parse stream response', error.message);
+                        }
+                    };
+                    eventSource.onerror = () => {
+                        eventSource.close();
+                        appendTerminal(errorText + NL);
+                        notify('danger', errorTitle, stripHtml(errorText));
+                        if (onError) onError();
+                    };
+                };
+
+                const runButtonStream = (event, selector, url, terminalText, originalText, successTitle, successBody, errorTitle, reloadAfter = false) => {
+                    const button = event.target.closest(selector);
+                    if (!button) return false;
+                    event.preventDefault();
+                    resetTerminal(terminalText + NL + NL);
+                    toggleLoading(button, true, originalText);
+                    openStream(url, () => {
+                        toggleLoading(button, false, originalText);
+                        if (reloadAfter) setTimeout(() => window.location.reload(), 1500);
+                    }, NL + '[ERROR] Stream connection was interrupted. Check Laravel logs.', successTitle, successBody, errorTitle, () => toggleLoading(button, false, originalText));
+                    return true;
+                };
+
+                const renderProdiSettings = (payload) => {
+                    const programs = payload.programs || [];
+                    const items = payload.items || [];
+                    const summary = payload.summary || {};
+                    const batch = payload.batch;
+                    prodiSummary.innerHTML = batch
+                        ? 'Batch #' + batch.id + ' | status: <b>' + batch.status + '</b> | ready: <b>' + (summary.ready_count || 0) + '</b> | belum setting: <b>' + (summary.missing_setting_count || 0) + '</b> | gagal: <b>' + (summary.failed_count || 0) + '</b> | belum fetch: <b>' + (summary.unfetched_count || 0) + '</b>'
+                        : 'Belum ada batch fetch. Jalankan Fetch All terlebih dahulu.';
+
+                    if (!items.length) {
+                        prodiModalBody.innerHTML = '<tr><td colspan="5" style="padding:0.75rem;text-align:center;color:#6b7280;">Belum ada data batch fetch.</td></tr>';
+                        return;
+                    }
+
+                    prodiModalBody.innerHTML = items.map((item) => {
+                        const disabled = item.can_set_program ? '' : 'disabled';
+                        const options = programs.map((program) => {
+                            const selected = (item.study_program_ids || []).includes(program.id) ? 'selected' : '';
+                            return '<option value="' + program.id + '" ' + selected + '>' + program.display_name + '</option>';
+                        }).join('');
+                        const statusColor = item.fetch_status === 'failed' ? '#dc2626' : (item.fetch_status === 'success_with_warning' ? '#d97706' : '#16a34a');
+                        return '<tr>'
+                            + '<td style="padding:0.5rem;border-bottom:1px solid #e5e7eb;font-family:monospace;">' + item.sinta_id + '</td>'
+                            + '<td style="padding:0.5rem;border-bottom:1px solid #e5e7eb;">' + (item.lecturer_name || '-') + '</td>'
+                            + '<td style="padding:0.5rem;border-bottom:1px solid #e5e7eb;color:' + statusColor + ';font-weight:700;">' + item.fetch_status + '</td>'
+                            + '<td style="padding:0.5rem;border-bottom:1px solid #e5e7eb;"><select data-sinta-id="' + item.sinta_id + '" multiple ' + disabled + ' style="width:100%;min-width:260px;border:1px solid #d1d5db;border-radius:0.375rem;padding:0.375rem;min-height:84px;">' + options + '</select></td>'
+                            + '<td style="padding:0.5rem;border-bottom:1px solid #e5e7eb;">' + item.setting_status + '</td>'
+                            + '</tr>';
+                    }).join('');
+                };
+
+                const loadProdiSettings = () => {
+                    prodiModal.style.display = 'flex';
+                    prodiModalBody.innerHTML = '<tr><td colspan="5" style="padding:0.75rem;text-align:center;">Loading...</td></tr>';
+                    fetch(routes.settings, { headers: { 'Accept': 'application/json' } })
+                        .then((response) => response.json())
+                        .then(renderProdiSettings)
+                        .catch((error) => notify('danger', 'Failed to load prodi settings', error.message));
+                };
+
+                const saveProdiSettings = () => {
+                    const selects = Array.from(document.querySelectorAll('#bulk-prodi-modal select[data-sinta-id]'));
+                    const settings = selects.map((select) => ({
+                        sinta_id: select.dataset.sintaId,
+                        study_program_ids: Array.from(select.selectedOptions).map((option) => option.value),
+                    }));
+                    fetch(routes.saveSettings, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                        body: JSON.stringify({ settings }),
+                    })
+                        .then((response) => response.json())
+                        .then((payload) => {
+                            if (!payload.success) throw new Error(payload.message || 'Failed to save settings.');
+                            notify('success', 'Prodi settings saved', payload.message || 'Study program settings have been saved.');
+                            loadProdiSettings();
+                        })
+                        .catch((error) => notify('danger', 'Failed to save prodi settings', error.message));
+                };
+
+                const clickHandler = (event) => {
+                    if (event.target.closest('#btn-clear-terminal')) { resetTerminal('Waiting for command...' + NL); return; }
+                    if (runButtonStream(event, '#btn-perbarui', routes.syncLecturers, '>>> Starting SINTA lecturer master sync...', 'Sync SINTA Lecturers', 'SINTA lecturers synced', 'SINTA lecturer data has been updated successfully.', 'SINTA lecturer sync failed', true)) return;
+                    if (runButtonStream(event, '#btn-fetch-all-details', routes.fetchAll, '>>> Starting bulk fetch for all registered lecturers...', 'Fetch All Registered Lecturers', 'Bulk fetch finished', 'All available lecturers were processed.', 'Bulk fetch failed')) return;
+                    if (runButtonStream(event, '#btn-resume-fetch', routes.resume, '>>> Resuming latest lecturer fetch batch...', 'Resume Fetch', 'Fetch batch resumed', 'The latest pending batch was processed.', 'Resume fetch failed')) return;
+                    if (runButtonStream(event, '#btn-retry-failed', routes.retryFailed, '>>> Retrying failed lecturer fetch items...', 'Retry Failed', 'Failed items retried', 'Failed lecturers were processed again.', 'Retry failed')) return;
+                    if (runButtonStream(event, '#btn-reset-batch', routes.reset, '>>> Resetting latest lecturer fetch batch...', 'Reset Batch', 'Batch reset', 'The latest batch was cancelled.', 'Reset batch failed')) return;
+                    if (runButtonStream(event, '#btn-import-all', routes.importAll, '>>> Starting Import All to Database...', 'Import All to Database', 'Import All finished', 'All ready lecturers have been imported.', 'Import All failed')) return;
+                    if (runButtonStream(event, '#btn-sync-program-studi', routes.syncPrograms, '>>> Starting study program sync from UNW API...', 'Sync Study Programs', 'Study programs synced', 'All study programs have been synced successfully.', 'Study program sync failed', true)) return;
+
+                    const btnAmbilDetail = event.target.closest('#btn-ambil-detail');
+                    if (btnAmbilDetail) {
+                        event.preventDefault();
+                        const sintaId = getSelectedSintaId();
+                        if (!sintaId) { notify('warning', 'Lecturer not selected', 'Please select a lecturer first.'); return; }
+                        resetTerminal('>>> Fetching SINTA detail modules for ID: ' + sintaId + '...' + NL + NL);
+                        toggleLoading(btnAmbilDetail, true, 'Fetch Selected Lecturer');
+                        openStream(routes.fetchSelected.replace(':id', sintaId), () => toggleLoading(btnAmbilDetail, false, 'Fetch Selected Lecturer'), NL + '[ERROR] Detail extraction was interrupted.', 'SINTA detail fetched', 'The lecturer detail Excel file has been generated successfully.', 'Failed to fetch SINTA detail', () => toggleLoading(btnAmbilDetail, false, 'Fetch Selected Lecturer'));
+                        return;
+                    }
+
+                    const btnImport = event.target.closest('#btn-import');
+                    if (btnImport) {
+                        event.preventDefault();
+                        const sintaId = getSelectedSintaId();
+                        const programStudi = getSelectedStudyPrograms();
+                        if (!sintaId) { notify('warning', 'SINTA ID was not found', 'Please select a lecturer in Step 2.'); return; }
+                        if (!programStudi || (Array.isArray(programStudi) && programStudi.length === 0)) { notify('warning', 'Study program is required', 'Please select at least one Study Program.'); return; }
+                        const programStudiString = Array.isArray(programStudi) ? programStudi.join(',') : programStudi;
+                        resetTerminal('>>> Importing lecturer into lecturers for SINTA ID: ' + sintaId + '...' + NL);
+                        toggleLoading(btnImport, true, 'Import Selected');
+                        openStream(routes.importSelected.replace(':id', sintaId) + '?jurusan=' + encodeURIComponent(programStudiString), () => toggleLoading(btnImport, false, 'Import Selected'), NL + '[ERROR] Database import stream was interrupted.', 'Lecturer imported', 'The lecturer has been imported into lecturers successfully.', 'Lecturer import failed', () => toggleLoading(btnImport, false, 'Import Selected'));
+                        return;
+                    }
+
+                    if (event.target.closest('#btn-open-prodi-settings')) { event.preventDefault(); loadProdiSettings(); return; }
+                    if (event.target.closest('#btn-close-prodi-settings')) { event.preventDefault(); prodiModal.style.display = 'none'; return; }
+                    if (event.target.closest('#btn-save-prodi-settings')) { event.preventDefault(); saveProdiSettings(); }
+                };
+
+                document.addEventListener('click', clickHandler);
+                window.__bulkSintaLecturerImportCleanup = () => document.removeEventListener('click', clickHandler);
+                appendTerminal('\n[INIT] Lecturer import controls are ready.' + NL);
+            </textarea>
+
             <div id="bulk-prodi-modal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
                 <div style="background:#fff;border-radius:0.75rem;box-shadow:0 20px 40px rgba(0,0,0,0.25);width:min(1100px,96vw);max-height:86vh;display:flex;flex-direction:column;overflow:hidden;">
                     <div style="padding:1rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;gap:1rem;">
@@ -137,209 +368,6 @@ class ImportSintaLecturers extends Page implements HasSchemas
                     <pre id="output-box" style="color:#4ade80;margin:0;white-space:pre-wrap;word-break:break-all;font-family:ui-monospace,monospace;font-size:0.875rem;line-height:1.5;">Waiting for command...</pre>
                 </div>
             </div>
-
-            <script>
-                document.addEventListener('DOMContentLoaded', function () {
-                    if (window.__bulkSintaLecturerImportInitialized) return;
-                    window.__bulkSintaLecturerImportInitialized = true;
-
-                    const routes = __ROUTES_JSON__;
-                    const NL = String.fromCharCode(10);
-                    const livewireElement = document.querySelector('[wire\\:id]');
-                    const livewire = livewireElement && window.Livewire ? window.Livewire.find(livewireElement.getAttribute('wire:id')) : null;
-                    const outputBox = document.getElementById('output-box');
-                    const terminalContainer = document.getElementById('terminal-container');
-                    const prodiModal = document.getElementById('bulk-prodi-modal');
-                    const prodiModalBody = document.getElementById('bulk-prodi-modal-body');
-                    const prodiSummary = document.getElementById('bulk-prodi-summary');
-                    const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
-                    const fatalKeywords = ['traceback', 'gagal membuka halaman', 'httperror', 'status: 403', 'status: 404', 'status: 500', 'fatal scraper pattern detected', 'import all is blocked', 'excel file was not found', 'merged detail excel was not downloaded'];
-                    const warningKeywords = ['tidak ada publikasi', 'kosong/tidak ditemukan', 'membuat sheet berisi', 'sheet contains', 'empty sheet', 'grafik garuda tidak ditemukan', 'gagal menemukan xaxis', 'gagal menemukan series', 'success_with_warning', 'empty-data warning'];
-
-                    const appendTerminal = (text) => {
-                        if (!outputBox || !terminalContainer) return;
-                        outputBox.innerHTML += text;
-                        terminalContainer.scrollTop = terminalContainer.scrollHeight;
-                    };
-
-                    const resetTerminal = (text) => {
-                        if (!outputBox) return;
-                        outputBox.innerHTML = text;
-                        if (terminalContainer) terminalContainer.scrollTop = terminalContainer.scrollHeight;
-                    };
-
-                    const notify = (status, title, body = '') => {
-                        if (livewire && typeof livewire.call === 'function') {
-                            livewire.call('notifyFromBrowser', status, title, body);
-                        }
-                    };
-
-                    const stripHtml = (value) => String(value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-
-                    const toggleLoading = (button, isLoading, originalText) => {
-                        if (!button) return;
-                        button.disabled = isLoading;
-                        button.innerText = isLoading ? '⏳ Processing...' : originalText;
-                        button.style.opacity = isLoading ? '0.5' : '1';
-                    };
-
-                    const notifyFromOutput = (streamOutput, successTitle, successBody, errorTitle) => {
-                        const plainText = stripHtml(streamOutput);
-                        const normalized = plainText.toLowerCase();
-                        if (fatalKeywords.some((keyword) => normalized.includes(keyword))) {
-                            notify('danger', errorTitle, plainText.slice(0, 240) || 'The process failed.');
-                            return;
-                        }
-                        if (warningKeywords.some((keyword) => normalized.includes(keyword))) {
-                            notify('warning', successTitle + ' with warnings', 'The process finished, but some modules were empty. This is allowed.');
-                            return;
-                        }
-                        notify('success', successTitle, successBody);
-                    };
-
-                    const openStream = (url, onDone, errorText, successTitle, successBody, errorTitle, onError = null) => {
-                        let streamOutput = '';
-                        appendTerminal('[SSE] Opening connection: ' + url + NL);
-                        const eventSource = new EventSource(url);
-                        eventSource.onmessage = (event) => {
-                            try {
-                                const data = JSON.parse(event.data);
-                                if (data.output) {
-                                    streamOutput += data.output + NL;
-                                    appendTerminal(data.output);
-                                }
-                                if (data.done) {
-                                    eventSource.close();
-                                    notifyFromOutput(streamOutput, successTitle, successBody, errorTitle);
-                                    if (onDone) onDone();
-                                }
-                            } catch (error) {
-                                appendTerminal(NL + '[ERROR] Failed to parse stream response: ' + error.message + NL);
-                                notify('danger', 'Failed to parse stream response', error.message);
-                            }
-                        };
-                        eventSource.onerror = () => {
-                            eventSource.close();
-                            appendTerminal(errorText + NL);
-                            notify('danger', errorTitle, stripHtml(errorText));
-                            if (onError) onError();
-                        };
-                    };
-
-                    const runButtonStream = (event, selector, url, terminalText, originalText, successTitle, successBody, errorTitle, reloadAfter = false) => {
-                        const button = event.target.closest(selector);
-                        if (!button) return false;
-                        event.preventDefault();
-                        resetTerminal(terminalText + NL + NL);
-                        toggleLoading(button, true, originalText);
-                        openStream(url, () => {
-                            toggleLoading(button, false, originalText);
-                            if (reloadAfter) setTimeout(() => window.location.reload(), 1500);
-                        }, NL + '[ERROR] Stream connection was interrupted. Check Laravel logs.', successTitle, successBody, errorTitle, () => toggleLoading(button, false, originalText));
-                        return true;
-                    };
-
-                    const renderProdiSettings = (payload) => {
-                        const programs = payload.programs || [];
-                        const items = payload.items || [];
-                        const summary = payload.summary || {};
-                        const batch = payload.batch;
-                        prodiSummary.innerHTML = batch
-                            ? 'Batch #' + batch.id + ' | status: <b>' + batch.status + '</b> | ready: <b>' + (summary.ready_count || 0) + '</b> | belum setting: <b>' + (summary.missing_setting_count || 0) + '</b> | gagal: <b>' + (summary.failed_count || 0) + '</b> | belum fetch: <b>' + (summary.unfetched_count || 0) + '</b>'
-                            : 'Belum ada batch fetch. Jalankan Fetch All terlebih dahulu.';
-
-                        if (!items.length) {
-                            prodiModalBody.innerHTML = '<tr><td colspan="5" style="padding:0.75rem;text-align:center;color:#6b7280;">Belum ada data batch fetch.</td></tr>';
-                            return;
-                        }
-
-                        prodiModalBody.innerHTML = items.map((item) => {
-                            const disabled = item.can_set_program ? '' : 'disabled';
-                            const options = programs.map((program) => {
-                                const selected = (item.study_program_ids || []).includes(program.id) ? 'selected' : '';
-                                return '<option value="' + program.id + '" ' + selected + '>' + program.display_name + '</option>';
-                            }).join('');
-                            const statusColor = item.fetch_status === 'failed' ? '#dc2626' : (item.fetch_status === 'success_with_warning' ? '#d97706' : '#16a34a');
-                            return '<tr>'
-                                + '<td style="padding:0.5rem;border-bottom:1px solid #e5e7eb;font-family:monospace;">' + item.sinta_id + '</td>'
-                                + '<td style="padding:0.5rem;border-bottom:1px solid #e5e7eb;">' + (item.lecturer_name || '-') + '</td>'
-                                + '<td style="padding:0.5rem;border-bottom:1px solid #e5e7eb;color:' + statusColor + ';font-weight:700;">' + item.fetch_status + '</td>'
-                                + '<td style="padding:0.5rem;border-bottom:1px solid #e5e7eb;"><select data-sinta-id="' + item.sinta_id + '" multiple ' + disabled + ' style="width:100%;min-width:260px;border:1px solid #d1d5db;border-radius:0.375rem;padding:0.375rem;min-height:84px;">' + options + '</select></td>'
-                                + '<td style="padding:0.5rem;border-bottom:1px solid #e5e7eb;">' + item.setting_status + '</td>'
-                                + '</tr>';
-                        }).join('');
-                    };
-
-                    const loadProdiSettings = () => {
-                        prodiModal.style.display = 'flex';
-                        prodiModalBody.innerHTML = '<tr><td colspan="5" style="padding:0.75rem;text-align:center;">Loading...</td></tr>';
-                        fetch(routes.settings, { headers: { 'Accept': 'application/json' } })
-                            .then((response) => response.json())
-                            .then(renderProdiSettings)
-                            .catch((error) => notify('danger', 'Failed to load prodi settings', error.message));
-                    };
-
-                    const saveProdiSettings = () => {
-                        const selects = Array.from(document.querySelectorAll('#bulk-prodi-modal select[data-sinta-id]'));
-                        const settings = selects.map((select) => ({
-                            sinta_id: select.dataset.sintaId,
-                            study_program_ids: Array.from(select.selectedOptions).map((option) => option.value),
-                        }));
-                        fetch(routes.saveSettings, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-                            body: JSON.stringify({ settings }),
-                        })
-                            .then((response) => response.json())
-                            .then((payload) => {
-                                if (!payload.success) throw new Error(payload.message || 'Failed to save settings.');
-                                notify('success', 'Prodi settings saved', payload.message || 'Study program settings have been saved.');
-                                loadProdiSettings();
-                            })
-                            .catch((error) => notify('danger', 'Failed to save prodi settings', error.message));
-                    };
-
-                    document.addEventListener('click', (event) => {
-                        if (event.target.closest('#btn-clear-terminal')) { resetTerminal('Waiting for command...' + NL); return; }
-                        if (runButtonStream(event, '#btn-perbarui', routes.syncLecturers, '>>> Starting SINTA lecturer master sync...', 'Sync SINTA Lecturers', 'SINTA lecturers synced', 'SINTA lecturer data has been updated successfully.', 'SINTA lecturer sync failed', true)) return;
-                        if (runButtonStream(event, '#btn-fetch-all-details', routes.fetchAll, '>>> Starting bulk fetch for all registered lecturers...', 'Fetch All Registered Lecturers', 'Bulk fetch finished', 'All available lecturers were processed.', 'Bulk fetch failed')) return;
-                        if (runButtonStream(event, '#btn-resume-fetch', routes.resume, '>>> Resuming latest lecturer fetch batch...', 'Resume Fetch', 'Fetch batch resumed', 'The latest pending batch was processed.', 'Resume fetch failed')) return;
-                        if (runButtonStream(event, '#btn-retry-failed', routes.retryFailed, '>>> Retrying failed lecturer fetch items...', 'Retry Failed', 'Failed items retried', 'Failed lecturers were processed again.', 'Retry failed')) return;
-                        if (runButtonStream(event, '#btn-reset-batch', routes.reset, '>>> Resetting latest lecturer fetch batch...', 'Reset Batch', 'Batch reset', 'The latest batch was cancelled.', 'Reset batch failed')) return;
-                        if (runButtonStream(event, '#btn-import-all', routes.importAll, '>>> Starting Import All to Database...', 'Import All to Database', 'Import All finished', 'All ready lecturers have been imported.', 'Import All failed')) return;
-                        if (runButtonStream(event, '#btn-sync-program-studi', routes.syncPrograms, '>>> Starting study program sync from UNW API...', 'Sync Study Programs', 'Study programs synced', 'All study programs have been synced successfully.', 'Study program sync failed', true)) return;
-
-                        const btnAmbilDetail = event.target.closest('#btn-ambil-detail');
-                        if (btnAmbilDetail) {
-                            event.preventDefault();
-                            const sintaId = livewire?.get('data.sinta_id');
-                            if (!sintaId) { notify('warning', 'Lecturer not selected', 'Please select a lecturer first.'); return; }
-                            resetTerminal('>>> Fetching SINTA detail modules for ID: ' + sintaId + '...' + NL + NL);
-                            toggleLoading(btnAmbilDetail, true, 'Fetch Selected Lecturer');
-                            openStream(routes.fetchSelected.replace(':id', sintaId), () => toggleLoading(btnAmbilDetail, false, 'Fetch Selected Lecturer'), NL + '[ERROR] Detail extraction was interrupted.', 'SINTA detail fetched', 'The lecturer detail Excel file has been generated successfully.', 'Failed to fetch SINTA detail', () => toggleLoading(btnAmbilDetail, false, 'Fetch Selected Lecturer'));
-                            return;
-                        }
-
-                        const btnImport = event.target.closest('#btn-import');
-                        if (btnImport) {
-                            event.preventDefault();
-                            const sintaId = livewire?.get('data.sinta_id');
-                            const programStudi = livewire?.get('data.program_studi');
-                            if (!sintaId) { notify('warning', 'SINTA ID was not found', 'Please select a lecturer in Step 2.'); return; }
-                            if (!programStudi || (Array.isArray(programStudi) && programStudi.length === 0)) { notify('warning', 'Study program is required', 'Please select at least one Study Program.'); return; }
-                            const programStudiString = Array.isArray(programStudi) ? programStudi.join(',') : programStudi;
-                            resetTerminal('>>> Importing lecturer into lecturers for SINTA ID: ' + sintaId + '...' + NL);
-                            toggleLoading(btnImport, true, 'Import Selected');
-                            openStream(routes.importSelected.replace(':id', sintaId) + '?jurusan=' + encodeURIComponent(programStudiString), () => toggleLoading(btnImport, false, 'Import Selected'), NL + '[ERROR] Database import stream was interrupted.', 'Lecturer imported', 'The lecturer has been imported into lecturers successfully.', 'Lecturer import failed', () => toggleLoading(btnImport, false, 'Import Selected'));
-                            return;
-                        }
-
-                        if (event.target.closest('#btn-open-prodi-settings')) { event.preventDefault(); loadProdiSettings(); return; }
-                        if (event.target.closest('#btn-close-prodi-settings')) { event.preventDefault(); prodiModal.style.display = 'none'; return; }
-                        if (event.target.closest('#btn-save-prodi-settings')) { event.preventDefault(); saveProdiSettings(); }
-                    });
-                });
-            </script>
         </div>
         HTML;
 
