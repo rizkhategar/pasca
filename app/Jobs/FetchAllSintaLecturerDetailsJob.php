@@ -26,7 +26,9 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue, ShouldBeUnique
 
     public int $timeout = 0;
 
-    public int $tries = 1;
+    public int $tries = 5;
+
+    public int $backoff = 10;
 
     public int $uniqueFor = 86400;
 
