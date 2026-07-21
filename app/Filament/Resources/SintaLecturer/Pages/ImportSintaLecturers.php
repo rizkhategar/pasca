@@ -12,6 +12,8 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
 use Filament\Schemas\Components\Grid;
@@ -39,13 +41,6 @@ class ImportSintaLecturers extends Page implements HasSchemas
         $this->form->fill();
     }
 
-    protected function getHeaderActions(): array
-    {
-        return [
-            $this->settingProdiFetchAllAction(),
-        ];
-    }
-
     public function settingProdiFetchAllAction(): Actions\Action
     {
         return Actions\Action::make('settingProdiFetchAll')
@@ -53,12 +48,44 @@ class ImportSintaLecturers extends Page implements HasSchemas
             ->icon('heroicon-o-academic-cap')
             ->color('warning')
             ->modalHeading('Setting Prodi Fetch All')
-            ->modalDescription('Periksa hasil auto-detect program studi dari file merged Excel. Program studi bisa diganti atau dipilih lebih dari satu sebelum disimpan.')
+            ->modalDescription('Gunakan search/filter untuk memilih dosen yang ingin disetting. Program studi otomatis dari Excel tetap bisa diganti atau dipilih lebih dari satu sebelum disimpan.')
             ->modalWidth('7xl')
             ->fillForm(fn (): array => [
+                'filter_search' => null,
+                'filter_study_program_id' => null,
                 'lecturers' => $this->getBulkProdiSettingRows(),
             ])
             ->form([
+                Section::make('Filter Data')
+                    ->description('Filter langsung aktif saat mengetik atau memilih program studi. Pilih Belum disetting / Null untuk menampilkan dosen yang belum punya setting tersimpan.')
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                TextInput::make('filter_search')
+                                    ->label('Cari Nama Dosen / SINTA ID')
+                                    ->placeholder('Ketik nama atau SINTA ID...')
+                                    ->live(debounce: 300)
+                                    ->afterStateUpdated(function (Set $set, Get $get, ?string $state): void {
+                                        $set('lecturers', $this->getBulkProdiSettingRows(
+                                            search: $state,
+                                            studyProgramFilter: $get('filter_study_program_id'),
+                                        ));
+                                    }),
+                                Select::make('filter_study_program_id')
+                                    ->label('Filter Program Studi')
+                                    ->options(fn (): array => $this->getStudyProgramFilterOptions())
+                                    ->searchable()
+                                    ->native(false)
+                                    ->live()
+                                    ->placeholder('Semua program studi')
+                                    ->afterStateUpdated(function (Set $set, Get $get, mixed $state): void {
+                                        $set('lecturers', $this->getBulkProdiSettingRows(
+                                            search: $get('filter_search'),
+                                            studyProgramFilter: $state,
+                                        ));
+                                    }),
+                            ]),
+                    ]),
                 Repeater::make('lecturers')
                     ->label('Daftar Dosen Fetch All')
                     ->schema([
@@ -423,7 +450,7 @@ class ImportSintaLecturers extends Page implements HasSchemas
             ->statePath('data');
     }
 
-    private function getBulkProdiSettingRows(): array
+    private function getBulkProdiSettingRows(?string $search = null, mixed $studyProgramFilter = null): array
     {
         $response = app(SmartBulkSintaLecturerController::class)->studyProgramSettings();
         $payload = $response->getData(true);
@@ -438,6 +465,9 @@ class ImportSintaLecturers extends Page implements HasSchemas
             return [];
         }
 
+        $normalizedSearch = trim(strtolower((string) $search));
+        $studyProgramFilter = filled($studyProgramFilter) ? (string) $studyProgramFilter : null;
+
         return collect(data_get($payload, 'items', []))
             ->map(fn (array $item): array => [
                 'sinta_id' => (string) data_get($item, 'sinta_id', ''),
@@ -451,6 +481,23 @@ class ImportSintaLecturers extends Page implements HasSchemas
                     ->toArray(),
                 'setting_status' => (string) data_get($item, 'setting_status', 'not_set'),
             ])
+            ->when($normalizedSearch !== '', function ($rows) use ($normalizedSearch) {
+                return $rows->filter(function (array $row) use ($normalizedSearch): bool {
+                    return str_contains(strtolower($row['lecturer_name'] ?? ''), $normalizedSearch)
+                        || str_contains(strtolower($row['sinta_id'] ?? ''), $normalizedSearch);
+                });
+            })
+            ->when($studyProgramFilter, function ($rows) use ($studyProgramFilter) {
+                return $rows->filter(function (array $row) use ($studyProgramFilter): bool {
+                    $selectedIds = collect($row['study_program_ids'] ?? [])->map(fn ($id) => (string) $id);
+
+                    if ($studyProgramFilter === '__null__') {
+                        return $selectedIds->isEmpty() || ($row['setting_status'] ?? 'not_set') !== 'complete';
+                    }
+
+                    return $selectedIds->contains((string) $studyProgramFilter);
+                });
+            })
             ->values()
             ->toArray();
     }
@@ -497,6 +544,11 @@ class ImportSintaLecturers extends Page implements HasSchemas
             ->body('Mapping program studi untuk batch fetch all sudah diperbarui.')
             ->success()
             ->send();
+    }
+
+    private function getStudyProgramFilterOptions(): array
+    {
+        return ['__null__' => 'Belum disetting / Null'] + $this->getStudyProgramOptions();
     }
 
     private function getStudyProgramOptions(): array
