@@ -66,6 +66,7 @@
             const progressText = (payload) => {
                 const batch = payload.batch || {};
                 const fetchCounts = payload.fetch_counts || {};
+                const summary = payload.summary || {};
                 const processed = Number(batch.processed_items || 0);
                 const total = Number(batch.total_items || 0);
                 const success = Number(fetchCounts.success || 0);
@@ -73,8 +74,9 @@
                 const failed = Number(fetchCounts.failed || 0);
                 const pending = Number(fetchCounts.pending || 0);
                 const processing = Number(fetchCounts.processing || 0);
+                const missingFiles = Number(summary.missing_output_file_count || 0);
 
-                return `[PROGRESS] ${processed}/${total} processed | success: ${success} | warning: ${warning} | failed: ${failed} | pending: ${pending} | running: ${processing}`;
+                return `[PROGRESS] ${processed}/${total} processed | success: ${success} | warning: ${warning} | failed: ${failed} | pending: ${pending} | running: ${processing} | missing file: ${missingFiles}`;
             };
 
             const isFetchActive = (payload) => {
@@ -115,7 +117,7 @@
                     return;
                 }
 
-                const key = `${item.id}:${item.sinta_id}:${item.status}:${item.finished_at || ''}`;
+                const key = `${item.id}:${item.sinta_id}:${item.status}:${item.finished_at || ''}:${item.output_file_exists ? 'exists' : 'missing'}`;
 
                 if (emittedDoneKeys.has(key)) {
                     return;
@@ -130,6 +132,12 @@
 
                 const statusLabel = item.status === 'success_with_warning' ? 'DONE WITH WARNING' : 'DONE';
                 const outputFile = item.output_file || `merged_data_${item.sinta_id}.xlsx`;
+
+                if (! item.output_file_exists) {
+                    appendTerminal(`[FILE MISSING] SINTA ID ${item.sinta_id} - ${normalize(item.lecturer_name) || '-'} status database ${statusLabel}, tetapi ${outputFile} tidak ada di scripts/output. Jalankan Fetch All ulang agar discrape ulang.\n`);
+                    return;
+                }
+
                 appendTerminal(`[${statusLabel}] SINTA ID ${item.sinta_id} - ${normalize(item.lecturer_name) || '-'} selesai. Output: ${outputFile}\n`);
             };
 
@@ -147,8 +155,10 @@
             const appendFinalStatus = (payload) => {
                 const batch = payload.batch || {};
                 const fetchCounts = payload.fetch_counts || {};
+                const summary = payload.summary || {};
                 const status = normalize(batch.status) || 'unknown';
-                const key = `${batch.id}:${status}:${batch.finished_at || ''}:${fetchCounts.failed || 0}:${fetchCounts.pending || 0}:${fetchCounts.processing || 0}`;
+                const missingFiles = Number(summary.missing_output_file_count || 0);
+                const key = `${batch.id}:${status}:${batch.finished_at || ''}:${fetchCounts.failed || 0}:${fetchCounts.pending || 0}:${fetchCounts.processing || 0}:${missingFiles}`;
 
                 if (key === lastFinalStatusKey) {
                     return;
@@ -162,7 +172,12 @@
                 }
 
                 if (status === 'cancelled') {
-                    appendTerminal('[CANCELLED] Fetch All batch dibatalkan.\n');
+                    appendTerminal('[CANCELLED] Fetch All batch dibatalkan. Klik Fetch All lagi setelah queue lama dibersihkan untuk membuat batch baru.\n');
+                    return;
+                }
+
+                if (missingFiles > 0) {
+                    appendTerminal(`[FINISHED WITH MISSING FILES] Fetch All selesai menurut database, tetapi ${missingFiles} file merged tidak ada di scripts/output. Klik Fetch All lagi untuk scrape ulang file yang hilang.\n`);
                     return;
                 }
 
