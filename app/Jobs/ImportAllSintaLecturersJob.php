@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Http\Controllers\BulkSintaLecturerController;
 use App\Models\SintaLecturerFetchBatch;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -12,7 +13,7 @@ use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
-class ImportAllSintaLecturersJob implements ShouldQueue
+class ImportAllSintaLecturersJob implements ShouldQueue, ShouldBeUnique
 {
     use Dispatchable;
     use InteractsWithQueue;
@@ -23,13 +24,20 @@ class ImportAllSintaLecturersJob implements ShouldQueue
 
     public int $tries = 1;
 
+    public int $uniqueFor = 86400;
+
     public function __construct(public int $batchId)
     {
     }
 
+    public function uniqueId(): string
+    {
+        return 'sinta-lecturer-import-all-' . $this->batchId;
+    }
+
     public function middleware(): array
     {
-        return [new WithoutOverlapping('sinta-lecturer-import-all')];
+        return [(new WithoutOverlapping('sinta-lecturer-import-all'))->dontRelease()];
     }
 
     public function handle(): void
