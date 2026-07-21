@@ -15,6 +15,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class QueuedSintaLecturerBatchController extends Controller
 {
+    private const FETCH_PROGRESS_HISTORY_LIMIT = 75;
+
     public function fetchAll(): StreamedResponse
     {
         return $this->streamResponse(function (): void {
@@ -162,17 +164,23 @@ class QueuedSintaLecturerBatchController extends Controller
             ? $batch->items()->where('sinta_id', $batch->current_sinta_id)->first(['id', 'sinta_id', 'lecturer_name', 'status', 'import_status', 'started_at', 'finished_at'])
             : null;
 
-        $latestFetchItem = $batch->items()
+        $recentFetchItems = $batch->items()
             ->whereIn('status', ['success', 'success_with_warning', 'failed'])
             ->whereNotNull('finished_at')
             ->orderByDesc('finished_at')
             ->orderByDesc('id')
-            ->first(['id', 'sinta_id', 'lecturer_name', 'status', 'warning_message', 'error_message', 'finished_at']);
+            ->limit(self::FETCH_PROGRESS_HISTORY_LIMIT)
+            ->get(['id', 'sinta_id', 'lecturer_name', 'status', 'warning_message', 'error_message', 'finished_at'])
+            ->reverse()
+            ->values();
+
+        $isFetchActive = $this->batchHasActiveFetchWork($batch, $fetchCounts);
 
         return response()->json([
             'batch' => [
                 'id' => $batch->id,
                 'status' => $batch->status,
+                'is_fetch_active' => $isFetchActive,
                 'total_items' => $batch->total_items,
                 'processed_items' => $batch->processed_items,
                 'success_items' => $batch->success_items,
@@ -187,8 +195,12 @@ class QueuedSintaLecturerBatchController extends Controller
             ],
             'fetch_counts' => $fetchCounts,
             'import_counts' => $importCounts,
+            'is_fetch_active' => $isFetchActive,
             'current_fetch_item' => $currentItem ? $this->fetchProgressItemPayload($currentItem) : null,
-            'latest_fetch_item' => $latestFetchItem ? $this->fetchProgressItemPayload($latestFetchItem) : null,
+            'latest_fetch_item' => $recentFetchItems->last() ? $this->fetchProgressItemPayload($recentFetchItems->last()) : null,
+            'recent_fetch_items' => $recentFetchItems
+                ->map(fn (SintaLecturerFetchBatchItem $item): array => $this->fetchProgressItemPayload($item))
+                ->values(),
             'summary' => $this->batchReadinessSummary($batch),
         ]);
     }
@@ -244,6 +256,17 @@ class QueuedSintaLecturerBatchController extends Controller
         return $batch->items()
             ->whereIn('status', ['pending', 'processing'])
             ->exists();
+    }
+
+    private function batchHasActiveFetchWork(SintaLecturerFetchBatch $batch, array $fetchCounts): bool
+    {
+        if (in_array($batch->status, ['completed', 'paused', 'failed', 'cancelled'], true)) {
+            return false;
+        }
+
+        return ((int) ($fetchCounts['pending'] ?? 0) > 0)
+            || ((int) ($fetchCounts['processing'] ?? 0) > 0)
+            || in_array($batch->status, ['queued', 'running'], true);
     }
 
     private function hasActiveImportBatch(SintaLecturerFetchBatch $batch): bool
