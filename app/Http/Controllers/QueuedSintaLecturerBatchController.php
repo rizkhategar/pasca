@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class QueuedSintaLecturerBatchController extends Controller
 {
-    private const FETCH_PROGRESS_HISTORY_LIMIT = 75;
+    private const FETCH_PROGRESS_HISTORY_LIMIT = 300;
 
     public function fetchAll(): StreamedResponse
     {
