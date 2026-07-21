@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Http\Controllers\BulkSintaLecturerController;
+use App\Models\SintaLecturerFetchBatch;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -22,6 +23,10 @@ class ImportAllSintaLecturersJob implements ShouldQueue
 
     public int $tries = 1;
 
+    public function __construct(public int $batchId)
+    {
+    }
+
     public function middleware(): array
     {
         return [new WithoutOverlapping('sinta-lecturer-import-all')];
@@ -29,12 +34,23 @@ class ImportAllSintaLecturersJob implements ShouldQueue
 
     public function handle(): void
     {
-        Log::info('[SINTA IMPORT ALL] Background import all job started.');
+        $latestBatchId = SintaLecturerFetchBatch::query()->latest('id')->value('id');
+
+        if ((int) $latestBatchId !== $this->batchId) {
+            Log::warning('[SINTA IMPORT ALL] Import job skipped because another fetch batch became the latest batch.', [
+                'job_batch_id' => $this->batchId,
+                'latest_batch_id' => $latestBatchId,
+            ]);
+
+            return;
+        }
+
+        Log::info('[SINTA IMPORT ALL] Background import all job started.', ['batch_id' => $this->batchId]);
 
         app(BulkSintaLecturerController::class)
             ->importAll()
             ->sendContent();
 
-        Log::info('[SINTA IMPORT ALL] Background import all job finished.');
+        Log::info('[SINTA IMPORT ALL] Background import all job finished.', ['batch_id' => $this->batchId]);
     }
 }
