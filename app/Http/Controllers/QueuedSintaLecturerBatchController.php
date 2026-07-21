@@ -6,6 +6,7 @@ use App\Jobs\FetchAllSintaLecturerDetailsJob;
 use App\Jobs\ImportAllSintaLecturersJob;
 use App\Models\SintaLecturer;
 use App\Models\SintaLecturerFetchBatch;
+use App\Models\SintaLecturerFetchBatchItem;
 use App\Models\SintaLecturerStudyProgramSetting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
@@ -158,8 +159,15 @@ class QueuedSintaLecturerBatchController extends Controller
         ];
 
         $currentItem = $batch->current_sinta_id
-            ? $batch->items()->where('sinta_id', $batch->current_sinta_id)->first(['sinta_id', 'lecturer_name', 'status', 'import_status'])
+            ? $batch->items()->where('sinta_id', $batch->current_sinta_id)->first(['id', 'sinta_id', 'lecturer_name', 'status', 'import_status', 'started_at', 'finished_at'])
             : null;
+
+        $latestFetchItem = $batch->items()
+            ->whereIn('status', ['success', 'success_with_warning', 'failed'])
+            ->whereNotNull('finished_at')
+            ->orderByDesc('finished_at')
+            ->orderByDesc('id')
+            ->first(['id', 'sinta_id', 'lecturer_name', 'status', 'warning_message', 'error_message', 'finished_at']);
 
         return response()->json([
             'batch' => [
@@ -179,8 +187,28 @@ class QueuedSintaLecturerBatchController extends Controller
             ],
             'fetch_counts' => $fetchCounts,
             'import_counts' => $importCounts,
+            'current_fetch_item' => $currentItem ? $this->fetchProgressItemPayload($currentItem) : null,
+            'latest_fetch_item' => $latestFetchItem ? $this->fetchProgressItemPayload($latestFetchItem) : null,
             'summary' => $this->batchReadinessSummary($batch),
         ]);
+    }
+
+    private function fetchProgressItemPayload(SintaLecturerFetchBatchItem $item): array
+    {
+        $sintaId = (string) $item->sinta_id;
+        $isCompleted = in_array($item->status, ['success', 'success_with_warning'], true);
+
+        return [
+            'id' => $item->id,
+            'sinta_id' => $sintaId,
+            'lecturer_name' => $item->lecturer_name,
+            'status' => $item->status,
+            'output_file' => $isCompleted ? "merged_data_{$sintaId}.xlsx" : null,
+            'warning_message' => $item->warning_message,
+            'error_message' => $item->error_message,
+            'started_at' => optional($item->started_at)->toDateTimeString(),
+            'finished_at' => optional($item->finished_at)->toDateTimeString(),
+        ];
     }
 
     private function stream(array $payload): void
