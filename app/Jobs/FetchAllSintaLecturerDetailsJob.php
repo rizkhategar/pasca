@@ -6,6 +6,7 @@ use App\Models\SintaLecturer;
 use App\Models\SintaLecturerFetchBatch;
 use App\Models\SintaLecturerFetchBatchItem;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -16,7 +17,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
-class FetchAllSintaLecturerDetailsJob implements ShouldQueue
+class FetchAllSintaLecturerDetailsJob implements ShouldQueue, ShouldBeUnique
 {
     use Dispatchable;
     use InteractsWithQueue;
@@ -27,13 +28,24 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
 
     public int $tries = 1;
 
+    public int $uniqueFor = 86400;
+
+    public function uniqueId(): string
+    {
+        return 'sinta-lecturer-fetch-all';
+    }
+
     public function middleware(): array
     {
-        return [new WithoutOverlapping('sinta-lecturer-fetch-all')];
+        return [(new WithoutOverlapping('sinta-lecturer-fetch-all'))->dontRelease()];
     }
 
     public function handle(): void
     {
+        if ($this->shouldSkipDuplicateRun()) {
+            return;
+        }
+
         $batch = $this->createBatchFromMasterLecturers();
 
         if (! $batch) {
@@ -42,6 +54,39 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
         }
 
         $this->processBatchItems($batch, ['pending']);
+    }
+
+    private function shouldSkipDuplicateRun(): bool
+    {
+        $latestBatch = SintaLecturerFetchBatch::query()->latest('id')->first();
+
+        if (! $latestBatch) {
+            return false;
+        }
+
+        $hasActiveWork = in_array($latestBatch->status, ['queued', 'running'], true)
+            && $latestBatch->items()->whereIn('status', ['pending', 'processing'])->exists();
+
+        if ($hasActiveWork) {
+            Log::warning('[SINTA FETCH ALL] Duplicate fetch-all job skipped because another batch is still active.', [
+                'batch_id' => $latestBatch->id,
+                'status' => $latestBatch->status,
+            ]);
+
+            return true;
+        }
+
+        if ($latestBatch->started_at && $latestBatch->started_at->gt(now()->subMinutes(2))) {
+            Log::warning('[SINTA FETCH ALL] Duplicate fetch-all job skipped because a batch was started recently.', [
+                'batch_id' => $latestBatch->id,
+                'status' => $latestBatch->status,
+                'started_at' => $latestBatch->started_at?->toDateTimeString(),
+            ]);
+
+            return true;
+        }
+
+        return false;
     }
 
     private function createBatchFromMasterLecturers(): ?SintaLecturerFetchBatch
