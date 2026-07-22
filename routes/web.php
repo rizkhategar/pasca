@@ -11,6 +11,7 @@ use App\Http\Controllers\OrganizationStructureController;
 use App\Http\Controllers\QueuedSintaLecturerBatchController;
 use App\Http\Controllers\RisetController;
 use App\Http\Controllers\ScrapController;
+use App\Http\Controllers\SimpleSintaFetchAllController;
 use App\Http\Controllers\SmartBulkSintaLecturerController;
 use App\Http\Controllers\VisionMissionController;
 use App\Models\AboutPostgraduate;
@@ -116,7 +117,7 @@ Route::get('/scrap/perbarui-dosen', [ScrapController::class, 'perbaruiDosen'])->
 Route::get('/scrap/sinkronisasi-program-studi', [ScrapController::class, 'syncStudyPrograms'])->name('scrap.syncStudyPrograms');
 Route::get('/scrap/ambil-detail/{sinta_id}', [ScrapController::class, 'ambilDetail'])->name('scrap.ambilDetail');
 Route::get('/scrap/import/{sinta_id}', [ScrapController::class, 'importData'])->name('scrap.importData');
-Route::get('/scrap/sinta-fetch-batches/fetch-all', [QueuedSintaLecturerBatchController::class, 'fetchAll'])->name('scrap.sintaFetchBatches.fetchAll');
+Route::get('/scrap/sinta-fetch-batches/fetch-all', [SimpleSintaFetchAllController::class, 'fetchAll'])->name('scrap.sintaFetchBatches.fetchAll');
 Route::get('/scrap/sinta-fetch-batches/resume', [SmartBulkSintaLecturerController::class, 'resume'])->name('scrap.sintaFetchBatches.resume');
 Route::get('/scrap/sinta-fetch-batches/retry-failed', [SmartBulkSintaLecturerController::class, 'retryFailed'])->name('scrap.sintaFetchBatches.retryFailed');
 Route::get('/scrap/sinta-fetch-batches/reset', [SmartBulkSintaLecturerController::class, 'reset'])->name('scrap.sintaFetchBatches.reset');
