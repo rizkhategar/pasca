@@ -31,6 +31,7 @@ use Illuminate\Support\Facades\Schema as SchemaFacade;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Rap2hpoutre\FastExcel\FastExcel;
+use Illuminate\Support\Facades\Auth;
 
 class ImportSintaLecturers extends Page implements HasSchemas
 {
@@ -1470,7 +1471,7 @@ class ImportSintaLecturers extends Page implements HasSchemas
     private function saveBulkProdiSettings(array $data): void
     {
         $rows = collect(data_get($data, 'lecturers', []));
-        $userId = auth()->user()?->getAuthIdentifier();
+        $userId = Auth::id();
 
         DB::transaction(function () use ($rows, $userId): void {
             foreach ($rows as $row) {
