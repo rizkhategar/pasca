@@ -129,10 +129,12 @@ class RunScheduledSintaLecturerFetchAll extends Command
 
     private function isActiveBatchStale(SintaLecturerFetchBatch $batch, $now): bool
     {
-        $referenceAt = $batch->items()
+        $processingItem = $batch->items()
             ->where('status', 'processing')
             ->orderBy('started_at')
-            ->value('started_at') ?? $batch->started_at;
+            ->first(['started_at']);
+
+        $referenceAt = $processingItem?->started_at ?? $batch->started_at;
 
         if (! $referenceAt) {
             return false;
