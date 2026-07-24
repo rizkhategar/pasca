@@ -17,10 +17,13 @@
 
             const statusUrl = @js(route('scrap.sintaFetchBatches.status'));
             const pollIntervalMs = 3000;
+            const timerWatchIntervalMs = 10000;
             let intervalId = null;
+            let timerIntervalId = null;
             let isPolling = false;
             let lastBatchId = null;
             let lastRunningKey = null;
+            let lastAutoTimerTriggerKey = null;
             const emittedDoneKeys = new Set();
 
             const outputBox = () => document.getElementById('output-box');
@@ -256,6 +259,83 @@
                 }
             };
 
+            const getLocalDateKey = (date = new Date()) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+
+                return `${year}-${month}-${day}`;
+            };
+
+            const minutesFromTime = (time) => {
+                const match = normalize(time).match(/^(\d{1,2}):(\d{2})$/);
+
+                if (! match) {
+                    return null;
+                }
+
+                return (Number(match[1]) * 60) + Number(match[2]);
+            };
+
+            const currentLocalMinutes = () => {
+                const now = new Date();
+
+                return (now.getHours() * 60) + now.getMinutes();
+            };
+
+            const readTimerTimeFromPage = () => {
+                const pageText = normalize(document.body?.innerText);
+                const match = pageText.match(/Automatic Fetch All:\s*Enabled\s*at\s*(\d{1,2}:\d{2})/i);
+
+                return match ? match[1].padStart(5, '0') : null;
+            };
+
+            const autoTriggerFetchAllFromTimer = async () => {
+                const scheduledTime = readTimerTimeFromPage();
+
+                if (! scheduledTime) {
+                    return;
+                }
+
+                const scheduledMinutes = minutesFromTime(scheduledTime);
+
+                if (scheduledMinutes === null || currentLocalMinutes() < scheduledMinutes) {
+                    return;
+                }
+
+                const triggerKey = `${getLocalDateKey()}:${scheduledTime}`;
+
+                if (lastAutoTimerTriggerKey === triggerKey || window.sessionStorage.getItem('sinta-fetch-all-auto-triggered') === triggerKey) {
+                    return;
+                }
+
+                const payload = await readStatus().catch(() => null);
+
+                if (payload && isFetchActive(payload)) {
+                    appendTerminal(`[TIMER] Jadwal Fetch All ${scheduledTime} sudah tercapai dan batch aktif terdeteksi. Monitoring otomatis dimulai.\n`);
+                    handlePayload(payload, { primeOnly: true, printBatch: true });
+
+                    if (! isPolling) {
+                        startPolling('');
+                    }
+
+                    lastAutoTimerTriggerKey = triggerKey;
+                    window.sessionStorage.setItem('sinta-fetch-all-auto-triggered', triggerKey);
+                    return;
+                }
+
+                const button = fetchAllButton();
+
+                if (! button || button.disabled) {
+                    return;
+                }
+
+                lastAutoTimerTriggerKey = triggerKey;
+                window.sessionStorage.setItem('sinta-fetch-all-auto-triggered', triggerKey);
+                appendTerminal(`[TIMER] Jadwal Fetch All ${scheduledTime} tercapai. Menjalankan tombol Fetch All otomatis.\n`);
+                button.click();
+            };
+
             const clickHandler = (event) => {
                 if (! event.target.closest('#btn-fetch-all-details')) {
                     return;
@@ -267,9 +347,17 @@
 
             document.addEventListener('click', clickHandler);
             window.setTimeout(resumeIfActive, 1000);
+            window.setTimeout(autoTriggerFetchAllFromTimer, 1500);
+            timerIntervalId = window.setInterval(autoTriggerFetchAllFromTimer, timerWatchIntervalMs);
 
             window.__sintaFetchAllQueueTerminalCleanup = () => {
                 stopPolling();
+
+                if (timerIntervalId) {
+                    window.clearInterval(timerIntervalId);
+                    timerIntervalId = null;
+                }
+
                 document.removeEventListener('click', clickHandler);
             };
         })();
