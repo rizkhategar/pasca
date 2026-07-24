@@ -12,3 +12,6 @@ Artisan::command('inspire', function () {
 // Jadwalkan sinkronisasi berita dari API berjalan otomatis
 // Anda bisa mengubahnya menjadi ->everyFifteenMinutes() atau ->everyThirtyMinutes() jika butuh lebih realtime
 Schedule::job(new SyncNewsApiJob)->hourly();
+
+
+Schedule::command('sinta:run-scheduled-fetch-all');

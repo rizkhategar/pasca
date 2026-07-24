@@ -2,17 +2,17 @@
 
 namespace App\Filament\Resources\SintaLecturer\Pages;
 
-use App\Filament\Resources\PostgraduateLecturer\RelationManagers\BooksRelationManager;
-use App\Filament\Resources\PostgraduateLecturer\RelationManagers\GarudaPublicationsRelationManager;
-use App\Filament\Resources\PostgraduateLecturer\RelationManagers\GarudaYearlyStatsRelationManager;
-use App\Filament\Resources\PostgraduateLecturer\RelationManagers\ResearchesRelationManager;
-use App\Filament\Resources\PostgraduateLecturer\RelationManagers\ResearchYearliesRelationManager;
-use App\Filament\Resources\PostgraduateLecturer\RelationManagers\ScholarPublicationsRelationManager;
-use App\Filament\Resources\PostgraduateLecturer\RelationManagers\ScholarYearlyStatsRelationManager;
-use App\Filament\Resources\PostgraduateLecturer\RelationManagers\ScopusPublicationsRelationManager;
-use App\Filament\Resources\PostgraduateLecturer\RelationManagers\ScopusYearlyStatsRelationManager;
-use App\Filament\Resources\PostgraduateLecturer\RelationManagers\ServicesRelationManager;
-use App\Filament\Resources\PostgraduateLecturer\RelationManagers\ServiceYearliesRelationManager;
+use App\Filament\Resources\Lecturer\RelationManagers\BooksRelationManager;
+use App\Filament\Resources\Lecturer\RelationManagers\GarudaPublicationsRelationManager;
+use App\Filament\Resources\Lecturer\RelationManagers\GarudaYearlyStatsRelationManager;
+use App\Filament\Resources\Lecturer\RelationManagers\ResearchesRelationManager;
+use App\Filament\Resources\Lecturer\RelationManagers\ResearchYearliesRelationManager;
+use App\Filament\Resources\Lecturer\RelationManagers\ScholarPublicationsRelationManager;
+use App\Filament\Resources\Lecturer\RelationManagers\ScholarYearlyStatsRelationManager;
+use App\Filament\Resources\Lecturer\RelationManagers\ScopusPublicationsRelationManager;
+use App\Filament\Resources\Lecturer\RelationManagers\ScopusYearlyStatsRelationManager;
+use App\Filament\Resources\Lecturer\RelationManagers\ServicesRelationManager;
+use App\Filament\Resources\Lecturer\RelationManagers\ServiceYearliesRelationManager;
 use App\Filament\Resources\SintaLecturer\SintaLecturerResource;
 use Filament\Resources\Pages\ViewRecord;
 

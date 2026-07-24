@@ -31,7 +31,11 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
 
     public function middleware(): array
     {
-        return [(new WithoutOverlapping('sinta-lecturer-fetch-all'))->dontRelease()];
+        return [
+            (new WithoutOverlapping('sinta-lecturer-fetch-all'))
+                ->releaseAfter(60)
+                ->expireAfter(14400),
+        ];
     }
 
     public function handle(): void
