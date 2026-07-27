@@ -10,7 +10,6 @@ use App\Models\SintaLecturerFetchBatchItem;
 use App\Models\SintaLecturerStudyProgramSetting;
 use App\Models\StudyProgram;
 use Filament\Actions;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -22,14 +21,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema as SchemaFacade;
-use Illuminate\Support\HtmlString;
 
 trait HasBulkProdiSettingAction
 {
-    private const BULK_PRODI_MODAL_DEFAULT_LIMIT = 10;
-
-    private const BULK_PRODI_MODAL_MAX_LIMIT = 100;
-
     public function settingProdiFetchAllAction(): Actions\Action
     {
         return Actions\Action::make('settingProdiFetchAll')
@@ -37,24 +31,28 @@ trait HasBulkProdiSettingAction
             ->icon('heroicon-o-academic-cap')
             ->color('warning')
             ->modalHeading('Setting Prodi Fetch All')
-            ->modalDescription('Data dimuat langsung saat popup dibuka agar state Filament stabil. Deteksi prodi memakai kolom department di tabel sinta_lecturers. Jika department unknown/null atau tidak cocok, pilih manual di popup ini.')
+            ->modalDescription('Semua data dari batch Fetch All terakhir dimuat langsung saat popup dibuka. Tidak ada pagination. Deteksi prodi memakai kolom department di tabel sinta_lecturers. Jika department unknown/null atau tidak cocok, pilih manual di popup ini.')
             ->modalWidth('7xl')
-            ->fillForm(fn (): array => $this->bulkProdiBuildLoadedModalState())
+            ->fillForm(fn (): array => [
+                'filter_search' => null,
+                'filter_study_program_id' => null,
+                'lecturers' => $this->getBulkProdiSettingRows(),
+            ])
             ->form([
                 Section::make('Filter Data')
-                    ->description('Search aktif saat mengetik. Opsi Belum dipilih / Null menampilkan dosen yang belum punya study_program_id valid satupun. Simpan dulu perubahan sebelum mengganti filter agar editan tidak hilang.')
+                    ->description('Filter akan memuat ulang semua baris yang cocok. Simpan dulu perubahan sebelum mengganti filter agar editan yang belum disimpan tidak hilang.')
                     ->schema([
-                        Grid::make(3)
+                        Grid::make(2)
                             ->schema([
                                 TextInput::make('filter_search')
                                     ->label('Cari Nama Dosen / SINTA ID')
                                     ->placeholder('Ketik nama atau SINTA ID...')
                                     ->live(debounce: 500)
                                     ->afterStateUpdated(function ($set, $get, ?string $state): void {
-                                        $this->reloadBulkProdiMountedActionData($set, $get, [
-                                            'filter_search' => $state,
-                                            'filter_page' => 1,
-                                        ]);
+                                        $set('lecturers', $this->getBulkProdiSettingRows(
+                                            search: $state,
+                                            studyProgramFilter: $get('filter_study_program_id'),
+                                        ));
                                     }),
                                 Select::make('filter_study_program_id')
                                     ->label('Filter Program Studi')
@@ -64,28 +62,10 @@ trait HasBulkProdiSettingAction
                                     ->live()
                                     ->placeholder('Semua program studi')
                                     ->afterStateUpdated(function ($set, $get, mixed $state): void {
-                                        $this->reloadBulkProdiMountedActionData($set, $get, [
-                                            'filter_study_program_id' => $state,
-                                            'filter_page' => 1,
-                                        ]);
-                                    }),
-                                Select::make('filter_limit')
-                                    ->label('Jumlah Data Ditampilkan')
-                                    ->options([
-                                        10 => '10 data',
-                                        20 => '20 data',
-                                        30 => '30 data',
-                                        50 => '50 data',
-                                        100 => '100 data',
-                                    ])
-                                    ->native(false)
-                                    ->live()
-                                    ->default(self::BULK_PRODI_MODAL_DEFAULT_LIMIT)
-                                    ->afterStateUpdated(function ($set, $get, mixed $state): void {
-                                        $this->reloadBulkProdiMountedActionData($set, $get, [
-                                            'filter_limit' => $state,
-                                            'filter_page' => 1,
-                                        ]);
+                                        $set('lecturers', $this->getBulkProdiSettingRows(
+                                            search: $get('filter_search'),
+                                            studyProgramFilter: $state,
+                                        ));
                                     }),
                             ]),
                     ]),
@@ -150,18 +130,6 @@ trait HasBulkProdiSettingAction
                     ->reorderable(false)
                     ->itemLabel(fn (array $state): ?string => trim(($state['lecturer_name'] ?? 'Dosen') . ' - ' . ($state['sinta_id'] ?? '')))
                     ->columns(1),
-                Section::make('Pagination')
-                    ->description('Gunakan tombol Previous / Next. Data halaman dimuat saat tombol diklik.')
-                    ->schema([
-                        Placeholder::make('pagination_controls')
-                            ->hiddenLabel()
-                            ->content(fn ($get): HtmlString => new HtmlString($this->bulkProdiPaginationControlsHtml(
-                                search: $get('filter_search'),
-                                studyProgramFilter: $get('filter_study_program_id'),
-                                limit: $get('filter_limit'),
-                                page: $get('filter_page'),
-                            ))),
-                    ]),
             ])
             ->modalSubmitActionLabel('Simpan Setting Prodi')
             ->action(function (array $data): void {
@@ -169,125 +137,7 @@ trait HasBulkProdiSettingAction
             });
     }
 
-    public function previousBulkProdiPageForMountedAction(): void
-    {
-        $data = $this->bulkProdiMountedActionData();
-        $page = max(1, ((int) data_get($data, 'filter_page', 1)) - 1);
-
-        $this->setBulkProdiMountedActionData($this->bulkProdiBuildLoadedModalState($data, [
-            'filter_page' => $page,
-        ]));
-    }
-
-    public function nextBulkProdiPageForMountedAction(): void
-    {
-        $data = $this->bulkProdiMountedActionData();
-        $currentPage = max(1, (int) data_get($data, 'filter_page', 1));
-        $limit = $this->resolveBulkProdiModalLimit(data_get($data, 'filter_limit'));
-        $total = $this->countBulkProdiSettingRows(
-            search: data_get($data, 'filter_search'),
-            studyProgramFilter: data_get($data, 'filter_study_program_id'),
-        );
-        $totalPages = max(1, (int) ceil($total / $limit));
-        $page = min($totalPages, $currentPage + 1);
-
-        $this->setBulkProdiMountedActionData($this->bulkProdiBuildLoadedModalState($data, [
-            'filter_page' => $page,
-        ]));
-    }
-
-    protected function bulkProdiPaginationControlsHtml(mixed $search = null, mixed $studyProgramFilter = null, mixed $limit = self::BULK_PRODI_MODAL_DEFAULT_LIMIT, mixed $page = 1): string
-    {
-        $resolvedLimit = $this->resolveBulkProdiModalLimit($limit);
-        $resolvedPage = $this->resolveBulkProdiModalPage($page);
-        $total = $this->countBulkProdiSettingRows($search, $studyProgramFilter);
-        $totalPages = max(1, (int) ceil($total / $resolvedLimit));
-        $from = $total > 0 ? (($resolvedPage - 1) * $resolvedLimit) + 1 : 0;
-        $to = min($resolvedPage * $resolvedLimit, $total);
-        $previousDisabled = $resolvedPage <= 1;
-        $nextDisabled = $resolvedPage >= $totalPages;
-        $disabledStyle = 'opacity:0.45;cursor:not-allowed;';
-        $buttonStyle = 'display:inline-flex;align-items:center;justify-content:center;border-radius:0.5rem;border:1px solid #d1d5db;background:#fff;color:#374151;font-weight:600;padding:0.5rem 0.75rem;min-width:96px;';
-        $info = "Menampilkan {$from}-{$to} dari {$total} data. Halaman {$resolvedPage} dari {$totalPages}.";
-
-        return sprintf(
-            '<div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap;padding:0.75rem;border:1px solid #e5e7eb;border-radius:0.75rem;background:#fafafa;">' .
-            '<div style="color:#374151;font-weight:500;">%s</div>' .
-            '<div style="display:flex;align-items:center;gap:0.5rem;">' .
-            '<button type="button" wire:click="previousBulkProdiPageForMountedAction" %s style="%s%s">Previous</button>' .
-            '<span style="color:#6b7280;font-weight:600;min-width:80px;text-align:center;">%s / %s</span>' .
-            '<button type="button" wire:click="nextBulkProdiPageForMountedAction" %s style="%s%s">Next</button>' .
-            '</div></div>',
-            e($info),
-            $previousDisabled ? 'disabled' : '',
-            $buttonStyle,
-            $previousDisabled ? $disabledStyle : '',
-            e((string) $resolvedPage),
-            e((string) $totalPages),
-            $nextDisabled ? 'disabled' : '',
-            $buttonStyle,
-            $nextDisabled ? $disabledStyle : '',
-        );
-    }
-
-    protected function bulkProdiMountedActionData(): array
-    {
-        if (! property_exists($this, 'mountedActionsData')) {
-            return [];
-        }
-
-        return $this->mountedActionsData[0] ?? [];
-    }
-
-    protected function setBulkProdiMountedActionData(array $data): void
-    {
-        if (! property_exists($this, 'mountedActionsData')) {
-            return;
-        }
-
-        $this->mountedActionsData[0] = $data;
-    }
-
-    protected function reloadBulkProdiMountedActionData($set, $get, array $overrides = []): void
-    {
-        $base = [
-            'filter_search' => data_get($overrides, 'filter_search', $get('filter_search')),
-            'filter_study_program_id' => data_get($overrides, 'filter_study_program_id', $get('filter_study_program_id')),
-            'filter_limit' => data_get($overrides, 'filter_limit', $get('filter_limit')),
-            'filter_page' => data_get($overrides, 'filter_page', $get('filter_page') ?: 1),
-            'lecturers' => [],
-        ];
-
-        $loaded = $this->bulkProdiBuildLoadedModalState($base);
-
-        foreach ($loaded as $key => $value) {
-            $set($key, $value);
-        }
-    }
-
-    protected function bulkProdiBuildLoadedModalState(array $base = [], array $overrides = []): array
-    {
-        $state = array_merge([
-            'filter_search' => null,
-            'filter_study_program_id' => null,
-            'filter_limit' => self::BULK_PRODI_MODAL_DEFAULT_LIMIT,
-            'filter_page' => 1,
-            'lecturers' => [],
-        ], $base, $overrides);
-
-        $state['filter_limit'] = $this->resolveBulkProdiModalLimit(data_get($state, 'filter_limit'));
-        $state['filter_page'] = $this->resolveBulkProdiModalPage(data_get($state, 'filter_page'));
-        $state['lecturers'] = $this->getBulkProdiSettingRows(
-            search: data_get($state, 'filter_search'),
-            studyProgramFilter: data_get($state, 'filter_study_program_id'),
-            limit: data_get($state, 'filter_limit'),
-            page: data_get($state, 'filter_page'),
-        );
-
-        return $state;
-    }
-
-    protected function getBulkProdiSettingRows(?string $search = null, mixed $studyProgramFilter = null, mixed $limit = self::BULK_PRODI_MODAL_DEFAULT_LIMIT, mixed $page = 1): array
+    protected function getBulkProdiSettingRows(?string $search = null, mixed $studyProgramFilter = null): array
     {
         if (! $this->bulkProdiBatchTablesReady()) {
             Notification::make()
@@ -305,34 +155,26 @@ trait HasBulkProdiSettingAction
             return [];
         }
 
-        $normalizedSearch = trim(strtolower((string) $search));
-        $studyProgramFilter = filled($studyProgramFilter) ? (string) $studyProgramFilter : null;
-        $resolvedLimit = $this->resolveBulkProdiModalLimit($limit);
-        $resolvedPage = $this->resolveBulkProdiModalPage($page);
-
-        $items = $this->getCachedBulkProdiPageItems(
+        $items = $this->bulkProdiItemsQuery(
             batch: $batch,
-            normalizedSearch: $normalizedSearch,
-            studyProgramFilter: $studyProgramFilter,
-            limit: $resolvedLimit,
-            page: $resolvedPage,
-        );
+            normalizedSearch: trim(strtolower((string) $search)),
+            studyProgramFilter: filled($studyProgramFilter) ? (string) $studyProgramFilter : null,
+        )
+            ->orderBy('lecturer_name')
+            ->orderBy('sinta_id')
+            ->get();
 
         if ($items->isEmpty()) {
             return [];
         }
 
-        $sintaIds = $items->pluck('sinta_id')->filter()->values();
-
-        $settings = SintaLecturerStudyProgramSetting::query()
-            ->whereIn('sinta_id', $sintaIds)
-            ->whereNotNull('study_program_id')
-            ->whereIn('study_program_id', StudyProgram::query()->select('id'))
+        $settings = $this->validStudyProgramSettingsQuery()
+            ->whereIn('sinta_id', $items->pluck('sinta_id')->filter()->values())
             ->get()
             ->groupBy('sinta_id');
 
         $departments = SintaLecturer::query()
-            ->whereIn('sinta_id', $sintaIds)
+            ->whereIn('sinta_id', $items->pluck('sinta_id')->filter()->values())
             ->pluck('department', 'sinta_id');
 
         $detector = $this->bulkProdiStudyProgramDetector();
@@ -402,54 +244,6 @@ trait HasBulkProdiSettingAction
             ->whereIn('study_program_id', StudyProgram::query()->select('id'));
     }
 
-    protected function getCachedBulkProdiPageItems(SintaLecturerFetchBatch $batch, string $normalizedSearch, ?string $studyProgramFilter, int $limit, int $page): Collection
-    {
-        $cacheKey = $this->bulkProdiPageCacheKey($batch->id, $normalizedSearch, $studyProgramFilter, $limit, $page);
-
-        $itemIds = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($batch, $normalizedSearch, $studyProgramFilter, $limit, $page): array {
-            return $this->bulkProdiItemsQuery($batch, $normalizedSearch, $studyProgramFilter)
-                ->orderBy('lecturer_name')
-                ->orderBy('sinta_id')
-                ->offset(($page - 1) * $limit)
-                ->limit($limit)
-                ->pluck('id')
-                ->map(fn ($id) => (int) $id)
-                ->values()
-                ->toArray();
-        });
-
-        if (empty($itemIds)) {
-            return collect();
-        }
-
-        $position = array_flip($itemIds);
-
-        return $batch->items()
-            ->select(['id', 'batch_id', 'sinta_id', 'lecturer_name', 'status', 'import_status', 'warning_message', 'error_message'])
-            ->whereIn('id', $itemIds)
-            ->get()
-            ->sortBy(fn (SintaLecturerFetchBatchItem $item) => $position[(int) $item->id] ?? 999999)
-            ->values();
-    }
-
-    protected function countBulkProdiSettingRows(?string $search = null, mixed $studyProgramFilter = null): int
-    {
-        if (! $this->bulkProdiBatchTablesReady()) {
-            return 0;
-        }
-
-        $batch = SintaLecturerFetchBatch::query()->latest('id')->first();
-
-        if (! $batch) {
-            return 0;
-        }
-
-        $normalizedSearch = trim(strtolower((string) $search));
-        $studyProgramFilter = filled($studyProgramFilter) ? (string) $studyProgramFilter : null;
-
-        return (int) $this->bulkProdiItemsQuery($batch, $normalizedSearch, $studyProgramFilter)->count();
-    }
-
     protected function saveBulkProdiSettings(array $data): void
     {
         $rows = collect(data_get($data, 'lecturers', []));
@@ -488,8 +282,6 @@ trait HasBulkProdiSettingAction
             }
         });
 
-        $this->bumpBulkProdiPageCacheVersion();
-
         Notification::make()
             ->title('Setting prodi berhasil disimpan')
             ->body('Mapping program studi untuk data yang sedang tampil sudah diperbarui.')
@@ -514,45 +306,6 @@ trait HasBulkProdiSettingAction
                 ])
                 ->toArray();
         });
-    }
-
-    protected function resolveBulkProdiModalLimit(mixed $limit): int
-    {
-        $limit = (int) $limit;
-
-        if ($limit <= 0) {
-            return self::BULK_PRODI_MODAL_DEFAULT_LIMIT;
-        }
-
-        return min($limit, self::BULK_PRODI_MODAL_MAX_LIMIT);
-    }
-
-    protected function resolveBulkProdiModalPage(mixed $page): int
-    {
-        return max(1, (int) $page);
-    }
-
-    protected function bulkProdiPageCacheVersion(): int
-    {
-        return (int) Cache::get('sinta_import_bulk_prodi_page_cache_version_v3', 1);
-    }
-
-    protected function bumpBulkProdiPageCacheVersion(): void
-    {
-        Cache::forever('sinta_import_bulk_prodi_page_cache_version_v3', $this->bulkProdiPageCacheVersion() + 1);
-    }
-
-    protected function bulkProdiPageCacheKey(int $batchId, string $normalizedSearch, ?string $studyProgramFilter, int $limit, int $page): string
-    {
-        $filterHash = md5(json_encode([
-            'search' => $normalizedSearch,
-            'study_program_filter' => $studyProgramFilter,
-            'limit' => $limit,
-            'page' => $page,
-            'version' => $this->bulkProdiPageCacheVersion(),
-        ]));
-
-        return "sinta_import_bulk_prodi_page_items:{$batchId}:{$filterHash}";
     }
 
     protected function bulkProdiBatchTablesReady(): bool
