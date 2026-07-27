@@ -2,11 +2,13 @@
 
 namespace App\Jobs;
 
+use App\Filament\Resources\SintaLecturer\Services\SintaLecturerMergedStudyProgramSyncer;
 use App\Models\SintaLecturer;
 use App\Models\SintaLecturerAutomaticRun;
 use App\Models\SintaLecturerFetchBatch;
 use App\Models\SintaLecturerFetchBatchItem;
 use App\Models\SintaLecturerStudyProgramSetting;
+use App\Models\StudyProgram;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -62,6 +64,7 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
             $message = 'No SINTA lecturer records were found.';
             $this->failAutomaticRun($automaticRun, $message);
             Log::warning('[SINTA FETCH ALL] ' . $message);
+
             return;
         }
 
@@ -70,6 +73,7 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
         ])->save();
 
         $this->processBatchItems($batch);
+        $this->syncStudyProgramSettingsFromMergedFiles($batch->fresh());
         $this->handleAutomaticRunAfterFetch($automaticRun, $batch->fresh());
 
         Log::info('[SINTA FETCH ALL] Background fetch all job finished.', [
@@ -140,6 +144,7 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
             ]);
 
             Log::error('[SINTA FETCH ALL] PYTHON_SCRAPER_URL is empty.');
+
             return;
         }
 
@@ -156,6 +161,7 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
                 'current_sinta_id' => null,
                 'error_message' => 'All lecturers already have merged Excel files. No Python scraper was executed.',
             ]);
+
             return;
         }
 
@@ -171,6 +177,7 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
                 ]);
 
                 $this->refreshBatchCounters($batch);
+
                 continue;
             }
 
@@ -365,6 +372,59 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
         ];
     }
 
+    private function syncStudyProgramSettingsFromMergedFiles(?SintaLecturerFetchBatch $batch): void
+    {
+        if (! $batch) {
+            return;
+        }
+
+        $syncer = app(SintaLecturerMergedStudyProgramSyncer::class);
+        $items = $batch->items()
+            ->whereIn('status', ['success', 'success_with_warning'])
+            ->orderBy('id')
+            ->get(['id', 'sinta_id']);
+
+        $matched = 0;
+        $empty = 0;
+        $unmatched = 0;
+        $failed = 0;
+
+        foreach ($items as $item) {
+            $sintaId = (string) $item->sinta_id;
+            $filePath = $this->mergedDetailFilePath($sintaId);
+
+            if (! $this->mergedDetailFileExists($sintaId)) {
+                continue;
+            }
+
+            try {
+                $result = $syncer->syncFromMergedExcel($sintaId, $filePath);
+
+                match ($result['status']) {
+                    'matched' => $matched++,
+                    'empty' => $empty++,
+                    'unmatched' => $unmatched++,
+                    default => null,
+                };
+            } catch (\Throwable $exception) {
+                $failed++;
+                Log::warning('[SINTA FETCH ALL] Failed to sync study program setting from merged Excel.', [
+                    'batch_id' => $batch->id,
+                    'sinta_id' => $sintaId,
+                    'message' => $exception->getMessage(),
+                ]);
+            }
+        }
+
+        Log::info('[SINTA FETCH ALL] Study program setting sync finished.', [
+            'batch_id' => $batch->id,
+            'matched' => $matched,
+            'empty' => $empty,
+            'unmatched' => $unmatched,
+            'failed' => $failed,
+        ]);
+    }
+
     private function refreshBatchCounters(SintaLecturerFetchBatch $batch): void
     {
         $batch->refresh();
@@ -397,6 +457,7 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
         if ($batch->status !== 'completed') {
             $failedIds = $batch->items()->where('status', 'failed')->pluck('sinta_id')->filter()->map(fn ($id) => (string) $id)->values()->all();
             $this->failAutomaticRun($automaticRun, $batch->error_message ?: 'Fetch All did not complete successfully.', $failedIds);
+
             return;
         }
 
@@ -404,11 +465,13 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
 
         if ($summary['missing_study_program_sinta_ids'] !== []) {
             $this->failAutomaticRun($automaticRun, 'Study program not configured.', [], $summary['missing_study_program_sinta_ids']);
+
             return;
         }
 
         if ($summary['missing_output_file_sinta_ids'] !== []) {
             $this->failAutomaticRun($automaticRun, 'Merged detail Excel file is missing.', $summary['missing_output_file_sinta_ids']);
+
             return;
         }
 
@@ -439,6 +502,8 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
         $successItems = $batch->items()->whereIn('status', ['success', 'success_with_warning'])->get(['sinta_id']);
         $settingIds = SintaLecturerStudyProgramSetting::query()
             ->whereIn('sinta_id', $successItems->pluck('sinta_id'))
+            ->whereNotNull('study_program_id')
+            ->whereIn('study_program_id', StudyProgram::query()->select('id'))
             ->pluck('sinta_id')
             ->unique();
 
