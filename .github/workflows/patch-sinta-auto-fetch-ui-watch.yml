@@ -1,5 +1,7 @@
 name: Patch SINTA Auto Fetch UI Watch
 
+# trigger: rerun patch after workflow exists
+
 on:
   push:
     branches:
@@ -37,7 +39,7 @@ jobs:
 
                         const payload = await readFetchAllStatus();
 """
-          if old_resume_start not in text:
+          if old_resume_start not in text and new_resume_start not in text:
               raise SystemExit('resumeQueuedFetchAllIfActive start block not found')
           text = text.replace(old_resume_start, new_resume_start, 1)
 
@@ -59,7 +61,7 @@ jobs:
                     document.removeEventListener('click', clickHandler);
                 };
 """
-          if old_init not in text:
+          if old_init not in text and new_init not in text:
               raise SystemExit('init cleanup block not found')
           text = text.replace(old_init, new_init, 1)
 
