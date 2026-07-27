@@ -10,7 +10,6 @@ use App\Models\SintaLecturerFetchBatchItem;
 use App\Models\SintaLecturerStudyProgramSetting;
 use App\Models\StudyProgram;
 use Filament\Actions;
-use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -38,20 +37,12 @@ trait HasBulkProdiSettingAction
             ->icon('heroicon-o-academic-cap')
             ->color('warning')
             ->modalHeading('Setting Prodi Fetch All')
-            ->modalDescription('Popup dibuka lebih cepat. Data dimuat setelah modal tampil, deteksi prodi memakai kolom department di tabel sinta_lecturers. Filter Belum dipilih / Null menampilkan dosen yang belum punya study_program_id valid sama sekali.')
+            ->modalDescription('Data dimuat langsung saat popup dibuka agar state Filament stabil. Deteksi prodi memakai kolom department di tabel sinta_lecturers. Jika department unknown/null atau tidak cocok, pilih manual di popup ini.')
             ->modalWidth('7xl')
-            ->fillForm(fn (): array => $this->bulkProdiEmptyModalState())
+            ->fillForm(fn (): array => $this->bulkProdiBuildLoadedModalState())
             ->form([
-                Hidden::make('bulk_loaded')->dehydrated(false),
-                Hidden::make('bulk_is_loading')->dehydrated(false),
-                Placeholder::make('bulk_loader')
-                    ->hiddenLabel()
-                    ->content(fn ($get): HtmlString => new HtmlString($this->bulkProdiLazyLoaderHtml(
-                        loaded: (bool) $get('bulk_loaded'),
-                        loading: (bool) $get('bulk_is_loading'),
-                    ))),
                 Section::make('Filter Data')
-                    ->description('Search aktif saat mengetik. Opsi Belum dipilih / Null menampilkan dosen yang belum dipilihkan program studi valid satupun. Simpan dulu perubahan sebelum mengganti filter agar editan tidak hilang.')
+                    ->description('Search aktif saat mengetik. Opsi Belum dipilih / Null menampilkan dosen yang belum punya study_program_id valid satupun. Simpan dulu perubahan sebelum mengganti filter agar editan tidak hilang.')
                     ->schema([
                         Grid::make(3)
                             ->schema([
@@ -107,23 +98,35 @@ trait HasBulkProdiSettingAction
                                     ->label('SINTA ID')
                                     ->disabled()
                                     ->dehydrated(true)
-                                    ->columnSpan(['default' => 12, 'md' => 2]),
+                                    ->columnSpan([
+                                        'default' => 12,
+                                        'md' => 2,
+                                    ]),
                                 TextInput::make('lecturer_name')
                                     ->label('Nama Dosen')
                                     ->disabled()
                                     ->dehydrated(true)
-                                    ->columnSpan(['default' => 12, 'md' => 3]),
+                                    ->columnSpan([
+                                        'default' => 12,
+                                        'md' => 3,
+                                    ]),
                                 TextInput::make('fetch_status')
                                     ->label('Status Fetch')
                                     ->disabled()
                                     ->dehydrated(true)
-                                    ->columnSpan(['default' => 12, 'md' => 2]),
+                                    ->columnSpan([
+                                        'default' => 12,
+                                        'md' => 2,
+                                    ]),
                                 TextInput::make('detected_study_program')
                                     ->label('Department SINTA')
                                     ->disabled()
                                     ->dehydrated(true)
                                     ->placeholder('Tidak terdeteksi / unknown')
-                                    ->columnSpan(['default' => 12, 'md' => 5]),
+                                    ->columnSpan([
+                                        'default' => 12,
+                                        'md' => 5,
+                                    ]),
                                 Select::make('study_program_ids')
                                     ->label('Program Studi')
                                     ->options(fn (): array => $this->getStudyProgramOptions())
@@ -136,7 +139,10 @@ trait HasBulkProdiSettingAction
                                     ->label('Status Setting')
                                     ->disabled()
                                     ->dehydrated(true)
-                                    ->columnSpan(['default' => 12, 'md' => 3]),
+                                    ->columnSpan([
+                                        'default' => 12,
+                                        'md' => 3,
+                                    ]),
                             ]),
                     ])
                     ->addable(false)
@@ -145,7 +151,7 @@ trait HasBulkProdiSettingAction
                     ->itemLabel(fn (array $state): ?string => trim(($state['lecturer_name'] ?? 'Dosen') . ' - ' . ($state['sinta_id'] ?? '')))
                     ->columns(1),
                 Section::make('Pagination')
-                    ->description('Gunakan tombol Previous / Next seperti pagination Filament. Data halaman dimuat saat tombol diklik, bukan saat popup pertama dibuka.')
+                    ->description('Gunakan tombol Previous / Next. Data halaman dimuat saat tombol diklik.')
                     ->schema([
                         Placeholder::make('pagination_controls')
                             ->hiddenLabel()
@@ -154,7 +160,6 @@ trait HasBulkProdiSettingAction
                                 studyProgramFilter: $get('filter_study_program_id'),
                                 limit: $get('filter_limit'),
                                 page: $get('filter_page'),
-                                loading: (bool) $get('bulk_is_loading'),
                             ))),
                     ]),
             ])
@@ -162,17 +167,6 @@ trait HasBulkProdiSettingAction
             ->action(function (array $data): void {
                 $this->saveBulkProdiSettings($data);
             });
-    }
-
-    public function loadBulkProdiSettingsForMountedAction(): void
-    {
-        $data = $this->bulkProdiMountedActionData();
-
-        if ((bool) data_get($data, 'bulk_loaded')) {
-            return;
-        }
-
-        $this->setBulkProdiMountedActionData($this->bulkProdiBuildLoadedModalState($data));
     }
 
     public function previousBulkProdiPageForMountedAction(): void
@@ -202,35 +196,7 @@ trait HasBulkProdiSettingAction
         ]));
     }
 
-    protected function bulkProdiEmptyModalState(): array
-    {
-        return [
-            'bulk_loaded' => false,
-            'bulk_is_loading' => true,
-            'filter_search' => null,
-            'filter_study_program_id' => null,
-            'filter_limit' => self::BULK_PRODI_MODAL_DEFAULT_LIMIT,
-            'filter_page' => 1,
-            'lecturers' => [],
-        ];
-    }
-
-    protected function bulkProdiLazyLoaderHtml(bool $loaded, bool $loading): string
-    {
-        if ($loaded) {
-            return '<div style="padding:0.75rem;border-radius:0.5rem;background-color:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.18);color:#047857;font-weight:500;">Data sudah dimuat. Gunakan filter atau pagination untuk memuat halaman lain.</div>';
-        }
-
-        $loadingText = $loading ? 'Memuat data pertama...' : 'Menyiapkan modal...';
-
-        return <<<HTML
-        <div x-data x-init="setTimeout(() => { if (typeof \$wire !== 'undefined') { \$wire.call('loadBulkProdiSettingsForMountedAction') } }, 150)" style="padding:0.875rem;border-radius:0.5rem;background-color:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);color:#1d4ed8;font-weight:500;">
-            ⏳ {$loadingText} Popup sudah terbuka, data akan muncul setelah server selesai membaca batch dan department SINTA.
-        </div>
-        HTML;
-    }
-
-    protected function bulkProdiPaginationControlsHtml(mixed $search = null, mixed $studyProgramFilter = null, mixed $limit = self::BULK_PRODI_MODAL_DEFAULT_LIMIT, mixed $page = 1, bool $loading = false): string
+    protected function bulkProdiPaginationControlsHtml(mixed $search = null, mixed $studyProgramFilter = null, mixed $limit = self::BULK_PRODI_MODAL_DEFAULT_LIMIT, mixed $page = 1): string
     {
         $resolvedLimit = $this->resolveBulkProdiModalLimit($limit);
         $resolvedPage = $this->resolveBulkProdiModalPage($page);
@@ -238,11 +204,11 @@ trait HasBulkProdiSettingAction
         $totalPages = max(1, (int) ceil($total / $resolvedLimit));
         $from = $total > 0 ? (($resolvedPage - 1) * $resolvedLimit) + 1 : 0;
         $to = min($resolvedPage * $resolvedLimit, $total);
-        $previousDisabled = $resolvedPage <= 1 || $loading;
-        $nextDisabled = $resolvedPage >= $totalPages || $loading;
+        $previousDisabled = $resolvedPage <= 1;
+        $nextDisabled = $resolvedPage >= $totalPages;
         $disabledStyle = 'opacity:0.45;cursor:not-allowed;';
         $buttonStyle = 'display:inline-flex;align-items:center;justify-content:center;border-radius:0.5rem;border:1px solid #d1d5db;background:#fff;color:#374151;font-weight:600;padding:0.5rem 0.75rem;min-width:96px;';
-        $info = $loading ? 'Sedang memuat data...' : "Menampilkan {$from}-{$to} dari {$total} data. Halaman {$resolvedPage} dari {$totalPages}.";
+        $info = "Menampilkan {$from}-{$to} dari {$total} data. Halaman {$resolvedPage} dari {$totalPages}.";
 
         return sprintf(
             '<div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap;padding:0.75rem;border:1px solid #e5e7eb;border-radius:0.75rem;background:#fafafa;">' .
@@ -285,17 +251,12 @@ trait HasBulkProdiSettingAction
     protected function reloadBulkProdiMountedActionData($set, $get, array $overrides = []): void
     {
         $base = [
-            'bulk_loaded' => true,
-            'bulk_is_loading' => true,
             'filter_search' => data_get($overrides, 'filter_search', $get('filter_search')),
             'filter_study_program_id' => data_get($overrides, 'filter_study_program_id', $get('filter_study_program_id')),
             'filter_limit' => data_get($overrides, 'filter_limit', $get('filter_limit')),
             'filter_page' => data_get($overrides, 'filter_page', $get('filter_page') ?: 1),
             'lecturers' => [],
         ];
-
-        $set('bulk_is_loading', true);
-        $set('lecturers', []);
 
         $loaded = $this->bulkProdiBuildLoadedModalState($base);
 
@@ -306,9 +267,14 @@ trait HasBulkProdiSettingAction
 
     protected function bulkProdiBuildLoadedModalState(array $base = [], array $overrides = []): array
     {
-        $state = array_merge($this->bulkProdiEmptyModalState(), $base, $overrides);
-        $state['bulk_loaded'] = true;
-        $state['bulk_is_loading'] = true;
+        $state = array_merge([
+            'filter_search' => null,
+            'filter_study_program_id' => null,
+            'filter_limit' => self::BULK_PRODI_MODAL_DEFAULT_LIMIT,
+            'filter_page' => 1,
+            'lecturers' => [],
+        ], $base, $overrides);
+
         $state['filter_limit'] = $this->resolveBulkProdiModalLimit(data_get($state, 'filter_limit'));
         $state['filter_page'] = $this->resolveBulkProdiModalPage(data_get($state, 'filter_page'));
         $state['lecturers'] = $this->getBulkProdiSettingRows(
@@ -317,7 +283,6 @@ trait HasBulkProdiSettingAction
             limit: data_get($state, 'filter_limit'),
             page: data_get($state, 'filter_page'),
         );
-        $state['bulk_is_loading'] = false;
 
         return $state;
     }
@@ -358,8 +323,11 @@ trait HasBulkProdiSettingAction
         }
 
         $sintaIds = $items->pluck('sinta_id')->filter()->values();
-        $settings = $this->validStudyProgramSettingsQuery()
+
+        $settings = SintaLecturerStudyProgramSetting::query()
             ->whereIn('sinta_id', $sintaIds)
+            ->whereNotNull('study_program_id')
+            ->whereIn('study_program_id', StudyProgram::query()->select('id'))
             ->get()
             ->groupBy('sinta_id');
 
@@ -376,7 +344,6 @@ trait HasBulkProdiSettingAction
                 $existing = $settings->get($sintaId, collect())
                     ->pluck('study_program_id')
                     ->map(fn ($id) => (int) $id)
-                    ->filter()
                     ->values();
 
                 if ($existing->isNotEmpty()) {
@@ -567,12 +534,12 @@ trait HasBulkProdiSettingAction
 
     protected function bulkProdiPageCacheVersion(): int
     {
-        return (int) Cache::get('sinta_import_bulk_prodi_page_cache_version_v2', 1);
+        return (int) Cache::get('sinta_import_bulk_prodi_page_cache_version_v3', 1);
     }
 
     protected function bumpBulkProdiPageCacheVersion(): void
     {
-        Cache::forever('sinta_import_bulk_prodi_page_cache_version_v2', $this->bulkProdiPageCacheVersion() + 1);
+        Cache::forever('sinta_import_bulk_prodi_page_cache_version_v3', $this->bulkProdiPageCacheVersion() + 1);
     }
 
     protected function bulkProdiPageCacheKey(int $batchId, string $normalizedSearch, ?string $studyProgramFilter, int $limit, int $page): string
@@ -585,15 +552,14 @@ trait HasBulkProdiSettingAction
             'version' => $this->bulkProdiPageCacheVersion(),
         ]));
 
-        return "sinta_import_bulk_prodi_page_items_v2:{$batchId}:{$filterHash}";
+        return "sinta_import_bulk_prodi_page_items:{$batchId}:{$filterHash}";
     }
 
     protected function bulkProdiBatchTablesReady(): bool
     {
         return SchemaFacade::hasTable('sinta_lecturer_fetch_batches')
             && SchemaFacade::hasTable('sinta_lecturer_fetch_batch_items')
-            && SchemaFacade::hasTable('sinta_lecturer_study_program_settings')
-            && SchemaFacade::hasTable('study_programs');
+            && SchemaFacade::hasTable('sinta_lecturer_study_program_settings');
     }
 
     protected function bulkProdiStudyProgramDetector(): SintaLecturerStudyProgramDetector
