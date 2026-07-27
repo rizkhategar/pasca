@@ -38,11 +38,7 @@ class ImportSintaLecturers extends Page implements HasSchemas
 
     private const BULK_PRODI_MODAL_MAX_LIMIT = 100;
 
-    /**
-     * Ubah jam otomatis Fetch All SINTA di sini.
-     * Format: HH:MM, contoh '00:00', '23:30'.
-     */
-    public const AUTO_FETCH_ALL_TIME = '00:00';
+    public const AUTO_FETCH_ALL_TIME = '11:48';
 
     protected static string $resource = SintaLecturerResource::class;
 
