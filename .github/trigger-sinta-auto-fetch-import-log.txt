@@ -1,1 +1,1 @@
-trigger auto fetch import log patch
+trigger auto fetch import log patch retry
