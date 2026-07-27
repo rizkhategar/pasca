@@ -142,7 +142,7 @@ class ManageSintaLecturerStudyProgramSettings extends Page implements HasTable
             ->select(['sinta_id', 'name'])
             ->with(['studyProgramSettings' => function ($query): void {
                 $query->select(['id', 'sinta_id', 'study_program_id'])
-                    ->with(['studyProgram:id,display_name'])
+                    ->with(['studyProgram:id,nama,jenjang,jenjang_nama_singkat'])
                     ->orderByRaw('study_program_id IS NULL')
                     ->orderBy('id');
             }]);
