@@ -3,8 +3,10 @@
 namespace App\Jobs;
 
 use App\Models\SintaLecturer;
+use App\Models\SintaLecturerAutomaticRun;
 use App\Models\SintaLecturerFetchBatch;
 use App\Models\SintaLecturerFetchBatchItem;
+use App\Models\SintaLecturerStudyProgramSetting;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -29,6 +31,10 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
 
     public int $backoff = 10;
 
+    public function __construct(public ?int $automaticRunId = null)
+    {
+    }
+
     public function middleware(): array
     {
         return [
@@ -42,17 +48,33 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
     {
         Log::info('[SINTA FETCH ALL] Background fetch all job started.');
 
+        $automaticRun = $this->automaticRun();
+        $automaticRun?->forceFill([
+            'status' => 'running',
+            'phase' => 'fetch',
+            'fetch_started_at' => now(),
+            'summary_message' => 'import & fetch automatic ' . $this->automaticRunDate($automaticRun) . ' [fetch running]',
+        ])->save();
+
         $batch = $this->createBatchFromMasterLecturers();
 
         if (! $batch) {
-            Log::warning('[SINTA FETCH ALL] No SINTA lecturer records were found.');
+            $message = 'No SINTA lecturer records were found.';
+            $this->failAutomaticRun($automaticRun, $message);
+            Log::warning('[SINTA FETCH ALL] ' . $message);
             return;
         }
 
+        $automaticRun?->forceFill([
+            'fetch_batch_id' => $batch->id,
+        ])->save();
+
         $this->processBatchItems($batch);
+        $this->handleAutomaticRunAfterFetch($automaticRun, $batch->fresh());
 
         Log::info('[SINTA FETCH ALL] Background fetch all job finished.', [
             'batch_id' => $batch->id,
+            'automatic_run_id' => $automaticRun?->id,
         ]);
     }
 
@@ -352,6 +374,117 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
             'warning_items' => $batch->items()->where('status', 'success_with_warning')->count(),
             'failed_items' => $batch->items()->where('status', 'failed')->count(),
         ]);
+    }
+
+    private function automaticRun(): ?SintaLecturerAutomaticRun
+    {
+        if (! $this->automaticRunId) {
+            return null;
+        }
+
+        return SintaLecturerAutomaticRun::query()->find($this->automaticRunId);
+    }
+
+    private function handleAutomaticRunAfterFetch(?SintaLecturerAutomaticRun $automaticRun, SintaLecturerFetchBatch $batch): void
+    {
+        if (! $automaticRun) {
+            return;
+        }
+
+        $batch->refresh();
+        $date = $this->automaticRunDate($automaticRun);
+
+        if ($batch->status !== 'completed') {
+            $failedIds = $batch->items()->where('status', 'failed')->pluck('sinta_id')->filter()->map(fn ($id) => (string) $id)->values()->all();
+            $this->failAutomaticRun($automaticRun, $batch->error_message ?: 'Fetch All did not complete successfully.', $failedIds);
+            return;
+        }
+
+        $summary = $this->automaticImportReadinessSummary($batch);
+
+        if ($summary['missing_study_program_sinta_ids'] !== []) {
+            $this->failAutomaticRun($automaticRun, 'Study program not configured.', [], $summary['missing_study_program_sinta_ids']);
+            return;
+        }
+
+        if ($summary['missing_output_file_sinta_ids'] !== []) {
+            $this->failAutomaticRun($automaticRun, 'Merged detail Excel file is missing.', $summary['missing_output_file_sinta_ids']);
+            return;
+        }
+
+        $batch->items()
+            ->whereIn('status', ['success', 'success_with_warning'])
+            ->whereIn('import_status', ['not_ready', 'ready', 'import_failed'])
+            ->update([
+                'import_status' => 'queued',
+                'import_error' => null,
+            ]);
+
+        $automaticRun->forceFill([
+            'status' => 'importing',
+            'phase' => 'import',
+            'fetch_finished_at' => now(),
+            'import_started_at' => now(),
+            'failed_sinta_ids' => null,
+            'missing_study_program_sinta_ids' => null,
+            'error_message' => null,
+            'summary_message' => "import & fetch automatic {$date} [fetch done, import queued]",
+        ])->save();
+
+        ImportAllSintaLecturersJob::dispatch((int) $batch->id, (int) $automaticRun->id);
+    }
+
+    private function automaticImportReadinessSummary(SintaLecturerFetchBatch $batch): array
+    {
+        $successItems = $batch->items()->whereIn('status', ['success', 'success_with_warning'])->get(['sinta_id']);
+        $settingIds = SintaLecturerStudyProgramSetting::query()
+            ->whereIn('sinta_id', $successItems->pluck('sinta_id'))
+            ->pluck('sinta_id')
+            ->unique();
+
+        return [
+            'missing_study_program_sinta_ids' => $successItems
+                ->reject(fn (SintaLecturerFetchBatchItem $item): bool => $settingIds->contains($item->sinta_id))
+                ->pluck('sinta_id')
+                ->filter()
+                ->map(fn ($id) => (string) $id)
+                ->values()
+                ->all(),
+            'missing_output_file_sinta_ids' => $successItems
+                ->filter(fn (SintaLecturerFetchBatchItem $item): bool => ! $this->mergedDetailFileExists((string) $item->sinta_id))
+                ->pluck('sinta_id')
+                ->filter()
+                ->map(fn ($id) => (string) $id)
+                ->values()
+                ->all(),
+        ];
+    }
+
+    private function failAutomaticRun(?SintaLecturerAutomaticRun $automaticRun, string $message, array $failedSintaIds = [], array $missingStudyProgramSintaIds = []): void
+    {
+        if (! $automaticRun) {
+            return;
+        }
+
+        $date = $this->automaticRunDate($automaticRun);
+        $suffix = $missingStudyProgramSintaIds !== []
+            ? implode(', ', $missingStudyProgramSintaIds) . ' study program not configured.'
+            : ($failedSintaIds !== [] ? implode(', ', $failedSintaIds) : $message);
+
+        $automaticRun->forceFill([
+            'status' => 'failed',
+            'phase' => 'failed',
+            'fetch_finished_at' => $automaticRun->fetch_finished_at ?: now(),
+            'failed_sinta_ids' => $failedSintaIds ?: null,
+            'missing_study_program_sinta_ids' => $missingStudyProgramSintaIds ?: null,
+            'error_message' => $message,
+            'summary_message' => "import & fetch automatic {$date} [failed] : {$suffix}",
+        ])->save();
+    }
+
+    private function automaticRunDate(SintaLecturerAutomaticRun $automaticRun): string
+    {
+        return optional($automaticRun->run_date)->toDateString() ?: now()->toDateString();
     }
 
     private function mergedDetailFilePath(string $sintaId): string
