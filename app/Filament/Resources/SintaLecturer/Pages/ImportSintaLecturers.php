@@ -313,7 +313,6 @@ class ImportSintaLecturers extends Page implements HasSchemas
     {
         $totalLecturers = SintaLecturer::query()->count();
         $statusSintaLecturersHtml = "<div style='padding: 0.75rem; border-radius: 0.5rem; background-color: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: #059669; font-weight: 500;'>✅ Total SINTA lecturer records in database: <b>{$totalLecturers}</b></div>";
-        $fetchAllTimerStatusHtml = $this->getFetchAllTimerStatusHtml();
         $programStudis = $this->getStudyProgramOptions();
 
         $routes = [
@@ -1177,7 +1176,6 @@ class ImportSintaLecturers extends Page implements HasSchemas
                             ->icon('heroicon-o-arrow-down-tray')
                             ->description('Fetch one selected lecturer or run a batch fetch for every registered SINTA lecturer.')
                             ->schema([
-                                Placeholder::make('status_fetch_all_timer')->label('Automatic Fetch All Timer')->content(new HtmlString($fetchAllTimerStatusHtml)),
                                 Select::make('sinta_id')
                                     ->label('Select Lecturer from SINTA Lecturers')
                                     ->options($this->getSintaLecturerOptions())
@@ -1219,25 +1217,6 @@ class ImportSintaLecturers extends Page implements HasSchemas
                 Placeholder::make('terminal_sync')->hiddenLabel()->content(new HtmlString($terminalHtml)),
             ])
             ->statePath('data');
-    }
-
-    private function getFetchAllTimerStatusHtml(): string
-    {
-        if (! SchemaFacade::hasTable('sinta_lecturer_fetch_all_schedule_settings')) {
-            return '<div style="padding:0.75rem;border-radius:0.5rem;background-color:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);color:#92400e;font-weight:500;">⚠️ Timer table is not ready. Run <b>php artisan migrate</b>.</div>';
-        }
-
-        $setting = SintaLecturerFetchAllScheduleSetting::current();
-        $timezone = e((string) config('app.timezone'));
-        $time = e((string) ($setting->formattedTime() ?: '-'));
-        $lastRun = $setting->last_run_at ? e($setting->last_run_at->format('Y-m-d H:i')) : '-';
-        $lastSkipReason = filled($setting->last_skip_reason) ? '<br><span style="font-size:0.8125rem;opacity:0.85;">Last skip: ' . e((string) $setting->last_skip_reason) . '</span>' : '';
-
-        if ($setting->is_enabled && $setting->scheduled_time) {
-            return "<div style='padding:0.75rem;border-radius:0.5rem;background-color:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.2);color:#0369a1;font-weight:500;'>⏰ Automatic Fetch All: <b>Enabled</b> at <b>{$time}</b> ({$timezone})<br><span style='font-size:0.8125rem;opacity:0.85;'>Last run: {$lastRun}</span>{$lastSkipReason}</div>";
-        }
-
-        return "<div style='padding:0.75rem;border-radius:0.5rem;background-color:rgba(107,114,128,0.1);border:1px solid rgba(107,114,128,0.2);color:#4b5563;font-weight:500;'>⏱ Automatic Fetch All: <b>Disabled</b></div>";
     }
 
     private function getBulkProdiSettingRows(?string $search = null, mixed $studyProgramFilter = null, mixed $limit = self::BULK_PRODI_MODAL_DEFAULT_LIMIT, mixed $page = 1): array
