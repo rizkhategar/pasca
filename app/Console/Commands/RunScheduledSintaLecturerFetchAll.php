@@ -11,11 +11,17 @@ use Illuminate\Support\Facades\Schema;
 
 class RunScheduledSintaLecturerFetchAll extends Command
 {
+    /**
+     * Ubah jam otomatis Fetch All di sini.
+     * Format: HH:MM, contoh '00:00', '23:30'.
+     */
+    private const HARDCODED_SCHEDULED_TIME = '00:00';
+
     private const STALE_ACTIVE_BATCH_MINUTES = 10;
 
     protected $signature = 'sinta:run-scheduled-fetch-all';
 
-    protected $description = 'Dispatch automatic Fetch All for SINTA lecturers when the saved timer has been reached.';
+    protected $description = 'Dispatch automatic Fetch All for SINTA lecturers when the hardcoded timer has been reached.';
 
     public function handle(): int
     {
@@ -27,7 +33,7 @@ class RunScheduledSintaLecturerFetchAll extends Command
 
         $setting = SintaLecturerFetchAllScheduleSetting::current();
 
-        if (! $setting->is_enabled || ! $setting->scheduled_time) {
+        if (! $setting->is_enabled) {
             return self::SUCCESS;
         }
 
@@ -44,7 +50,7 @@ class RunScheduledSintaLecturerFetchAll extends Command
         }
 
         $now = now();
-        $scheduledTime = $setting->formattedTime();
+        $scheduledTime = self::HARDCODED_SCHEDULED_TIME;
         $scheduledAt = $this->scheduledAtForToday($scheduledTime);
 
         if ($now->lt($scheduledAt)) {
@@ -97,9 +103,9 @@ class RunScheduledSintaLecturerFetchAll extends Command
         return self::SUCCESS;
     }
 
-    private function scheduledAtForToday(?string $scheduledTime)
+    private function scheduledAtForToday(string $scheduledTime)
     {
-        [$hour, $minute] = array_pad(array_map('intval', explode(':', (string) $scheduledTime)), 2, 0);
+        [$hour, $minute] = array_pad(array_map('intval', explode(':', $scheduledTime)), 2, 0);
 
         return now()->setTime($hour, $minute);
     }
