@@ -1,1 +1,0 @@
-trigger auto fetch import log patch retry
