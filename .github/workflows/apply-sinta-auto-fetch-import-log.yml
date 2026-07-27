@@ -1,0 +1,621 @@
+name: Apply SINTA Auto Fetch Import Log Patch
+
+on:
+  push:
+    branches:
+      - refactor/lecturer-filament-resource
+    paths:
+      - .github/trigger-sinta-auto-fetch-import-log.txt
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/lecturer-filament-resource
+
+      - name: Apply code changes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          def read(path):
+              return Path(path).read_text()
+
+          def write(path, text):
+              Path(path).parent.mkdir(parents=True, exist_ok=True)
+              Path(path).write_text(text)
+
+          def replace_once(text, old, new, label):
+              if old not in text:
+                  raise SystemExit(f'Pattern not found for {label}')
+              return text.replace(old, new, 1)
+
+          # 1) Migration + model for automatic run logs
+          migration_path = Path('database/migrations/2026_07_27_000001_create_sinta_lecturer_automatic_runs_table.php')
+          if not migration_path.exists():
+              migration_path.write_text("""<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('sinta_lecturer_automatic_runs', function (Blueprint $table): void {
+            $table->id();
+            $table->date('run_date')->index();
+            $table->string('scheduled_time', 5)->nullable();
+            $table->foreignId('fetch_batch_id')->nullable()->constrained('sinta_lecturer_fetch_batches')->nullOnDelete();
+            $table->string('status')->default('queued')->index();
+            $table->string('phase')->nullable()->index();
+            $table->timestamp('fetch_started_at')->nullable();
+            $table->timestamp('fetch_finished_at')->nullable();
+            $table->timestamp('import_started_at')->nullable();
+            $table->timestamp('import_finished_at')->nullable();
+            $table->json('failed_sinta_ids')->nullable();
+            $table->json('missing_study_program_sinta_ids')->nullable();
+            $table->longText('error_message')->nullable();
+            $table->longText('summary_message')->nullable();
+            $table->timestamps();
+
+            $table->unique(['run_date', 'scheduled_time']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('sinta_lecturer_automatic_runs');
+    }
+};
+""")
+
+          model_path = Path('app/Models/SintaLecturerAutomaticRun.php')
+          if not model_path.exists():
+              model_path.write_text("""<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class SintaLecturerAutomaticRun extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'run_date',
+        'scheduled_time',
+        'fetch_batch_id',
+        'status',
+        'phase',
+        'fetch_started_at',
+        'fetch_finished_at',
+        'import_started_at',
+        'import_finished_at',
+        'failed_sinta_ids',
+        'missing_study_program_sinta_ids',
+        'error_message',
+        'summary_message',
+    ];
+
+    protected $casts = [
+        'run_date' => 'date',
+        'fetch_started_at' => 'datetime',
+        'fetch_finished_at' => 'datetime',
+        'import_started_at' => 'datetime',
+        'import_finished_at' => 'datetime',
+        'failed_sinta_ids' => 'array',
+        'missing_study_program_sinta_ids' => 'array',
+    ];
+
+    public function fetchBatch(): BelongsTo
+    {
+        return $this->belongsTo(SintaLecturerFetchBatch::class, 'fetch_batch_id');
+    }
+}
+""")
+
+          # 2) Scheduled command creates an automatic run log and dispatches linked fetch job
+          path = 'app/Console/Commands/RunScheduledSintaLecturerFetchAll.php'
+          text = read(path)
+          if 'use App\Models\SintaLecturerAutomaticRun;' not in text:
+              text = text.replace('use App\Models\SintaLecturerFetchAllScheduleSetting;\n', 'use App\\Models\\SintaLecturerAutomaticRun;\nuse App\\Models\\SintaLecturerFetchAllScheduleSetting;\n')
+          text = text.replace("if (! Schema::hasTable('sinta_lecturer_fetch_all_schedule_settings')) {", "if (! Schema::hasTable('sinta_lecturer_fetch_all_schedule_settings') || ! Schema::hasTable('sinta_lecturer_automatic_runs')) {")
+          old = """        FetchAllSintaLecturerDetailsJob::dispatch();
+
+        $setting->forceFill([
+            'last_run_at' => $now,
+            'last_skip_reason' => null,
+        ])->save();
+"""
+          new = """        $automaticRun = SintaLecturerAutomaticRun::updateOrCreate(
+            [
+                'run_date' => $now->toDateString(),
+                'scheduled_time' => $scheduledTime,
+            ],
+            [
+                'status' => 'queued',
+                'phase' => 'fetch',
+                'fetch_batch_id' => null,
+                'fetch_started_at' => null,
+                'fetch_finished_at' => null,
+                'import_started_at' => null,
+                'import_finished_at' => null,
+                'failed_sinta_ids' => null,
+                'missing_study_program_sinta_ids' => null,
+                'error_message' => null,
+                'summary_message' => "import & fetch automatic {$now->toDateString()} [queued]",
+            ]
+        );
+
+        FetchAllSintaLecturerDetailsJob::dispatch((int) $automaticRun->id);
+
+        $setting->forceFill([
+            'last_run_at' => $now,
+            'last_skip_reason' => null,
+        ])->save();
+"""
+          if old in text:
+              text = text.replace(old, new, 1)
+          text = text.replace("return Schema::hasTable('sinta_lecturer_fetch_batches')\n            && Schema::hasTable('sinta_lecturer_fetch_batch_items');", "return Schema::hasTable('sinta_lecturer_fetch_batches')\n            && Schema::hasTable('sinta_lecturer_fetch_batch_items')\n            && Schema::hasTable('sinta_lecturer_study_program_settings')\n            && Schema::hasTable('sinta_lecturer_automatic_runs');")
+          write(path, text)
+
+          # 3) Fetch all job links automatic run and dispatches Import All when fetch succeeds + prodi ready
+          path = 'app/Jobs/FetchAllSintaLecturerDetailsJob.php'
+          text = read(path)
+          if 'use App\Models\SintaLecturerAutomaticRun;' not in text:
+              text = text.replace('use App\Models\SintaLecturer;\n', 'use App\\Models\\SintaLecturer;\nuse App\\Models\\SintaLecturerAutomaticRun;\n')
+          if 'use App\Models\SintaLecturerStudyProgramSetting;' not in text:
+              text = text.replace('use App\Models\SintaLecturerFetchBatchItem;\n', 'use App\\Models\\SintaLecturerFetchBatchItem;\nuse App\\Models\\SintaLecturerStudyProgramSetting;\n')
+          if 'public function __construct(public ?int $automaticRunId = null)' not in text:
+              text = text.replace('    public int $backoff = 10;\n\n', '    public int $backoff = 10;\n\n    public function __construct(public ?int $automaticRunId = null)\n    {\n    }\n\n')
+          old = """    public function handle(): void
+    {
+        Log::info('[SINTA FETCH ALL] Background fetch all job started.');
+
+        $batch = $this->createBatchFromMasterLecturers();
+
+        if (! $batch) {
+            Log::warning('[SINTA FETCH ALL] No SINTA lecturer records were found.');
+            return;
+        }
+
+        $this->processBatchItems($batch);
+
+        Log::info('[SINTA FETCH ALL] Background fetch all job finished.', [
+            'batch_id' => $batch->id,
+        ]);
+    }
+"""
+          new = """    public function handle(): void
+    {
+        Log::info('[SINTA FETCH ALL] Background fetch all job started.');
+
+        $automaticRun = $this->automaticRun();
+        $automaticRun?->forceFill([
+            'status' => 'running',
+            'phase' => 'fetch',
+            'fetch_started_at' => now(),
+            'summary_message' => 'import & fetch automatic ' . now()->toDateString() . ' [fetch running]',
+        ])->save();
+
+        $batch = $this->createBatchFromMasterLecturers();
+
+        if (! $batch) {
+            $this->failAutomaticRun($automaticRun, 'No SINTA lecturer records were found.');
+            Log::warning('[SINTA FETCH ALL] No SINTA lecturer records were found.');
+            return;
+        }
+
+        $automaticRun?->forceFill([
+            'fetch_batch_id' => $batch->id,
+        ])->save();
+
+        $this->processBatchItems($batch);
+        $this->handleAutomaticRunAfterFetch($automaticRun, $batch->fresh());
+
+        Log::info('[SINTA FETCH ALL] Background fetch all job finished.', [
+            'batch_id' => $batch->id,
+            'automatic_run_id' => $automaticRun?->id,
+        ]);
+    }
+"""
+          if old in text:
+              text = text.replace(old, new, 1)
+          insert_before = """    private function mergedDetailFilePath(string $sintaId): string
+"""
+          helper = """    private function automaticRun(): ?SintaLecturerAutomaticRun
+    {
+        if (! $this->automaticRunId) {
+            return null;
+        }
+
+        return SintaLecturerAutomaticRun::query()->find($this->automaticRunId);
+    }
+
+    private function failAutomaticRun(?SintaLecturerAutomaticRun $automaticRun, string $message, array $failedSintaIds = [], array $missingStudyProgramSintaIds = []): void
+    {
+        if (! $automaticRun) {
+            return;
+        }
+
+        $date = optional($automaticRun->run_date)->toDateString() ?: now()->toDateString();
+        $suffix = $missingStudyProgramSintaIds !== []
+            ? implode(', ', $missingStudyProgramSintaIds) . ' study program not configured.'
+            : ($failedSintaIds !== [] ? implode(', ', $failedSintaIds) : $message);
+
+        $automaticRun->forceFill([
+            'status' => 'failed',
+            'phase' => 'failed',
+            'fetch_finished_at' => $automaticRun->fetch_finished_at ?: now(),
+            'failed_sinta_ids' => $failedSintaIds ?: null,
+            'missing_study_program_sinta_ids' => $missingStudyProgramSintaIds ?: null,
+            'error_message' => $message,
+            'summary_message' => "import & fetch automatic {$date} [failed] : {$suffix}",
+        ])->save();
+    }
+
+    private function handleAutomaticRunAfterFetch(?SintaLecturerAutomaticRun $automaticRun, SintaLecturerFetchBatch $batch): void
+    {
+        if (! $automaticRun) {
+            return;
+        }
+
+        $batch->refresh();
+        $date = optional($automaticRun->run_date)->toDateString() ?: now()->toDateString();
+
+        if ($batch->status !== 'completed') {
+            $failedIds = $batch->items()->where('status', 'failed')->pluck('sinta_id')->filter()->map(fn ($id) => (string) $id)->values()->all();
+            $this->failAutomaticRun($automaticRun, $batch->error_message ?: 'Fetch All did not complete successfully.', $failedIds);
+            return;
+        }
+
+        $summary = $this->automaticImportReadinessSummary($batch);
+
+        if ($summary['missing_study_program_sinta_ids'] !== []) {
+            $this->failAutomaticRun($automaticRun, 'Study program not configured.', [], $summary['missing_study_program_sinta_ids']);
+            return;
+        }
+
+        if ($summary['missing_output_file_sinta_ids'] !== []) {
+            $this->failAutomaticRun($automaticRun, 'Merged detail Excel file is missing.', $summary['missing_output_file_sinta_ids']);
+            return;
+        }
+
+        $batch->items()
+            ->whereIn('status', ['success', 'success_with_warning'])
+            ->whereIn('import_status', ['not_ready', 'ready', 'import_failed'])
+            ->update([
+                'import_status' => 'queued',
+                'import_error' => null,
+            ]);
+
+        $automaticRun->forceFill([
+            'status' => 'importing',
+            'phase' => 'import',
+            'fetch_finished_at' => now(),
+            'import_started_at' => now(),
+            'failed_sinta_ids' => null,
+            'missing_study_program_sinta_ids' => null,
+            'error_message' => null,
+            'summary_message' => "import & fetch automatic {$date} [fetch done, import queued]",
+        ])->save();
+
+        ImportAllSintaLecturersJob::dispatch((int) $batch->id, (int) $automaticRun->id);
+    }
+
+    private function automaticImportReadinessSummary(SintaLecturerFetchBatch $batch): array
+    {
+        $successItems = $batch->items()->whereIn('status', ['success', 'success_with_warning'])->get(['sinta_id']);
+        $settingIds = SintaLecturerStudyProgramSetting::query()
+            ->whereIn('sinta_id', $successItems->pluck('sinta_id'))
+            ->pluck('sinta_id')
+            ->unique();
+
+        return [
+            'missing_study_program_sinta_ids' => $successItems
+                ->reject(fn (SintaLecturerFetchBatchItem $item): bool => $settingIds->contains($item->sinta_id))
+                ->pluck('sinta_id')
+                ->filter()
+                ->map(fn ($id) => (string) $id)
+                ->values()
+                ->all(),
+            'missing_output_file_sinta_ids' => $successItems
+                ->filter(fn (SintaLecturerFetchBatchItem $item): bool => ! $this->mergedDetailFileExists((string) $item->sinta_id))
+                ->pluck('sinta_id')
+                ->filter()
+                ->map(fn ($id) => (string) $id)
+                ->values()
+                ->all(),
+        ];
+    }
+
+"""
+          if 'private function automaticRun(): ?SintaLecturerAutomaticRun' not in text:
+              text = text.replace(insert_before, helper + insert_before, 1)
+          write(path, text)
+
+          # 4) Import All job updates automatic run log at finish/failure
+          path = 'app/Jobs/ImportAllSintaLecturersJob.php'
+          text = read(path)
+          if 'use App\Models\SintaLecturerAutomaticRun;' not in text:
+              text = text.replace('use App\Models\SintaLecturerFetchBatch;\n', 'use App\\Models\\SintaLecturerAutomaticRun;\nuse App\\Models\\SintaLecturerFetchBatch;\n')
+          text = text.replace('    public function __construct(public int $batchId)\n    {\n    }', '    public function __construct(public int $batchId, public ?int $automaticRunId = null)\n    {\n    }')
+          old = """        if ((int) $latestBatchId !== $this->batchId) {
+            Log::warning('[SINTA IMPORT ALL] Import job skipped because another fetch batch became the latest batch.', [
+                'job_batch_id' => $this->batchId,
+                'latest_batch_id' => $latestBatchId,
+            ]);
+
+            return;
+        }
+
+        Log::info('[SINTA IMPORT ALL] Background import all job started.', ['batch_id' => $this->batchId]);
+
+        app(BulkSintaLecturerController::class)
+            ->importAll()
+            ->sendContent();
+
+        Log::info('[SINTA IMPORT ALL] Background import all job finished.', ['batch_id' => $this->batchId]);
+"""
+          new = """        $automaticRun = $this->automaticRun();
+
+        if ((int) $latestBatchId !== $this->batchId) {
+            $message = 'Import job skipped because another fetch batch became the latest batch.';
+            $this->failAutomaticRun($automaticRun, $message);
+            Log::warning('[SINTA IMPORT ALL] ' . $message, [
+                'job_batch_id' => $this->batchId,
+                'latest_batch_id' => $latestBatchId,
+            ]);
+
+            return;
+        }
+
+        $automaticRun?->forceFill([
+            'status' => 'importing',
+            'phase' => 'import',
+            'import_started_at' => $automaticRun->import_started_at ?: now(),
+            'summary_message' => 'import & fetch automatic ' . now()->toDateString() . ' [import running]',
+        ])->save();
+
+        Log::info('[SINTA IMPORT ALL] Background import all job started.', ['batch_id' => $this->batchId]);
+
+        try {
+            app(BulkSintaLecturerController::class)
+                ->importAll()
+                ->sendContent();
+
+            $this->finishAutomaticRun($automaticRun);
+        } catch (\\Throwable $e) {
+            $this->failAutomaticRun($automaticRun, $e->getMessage());
+            throw $e;
+        }
+
+        Log::info('[SINTA IMPORT ALL] Background import all job finished.', ['batch_id' => $this->batchId]);
+"""
+          if old in text:
+              text = text.replace(old, new, 1)
+          helper = """
+    private function automaticRun(): ?SintaLecturerAutomaticRun
+    {
+        if (! $this->automaticRunId) {
+            return null;
+        }
+
+        return SintaLecturerAutomaticRun::query()->find($this->automaticRunId);
+    }
+
+    private function finishAutomaticRun(?SintaLecturerAutomaticRun $automaticRun): void
+    {
+        if (! $automaticRun) {
+            return;
+        }
+
+        $batch = SintaLecturerFetchBatch::query()->find($this->batchId);
+        $date = optional($automaticRun->run_date)->toDateString() ?: now()->toDateString();
+        $failedIds = $batch
+            ? $batch->items()->where('import_status', 'import_failed')->pluck('sinta_id')->filter()->map(fn ($id) => (string) $id)->values()->all()
+            : [];
+
+        if ($failedIds !== []) {
+            $automaticRun->forceFill([
+                'status' => 'failed',
+                'phase' => 'failed',
+                'import_finished_at' => now(),
+                'failed_sinta_ids' => $failedIds,
+                'error_message' => 'Some SINTA lecturers failed during Import All.',
+                'summary_message' => 'import & fetch automatic ' . $date . ' [failed] : ' . implode(', ', $failedIds),
+            ])->save();
+            return;
+        }
+
+        $automaticRun->forceFill([
+            'status' => 'done',
+            'phase' => 'done',
+            'import_finished_at' => now(),
+            'failed_sinta_ids' => null,
+            'missing_study_program_sinta_ids' => null,
+            'error_message' => null,
+            'summary_message' => 'import & fetch automatic ' . $date . ' [done]',
+        ])->save();
+    }
+
+    private function failAutomaticRun(?SintaLecturerAutomaticRun $automaticRun, string $message): void
+    {
+        if (! $automaticRun) {
+            return;
+        }
+
+        $date = optional($automaticRun->run_date)->toDateString() ?: now()->toDateString();
+
+        $automaticRun->forceFill([
+            'status' => 'failed',
+            'phase' => 'failed',
+            'import_finished_at' => now(),
+            'error_message' => $message,
+            'summary_message' => 'import & fetch automatic ' . $date . ' [failed] : ' . $message,
+        ])->save();
+    }
+"""
+          if 'private function automaticRun(): ?SintaLecturerAutomaticRun' not in text:
+              text = text.replace('\n}\n', helper + '\n}\n', 1)
+          write(path, text)
+
+          # 5) Status endpoint includes automatic run logs
+          path = 'app/Http/Controllers/QueuedSintaLecturerBatchController.php'
+          text = read(path)
+          if 'use App\Models\SintaLecturerAutomaticRun;' not in text:
+              text = text.replace('use App\Models\SintaLecturer;\n', 'use App\\Models\\SintaLecturer;\nuse App\\Models\\SintaLecturerAutomaticRun;\n')
+          text = text.replace("'message' => 'Batch tables are not available. Run php artisan migrate first.',\n            ], 503);", "'message' => 'Batch tables are not available. Run php artisan migrate first.',\n                'automatic_run_logs' => $this->automaticRunLogsPayload(),\n            ], 503);", 1)
+          text = text.replace("'message' => 'No fetch batch was found.',\n            ]);", "'message' => 'No fetch batch was found.',\n                'automatic_run_logs' => $this->automaticRunLogsPayload(),\n            ]);", 1)
+          if "'automatic_run_logs' => $this->automaticRunLogsPayload()," not in text[text.find("'summary' => $summary,"):text.find("'summary' => $summary,")+200]:
+              text = text.replace("'summary' => $summary,\n        ]);", "'summary' => $summary,\n            'automatic_run_logs' => $this->automaticRunLogsPayload(),\n        ]);", 1)
+          helper = """    private function automaticRunLogsPayload(): array
+    {
+        if (! Schema::hasTable('sinta_lecturer_automatic_runs')) {
+            return [];
+        }
+
+        return SintaLecturerAutomaticRun::query()
+            ->latest('id')
+            ->limit(10)
+            ->get(['id', 'run_date', 'scheduled_time', 'status', 'phase', 'summary_message', 'error_message', 'updated_at'])
+            ->reverse()
+            ->map(fn (SintaLecturerAutomaticRun $run): array => [
+                'id' => $run->id,
+                'run_date' => optional($run->run_date)->toDateString(),
+                'scheduled_time' => $run->scheduled_time,
+                'status' => $run->status,
+                'phase' => $run->phase,
+                'summary_message' => $run->summary_message,
+                'error_message' => $run->error_message,
+                'updated_at' => optional($run->updated_at)->toDateTimeString(),
+            ])
+            ->values()
+            ->all();
+    }
+
+"""
+          if 'private function automaticRunLogsPayload(): array' not in text:
+              text = text.replace('    private function batchTablesReady(): bool\n', helper + '    private function batchTablesReady(): bool\n', 1)
+          write(path, text)
+
+          # 6) Browser watcher + automatic log rendering in ImportSintaLecturers page
+          path = 'app/Filament/Resources/SintaLecturer/Pages/ImportSintaLecturers.php'
+          text = read(path)
+          if 'automaticRunLogState' not in text:
+              text = text.replace("""                const fetchAllPollState = {
+                    intervalId: null,
+                    lastBatchId: null,
+                    lastRunningKey: null,
+                    waitForNewBatchAfterId: null,
+                    waitingForNewBatchNoticePrinted: false,
+                    emittedDoneKeys: new Set(),
+                };
+""", """                const fetchAllPollState = {
+                    intervalId: null,
+                    lastBatchId: null,
+                    lastRunningKey: null,
+                    waitForNewBatchAfterId: null,
+                    waitingForNewBatchNoticePrinted: false,
+                    emittedDoneKeys: new Set(),
+                };
+
+                const automaticRunLogState = {
+                    emittedKeys: new Set(),
+                };
+""", 1)
+          if 'const appendAutomaticRunLogs = (logs)' not in text:
+              text = text.replace("""                const normalizeText = (value) => String(value || '').trim();
+""", """                const normalizeText = (value) => String(value || '').trim();
+
+                const appendAutomaticRunLogs = (logs) => {
+                    if (!Array.isArray(logs)) return;
+
+                    logs.forEach((log) => {
+                        const message = normalizeText(log?.summary_message);
+                        if (!message) return;
+
+                        const key = `${log.id || ''}:${log.status || ''}:${log.phase || ''}:${log.updated_at || ''}:${message}`;
+                        if (automaticRunLogState.emittedKeys.has(key)) return;
+
+                        automaticRunLogState.emittedKeys.add(key);
+                        appendPlainTerminal('[AUTO] ' + message + NL);
+                    });
+                };
+""", 1)
+          text = text.replace("""                        const payload = await readFetchAllStatus();
+
+                        if (fetchAllPollState.waitForNewBatchAfterId !== null) {
+""", """                        const payload = await readFetchAllStatus();
+                        appendAutomaticRunLogs(payload?.automatic_run_logs || []);
+
+                        if (fetchAllPollState.waitForNewBatchAfterId !== null) {
+""", 1)
+          text = text.replace("""                const resumeQueuedFetchAllIfActive = async () => {
+                    try {
+                        const payload = await readFetchAllStatus();
+
+                        if (!isFetchAllActive(payload)) {
+""", """                const resumeQueuedFetchAllIfActive = async () => {
+                    if (fetchAllPollState.intervalId) {
+                        return;
+                    }
+
+                    try {
+                        const payload = await readFetchAllStatus();
+                        appendAutomaticRunLogs(payload?.automatic_run_logs || []);
+
+                        if (!isFetchAllActive(payload)) {
+""", 1)
+          if 'scheduledFetchAllWatcherIntervalId' not in text:
+              text = text.replace("""                document.addEventListener('click', clickHandler);
+                window.setTimeout(resumeQueuedFetchAllIfActive, 1000);
+                window.__bulkSintaLecturerImportCleanup = () => {
+                    stopFetchAllPolling();
+                    stopImportAllPolling();
+                    document.removeEventListener('click', clickHandler);
+                };
+""", """                document.addEventListener('click', clickHandler);
+                window.setTimeout(resumeQueuedFetchAllIfActive, 1000);
+                const scheduledFetchAllWatcherIntervalId = window.setInterval(resumeQueuedFetchAllIfActive, 15000);
+                window.__bulkSintaLecturerImportCleanup = () => {
+                    stopFetchAllPolling();
+                    stopImportAllPolling();
+                    window.clearInterval(scheduledFetchAllWatcherIntervalId);
+                    document.removeEventListener('click', clickHandler);
+                };
+""", 1)
+          write(path, text)
+
+          # Clean previous failed temp watcher files if present
+          for stale in [
+              '.github/workflows/patch-sinta-fetch-watcher.yml',
+              '.github/trigger-sinta-fetch-watcher.txt',
+          ]:
+              p = Path(stale)
+              if p.exists():
+                  p.unlink()
+          PY
+
+      - name: Commit patch and cleanup
+        run: |
+          rm -f .github/workflows/apply-sinta-auto-fetch-import-log.yml .github/trigger-sinta-auto-fetch-import-log.txt
+          git config user.name "chatgpt-codex"
+          git config user.email "chatgpt-codex@users.noreply.github.com"
+          git add app database .github
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "feat(sinta): automate fetch all import logging"
+          git push
