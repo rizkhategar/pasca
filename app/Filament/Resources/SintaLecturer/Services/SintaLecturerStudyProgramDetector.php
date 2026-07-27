@@ -11,7 +11,7 @@ class SintaLecturerStudyProgramDetector
 {
     /**
      * Ambil teks program studi dari kolom sinta_lecturers.department.
-     * Contoh format: "Profesi - Pendidikan Profesi Bidan".
+     * Contoh format: "Profesi - Pendidikan Profesi Bidan" atau "Manajemen Pendidikan (S2)".
      */
     public function detectRawDepartment(string $sintaId): ?string
     {
@@ -122,18 +122,27 @@ class SintaLecturerStudyProgramDetector
         $level = null;
         $name = $raw;
 
-        if (preg_match('/^\s*(.*?)\s*[-–—]\s*(.+)$/u', $raw, $matches)) {
+        // Format: "Profesi - Pendidikan Profesi Bidan" atau "S2 - Manajemen Pendidikan".
+        if (preg_match('/^\s*(S1|S2|S3|D3|D4|Profesi|Sarjana|Magister|Doktor|Diploma\s*3|Diploma\s*4)\s*[-–—]\s*(.+)$/iu', $raw, $matches)) {
             $level = trim($matches[1]);
             $name = trim($matches[2]);
         }
 
+        // Format: "Manajemen Pendidikan (S2)" atau "Pendidikan Profesi Bidan (Profesi)".
+        if (! $level && preg_match('/^\s*(.+?)\s*\((S1|S2|S3|D3|D4|Profesi|Sarjana|Magister|Doktor|Diploma\s*3|Diploma\s*4)\)\s*$/iu', $raw, $matches)) {
+            $name = trim($matches[1]);
+            $level = trim($matches[2]);
+        }
+
+        // Format fallback: cari level di mana saja, tapi bersihkan token level dari nama.
         if (! $level && preg_match('/\b(S1|S2|S3|D3|D4|Profesi|Sarjana|Magister|Doktor|Diploma\s*3|Diploma\s*4)\b/i', $raw, $matches)) {
             $level = $matches[1];
+            $name = trim(preg_replace('/\s*[\(\[]?\b' . preg_quote($matches[1], '/') . '\b[\)\]]?\s*/i', ' ', $raw));
         }
 
         return [
             'level' => $level,
-            'name' => $name,
+            'name' => trim($name),
         ];
     }
 
