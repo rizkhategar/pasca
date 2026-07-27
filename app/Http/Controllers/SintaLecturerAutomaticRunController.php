@@ -17,25 +17,27 @@ class SintaLecturerAutomaticRunController extends Controller
             ]);
         }
 
-        $logs = SintaLecturerAutomaticRun::query()
+        $latestRun = SintaLecturerAutomaticRun::query()
             ->latest('id')
-            ->limit(10)
-            ->get(['id', 'run_date', 'scheduled_time', 'status', 'phase', 'summary_message', 'error_message', 'updated_at'])
-            ->reverse()
-            ->map(fn (SintaLecturerAutomaticRun $run): array => [
-                'id' => $run->id,
-                'run_date' => optional($run->run_date)->toDateString(),
-                'scheduled_time' => $run->scheduled_time,
-                'status' => $run->status,
-                'phase' => $run->phase,
-                'summary_message' => $run->summary_message,
-                'error_message' => $run->error_message,
-                'updated_at' => optional($run->updated_at)->toDateTimeString(),
-            ])
-            ->values();
+            ->first(['id', 'run_date', 'scheduled_time', 'status', 'phase', 'summary_message', 'error_message', 'updated_at']);
+
+        if (! $latestRun) {
+            return response()->json([
+                'logs' => [],
+            ]);
+        }
 
         return response()->json([
-            'logs' => $logs,
+            'logs' => [[
+                'id' => $latestRun->id,
+                'run_date' => optional($latestRun->run_date)->toDateString(),
+                'scheduled_time' => $latestRun->scheduled_time,
+                'status' => $latestRun->status,
+                'phase' => $latestRun->phase,
+                'summary_message' => $latestRun->summary_message,
+                'error_message' => $latestRun->error_message,
+                'updated_at' => optional($latestRun->updated_at)->toDateTimeString(),
+            ]],
         ]);
     }
 }
