@@ -38,7 +38,7 @@ trait HasBulkProdiSettingAction
             ->icon('heroicon-o-academic-cap')
             ->color('warning')
             ->modalHeading('Setting Prodi Fetch All')
-            ->modalDescription('Popup dibuka lebih cepat. Data dimuat setelah modal tampil, deteksi prodi memakai kolom department di tabel sinta_lecturers. Jika department unknown/null atau tidak cocok, pilih manual di popup ini.')
+            ->modalDescription('Popup dibuka lebih cepat. Data dimuat setelah modal tampil, deteksi prodi memakai kolom department di tabel sinta_lecturers. Filter Belum dipilih / Null menampilkan dosen yang belum punya study_program_id valid sama sekali.')
             ->modalWidth('7xl')
             ->fillForm(fn (): array => $this->bulkProdiEmptyModalState())
             ->form([
@@ -51,7 +51,7 @@ trait HasBulkProdiSettingAction
                         loading: (bool) $get('bulk_is_loading'),
                     ))),
                 Section::make('Filter Data')
-                    ->description('Search aktif saat mengetik. Opsi Belum disetting / Null menampilkan dosen yang belum punya setting tersimpan. Simpan dulu perubahan sebelum mengganti filter agar editan tidak hilang.')
+                    ->description('Search aktif saat mengetik. Opsi Belum dipilih / Null menampilkan dosen yang belum dipilihkan program studi valid satupun. Simpan dulu perubahan sebelum mengganti filter agar editan tidak hilang.')
                     ->schema([
                         Grid::make(3)
                             ->schema([
@@ -107,35 +107,23 @@ trait HasBulkProdiSettingAction
                                     ->label('SINTA ID')
                                     ->disabled()
                                     ->dehydrated(true)
-                                    ->columnSpan([
-                                        'default' => 12,
-                                        'md' => 2,
-                                    ]),
+                                    ->columnSpan(['default' => 12, 'md' => 2]),
                                 TextInput::make('lecturer_name')
                                     ->label('Nama Dosen')
                                     ->disabled()
                                     ->dehydrated(true)
-                                    ->columnSpan([
-                                        'default' => 12,
-                                        'md' => 3,
-                                    ]),
+                                    ->columnSpan(['default' => 12, 'md' => 3]),
                                 TextInput::make('fetch_status')
                                     ->label('Status Fetch')
                                     ->disabled()
                                     ->dehydrated(true)
-                                    ->columnSpan([
-                                        'default' => 12,
-                                        'md' => 2,
-                                    ]),
+                                    ->columnSpan(['default' => 12, 'md' => 2]),
                                 TextInput::make('detected_study_program')
                                     ->label('Department SINTA')
                                     ->disabled()
                                     ->dehydrated(true)
                                     ->placeholder('Tidak terdeteksi / unknown')
-                                    ->columnSpan([
-                                        'default' => 12,
-                                        'md' => 5,
-                                    ]),
+                                    ->columnSpan(['default' => 12, 'md' => 5]),
                                 Select::make('study_program_ids')
                                     ->label('Program Studi')
                                     ->options(fn (): array => $this->getStudyProgramOptions())
@@ -148,10 +136,7 @@ trait HasBulkProdiSettingAction
                                     ->label('Status Setting')
                                     ->disabled()
                                     ->dehydrated(true)
-                                    ->columnSpan([
-                                        'default' => 12,
-                                        'md' => 3,
-                                    ]),
+                                    ->columnSpan(['default' => 12, 'md' => 3]),
                             ]),
                     ])
                     ->addable(false)
@@ -372,13 +357,14 @@ trait HasBulkProdiSettingAction
             return [];
         }
 
-        $settings = SintaLecturerStudyProgramSetting::query()
-            ->whereIn('sinta_id', $items->pluck('sinta_id')->filter()->values())
+        $sintaIds = $items->pluck('sinta_id')->filter()->values();
+        $settings = $this->validStudyProgramSettingsQuery()
+            ->whereIn('sinta_id', $sintaIds)
             ->get()
             ->groupBy('sinta_id');
 
         $departments = SintaLecturer::query()
-            ->whereIn('sinta_id', $items->pluck('sinta_id')->filter()->values())
+            ->whereIn('sinta_id', $sintaIds)
             ->pluck('department', 'sinta_id');
 
         $detector = $this->bulkProdiStudyProgramDetector();
@@ -390,6 +376,7 @@ trait HasBulkProdiSettingAction
                 $existing = $settings->get($sintaId, collect())
                     ->pluck('study_program_id')
                     ->map(fn ($id) => (int) $id)
+                    ->filter()
                     ->values();
 
                 if ($existing->isNotEmpty()) {
@@ -432,13 +419,20 @@ trait HasBulkProdiSettingAction
                 });
             })
             ->when($studyProgramFilter === '__null__', function ($query): void {
-                $query->whereNotIn('sinta_id', SintaLecturerStudyProgramSetting::query()->select('sinta_id'));
+                $query->whereNotIn('sinta_id', $this->validStudyProgramSettingsQuery()->select('sinta_id'));
             })
             ->when($studyProgramFilter && $studyProgramFilter !== '__null__', function ($query) use ($studyProgramFilter): void {
-                $query->whereIn('sinta_id', SintaLecturerStudyProgramSetting::query()
+                $query->whereIn('sinta_id', $this->validStudyProgramSettingsQuery()
                     ->where('study_program_id', (int) $studyProgramFilter)
                     ->select('sinta_id'));
             });
+    }
+
+    protected function validStudyProgramSettingsQuery()
+    {
+        return SintaLecturerStudyProgramSetting::query()
+            ->whereNotNull('study_program_id')
+            ->whereIn('study_program_id', StudyProgram::query()->select('id'));
     }
 
     protected function getCachedBulkProdiPageItems(SintaLecturerFetchBatch $batch, string $normalizedSearch, ?string $studyProgramFilter, int $limit, int $page): Collection
@@ -538,7 +532,7 @@ trait HasBulkProdiSettingAction
 
     protected function getStudyProgramFilterOptions(): array
     {
-        return ['__null__' => 'Belum disetting / Null'] + $this->getStudyProgramOptions();
+        return ['__null__' => 'Belum dipilih / Null'] + $this->getStudyProgramOptions();
     }
 
     protected function getStudyProgramOptions(): array
@@ -573,12 +567,12 @@ trait HasBulkProdiSettingAction
 
     protected function bulkProdiPageCacheVersion(): int
     {
-        return (int) Cache::get('sinta_import_bulk_prodi_page_cache_version', 1);
+        return (int) Cache::get('sinta_import_bulk_prodi_page_cache_version_v2', 1);
     }
 
     protected function bumpBulkProdiPageCacheVersion(): void
     {
-        Cache::forever('sinta_import_bulk_prodi_page_cache_version', $this->bulkProdiPageCacheVersion() + 1);
+        Cache::forever('sinta_import_bulk_prodi_page_cache_version_v2', $this->bulkProdiPageCacheVersion() + 1);
     }
 
     protected function bulkProdiPageCacheKey(int $batchId, string $normalizedSearch, ?string $studyProgramFilter, int $limit, int $page): string
@@ -591,14 +585,15 @@ trait HasBulkProdiSettingAction
             'version' => $this->bulkProdiPageCacheVersion(),
         ]));
 
-        return "sinta_import_bulk_prodi_page_items:{$batchId}:{$filterHash}";
+        return "sinta_import_bulk_prodi_page_items_v2:{$batchId}:{$filterHash}";
     }
 
     protected function bulkProdiBatchTablesReady(): bool
     {
         return SchemaFacade::hasTable('sinta_lecturer_fetch_batches')
             && SchemaFacade::hasTable('sinta_lecturer_fetch_batch_items')
-            && SchemaFacade::hasTable('sinta_lecturer_study_program_settings');
+            && SchemaFacade::hasTable('sinta_lecturer_study_program_settings')
+            && SchemaFacade::hasTable('study_programs');
     }
 
     protected function bulkProdiStudyProgramDetector(): SintaLecturerStudyProgramDetector
@@ -609,16 +604,6 @@ trait HasBulkProdiSettingAction
     protected function bulkProdiStudyProgramCacheWarmer(): SintaLecturerStudyProgramCacheWarmer
     {
         return app(SintaLecturerStudyProgramCacheWarmer::class);
-    }
-
-    protected function detectStudyProgramFromSintaDepartment(string $sintaId): ?string
-    {
-        return $this->bulkProdiStudyProgramDetector()->detectRawDepartment($sintaId);
-    }
-
-    protected function suggestStudyProgramIdsFromSintaDepartment(string $sintaId, ?Collection $programs = null): Collection
-    {
-        return $this->bulkProdiStudyProgramDetector()->suggestStudyProgramIdsFromDepartment($sintaId, $programs);
     }
 
     protected function queueDepartmentProdiCacheWarmForLatestBatch(int $limit = 100): void
