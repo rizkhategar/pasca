@@ -3,8 +3,7 @@
 namespace App\Filament\Resources\SintaLecturer\Pages;
 
 use App\Filament\Resources\SintaLecturer\SintaLecturerResource;
-use App\Models\SintaLecturerFetchBatch;
-use App\Models\SintaLecturerFetchBatchItem;
+use App\Models\SintaLecturer;
 use App\Models\SintaLecturerStudyProgramSetting;
 use App\Models\StudyProgram;
 use Filament\Actions\Action;
@@ -33,50 +32,33 @@ class ManageSintaLecturerStudyProgramSettings extends Page implements HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->query($this->settingQueryForLatestBatch())
+            ->query($this->sintaLecturerQuery())
             ->columns([
                 TextColumn::make('sinta_id')
                     ->label('SINTA ID')
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('sintaLecturer.name')
+                TextColumn::make('name')
                     ->label('Nama Dosen')
                     ->searchable()
+                    ->sortable()
                     ->wrap(),
-
-                TextColumn::make('sintaLecturer.department')
-                    ->label('Department SINTA')
-                    ->searchable()
-                    ->wrap()
-                    ->placeholder('Unknown / kosong'),
 
                 SelectColumn::make('study_program_id')
                     ->label('Program Studi')
                     ->options(fn (): array => $this->studyProgramOptions())
                     ->placeholder('Belum dipilih / Null')
-                    ->afterStateUpdated(function (SintaLecturerStudyProgramSetting $record): void {
-                        $record->forceFill([
-                            'updated_by' => auth()->id(),
-                        ])->save();
+                    ->getStateUsing(fn (SintaLecturer $record): ?int => $this->selectedStudyProgramId($record))
+                    ->updateStateUsing(function (SintaLecturer $record, mixed $state): void {
+                        $this->saveStudyProgramSetting($record, $state);
 
                         Notification::make()
                             ->title('Program studi diperbarui')
-                            ->body("Setting prodi untuk SINTA ID {$record->sinta_id} sudah disimpan.")
+                            ->body("Setting prodi untuk {$record->name} ({$record->sinta_id}) sudah disimpan.")
                             ->success()
                             ->send();
                     }),
-
-                TextColumn::make('studyProgram.display_name')
-                    ->label('Prodi Tersimpan')
-                    ->placeholder('Belum dipilih / Null')
-                    ->toggleable(),
-
-                TextColumn::make('updated_at')
-                    ->label('Terakhir Diubah')
-                    ->dateTime('d M Y H:i')
-                    ->sortable()
-                    ->toggleable(),
             ])
             ->filters([
                 SelectFilter::make('setting_status')
@@ -89,17 +71,19 @@ class ManageSintaLecturerStudyProgramSettings extends Page implements HasTable
                         $value = data_get($data, 'value');
 
                         return match ($value) {
-                            'selected' => $query->whereNotNull('study_program_id')
-                                ->whereIn('study_program_id', StudyProgram::query()->select('id')),
-                            'empty' => $query->where(function (Builder $subQuery): void {
-                                $subQuery->whereNull('study_program_id')
-                                    ->orWhereNotIn('study_program_id', StudyProgram::query()->select('id'));
+                            'selected' => $query->whereHas('studyProgramSettings', function (Builder $settingQuery): void {
+                                $settingQuery->whereNotNull('study_program_id')
+                                    ->whereIn('study_program_id', StudyProgram::query()->select('id'));
+                            }),
+                            'empty' => $query->whereDoesntHave('studyProgramSettings', function (Builder $settingQuery): void {
+                                $settingQuery->whereNotNull('study_program_id')
+                                    ->whereIn('study_program_id', StudyProgram::query()->select('id'));
                             }),
                             default => $query,
                         };
                     }),
             ])
-            ->defaultSort('sinta_id')
+            ->defaultSort('name')
             ->paginated([10, 25, 50, 100]);
     }
 
@@ -113,19 +97,42 @@ class ManageSintaLecturerStudyProgramSettings extends Page implements HasTable
         ];
     }
 
-    protected function settingQueryForLatestBatch(): Builder
+    protected function sintaLecturerQuery(): Builder
     {
-        $latestBatchId = SintaLecturerFetchBatch::query()->latest('id')->value('id');
+        return SintaLecturer::query()
+            ->select(['sinta_id', 'name'])
+            ->with(['studyProgramSettings' => function ($query): void {
+                $query->select(['id', 'sinta_id', 'study_program_id'])
+                    ->orderByRaw('study_program_id IS NULL')
+                    ->orderBy('id');
+            }]);
+    }
 
-        return SintaLecturerStudyProgramSetting::query()
-            ->with(['sintaLecturer', 'studyProgram'])
-            ->when($latestBatchId, function (Builder $query) use ($latestBatchId): void {
-                $query->whereIn('sinta_id', SintaLecturerFetchBatchItem::query()
-                    ->where('batch_id', $latestBatchId)
-                    ->whereIn('status', ['success', 'success_with_warning'])
-                    ->select('sinta_id'));
-            })
-            ->when(! $latestBatchId, fn (Builder $query): Builder => $query->whereRaw('1 = 0'));
+    protected function selectedStudyProgramId(SintaLecturer $record): ?int
+    {
+        $studyProgramId = $record->studyProgramSettings
+            ->first(fn (SintaLecturerStudyProgramSetting $setting): bool => filled($setting->study_program_id))
+            ?->study_program_id;
+
+        return $studyProgramId ? (int) $studyProgramId : null;
+    }
+
+    protected function saveStudyProgramSetting(SintaLecturer $record, mixed $state): void
+    {
+        $studyProgramId = filled($state) ? (int) $state : null;
+
+        SintaLecturerStudyProgramSetting::query()
+            ->where('sinta_id', $record->sinta_id)
+            ->delete();
+
+        SintaLecturerStudyProgramSetting::query()->create([
+            'sinta_id' => (string) $record->sinta_id,
+            'study_program_id' => $studyProgramId,
+            'created_by' => auth()->id(),
+            'updated_by' => auth()->id(),
+        ]);
+
+        $record->unsetRelation('studyProgramSettings');
     }
 
     protected function studyProgramOptions(): array
