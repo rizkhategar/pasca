@@ -1,0 +1,75 @@
+name: Patch SINTA Auto Fetch UI Watch
+
+on:
+  push:
+    branches:
+      - refactor/lecturer-filament-resource
+    paths:
+      - .github/workflows/patch-sinta-auto-fetch-ui-watch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/lecturer-filament-resource
+      - name: Patch auto fetch UI watcher
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          path = Path('app/Filament/Resources/SintaLecturer/Pages/ImportSintaLecturers.php')
+          text = path.read_text()
+
+          old_resume_start = """                const resumeQueuedFetchAllIfActive = async () => {
+                    try {
+                        const payload = await readFetchAllStatus();
+"""
+          new_resume_start = """                const resumeQueuedFetchAllIfActive = async () => {
+                    try {
+                        if (fetchAllPollState.intervalId) {
+                            return;
+                        }
+
+                        const payload = await readFetchAllStatus();
+"""
+          if old_resume_start not in text:
+              raise SystemExit('resumeQueuedFetchAllIfActive start block not found')
+          text = text.replace(old_resume_start, new_resume_start, 1)
+
+          old_init = """                document.addEventListener('click', clickHandler);
+                window.setTimeout(resumeQueuedFetchAllIfActive, 1000);
+                window.__bulkSintaLecturerImportCleanup = () => {
+                    stopFetchAllPolling();
+                    stopImportAllPolling();
+                    document.removeEventListener('click', clickHandler);
+                };
+"""
+          new_init = """                document.addEventListener('click', clickHandler);
+                window.setTimeout(resumeQueuedFetchAllIfActive, 1000);
+                const scheduledFetchAllWatcherIntervalId = window.setInterval(resumeQueuedFetchAllIfActive, 15000);
+                window.__bulkSintaLecturerImportCleanup = () => {
+                    stopFetchAllPolling();
+                    stopImportAllPolling();
+                    window.clearInterval(scheduledFetchAllWatcherIntervalId);
+                    document.removeEventListener('click', clickHandler);
+                };
+"""
+          if old_init not in text:
+              raise SystemExit('init cleanup block not found')
+          text = text.replace(old_init, new_init, 1)
+
+          path.write_text(text)
+          PY
+      - name: Commit patch and remove workflow
+        run: |
+          rm .github/workflows/patch-sinta-auto-fetch-ui-watch.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/Filament/Resources/SintaLecturer/Pages/ImportSintaLecturers.php .github/workflows/patch-sinta-auto-fetch-ui-watch.yml
+          git commit -m "fix(sinta-lecturer): auto-monitor scheduled fetch all" || exit 0
+          git push
