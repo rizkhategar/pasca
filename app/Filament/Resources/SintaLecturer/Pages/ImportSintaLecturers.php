@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources\SintaLecturer\Pages;
 
-use App\Filament\Resources\SintaLecturer\Pages\Concerns\HasBulkProdiSettingAction;
 use App\Filament\Resources\SintaLecturer\SintaLecturerResource;
 use App\Models\SintaLecturer;
+use App\Models\StudyProgram;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
@@ -14,11 +14,11 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Concerns\InteractsWithSchemas;
 use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\HtmlString;
 
 class ImportSintaLecturers extends Page implements HasSchemas
 {
-    use HasBulkProdiSettingAction;
     use InteractsWithSchemas;
 
     /**
@@ -38,7 +38,6 @@ class ImportSintaLecturers extends Page implements HasSchemas
     public function mount(): void
     {
         $this->form->fill();
-        $this->queueDepartmentProdiCacheWarmForLatestBatch();
     }
 
     public function notifyFromBrowser(string $status, string $title, ?string $body = null): void
@@ -74,14 +73,14 @@ class ImportSintaLecturers extends Page implements HasSchemas
             'importAll' => route('scrap.sintaFetchBatches.importAll'),
         ];
 
-        $buttonBaseStyle = 'width: 100%; display: inline-flex; align-items: center; justify-content: center; border-radius: 0.5rem; padding: 0.625rem 0.875rem; font-weight: 600; color: #ffffff; border: none; cursor: pointer; margin-top: 0.375rem;';
+        $buttonBaseStyle = 'width: 100%; display: inline-flex; align-items: center; justify-content: center; border-radius: 0.5rem; padding: 0.625rem 0.875rem; font-weight: 600; color: #ffffff; border: none; cursor: pointer; margin-top: 0.375rem; text-decoration: none;';
 
         $buttons = [
             'syncSinta' => '<button type="button" id="btn-perbarui" style="' . $buttonBaseStyle . ' background-color: #525252;">Sync SINTA Lecturers</button>',
             'fetchSelected' => '<button type="button" id="btn-ambil-detail" style="' . $buttonBaseStyle . ' background-color: #2563eb;">Fetch Selected Lecturer</button>',
             'fetchAll' => '<button type="button" id="btn-fetch-all-details" style="' . $buttonBaseStyle . ' background-color: #0f766e;">Fetch All / Lanjutkan Otomatis</button>',
             'syncPrograms' => '<button type="button" id="btn-sync-program-studi" style="' . $buttonBaseStyle . ' background-color: #7c3aed;">Sync Study Programs</button>',
-            'settings' => '<button type="button" wire:click="mountAction(\'settingProdiFetchAll\')" style="' . $buttonBaseStyle . ' background-color: #ea580c;">Setting Prodi Fetch All</button>',
+            'settings' => '<a href="' . SintaLecturerResource::getUrl('bulk-prodi-settings') . '" style="' . $buttonBaseStyle . ' background-color: #ea580c;">Setting Prodi Fetch All</a>',
             'importSelected' => '<button type="button" id="btn-import" style="' . $buttonBaseStyle . ' background-color: #16a34a;">Import Selected</button>',
             'importAll' => '<button type="button" id="btn-import-all" style="' . $buttonBaseStyle . ' background-color: #15803d;">Import All to Database</button>',
         ];
@@ -369,7 +368,7 @@ class ImportSintaLecturers extends Page implements HasSchemas
 
                         Section::make('Step 3: Setting Prodi & Import')
                             ->icon('heroicon-o-server')
-                            ->description('Set study program mappings from SINTA department, then import selected or all ready lecturers.')
+                            ->description('Fetch All otomatis mengisi tabel setting prodi dari Excel merged. Buka table setting untuk koreksi data yang kosong/null.')
                             ->schema([
                                 Placeholder::make('button_sync_program_studi')->hiddenLabel()->content(new HtmlString($buttons['syncPrograms'])),
                                 Placeholder::make('button_setting_prodi_fetch_all')->hiddenLabel()->content(new HtmlString($buttons['settings'])),
@@ -408,5 +407,19 @@ class ImportSintaLecturers extends Page implements HasSchemas
                 $lecturer->sinta_id => trim(($lecturer->name ?? '-') . ' (' . $lecturer->sinta_id . ')'),
             ])
             ->toArray();
+    }
+
+    protected function getStudyProgramOptions(): array
+    {
+        return Cache::remember('sinta_import_study_program_options_v4', now()->addMinutes(10), function (): array {
+            return StudyProgram::query()
+                ->orderBy('jenjang')
+                ->orderBy('nama')
+                ->get()
+                ->mapWithKeys(fn (StudyProgram $program): array => [
+                    $program->id => $program->display_name,
+                ])
+                ->toArray();
+        });
     }
 }
