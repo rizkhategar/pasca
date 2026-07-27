@@ -1,0 +1,85 @@
+name: Patch SINTA Fetch Watcher
+
+on:
+  push:
+    branches:
+      - refactor/lecturer-filament-resource
+    paths:
+      - .github/trigger-sinta-fetch-watcher.txt
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/lecturer-filament-resource
+      - name: Patch watcher in ImportSintaLecturers
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          path = Path('app/Filament/Resources/SintaLecturer/Pages/ImportSintaLecturers.php')
+          text = path.read_text()
+
+          old_resume = """                const resumeQueuedFetchAllIfActive = async () => {
+                    try {
+                        const payload = await readFetchAllStatus();
+
+                        if (!isFetchAllActive(payload)) {
+                            return;
+                        }
+"""
+          new_resume = """                const resumeQueuedFetchAllIfActive = async () => {
+                    try {
+                        if (fetchAllPollState.intervalId) {
+                            return;
+                        }
+
+                        const payload = await readFetchAllStatus();
+
+                        if (!isFetchAllActive(payload)) {
+                            return;
+                        }
+"""
+          if old_resume in text:
+              text = text.replace(old_resume, new_resume, 1)
+          elif "if (fetchAllPollState.intervalId)" not in text:
+              raise SystemExit('resumeQueuedFetchAllIfActive block not found')
+
+          old_init = """                document.addEventListener('click', clickHandler);
+                window.setTimeout(resumeQueuedFetchAllIfActive, 1000);
+                window.__bulkSintaLecturerImportCleanup = () => {
+                    stopFetchAllPolling();
+                    stopImportAllPolling();
+                    document.removeEventListener('click', clickHandler);
+                };
+"""
+          new_init = """                document.addEventListener('click', clickHandler);
+                window.setTimeout(resumeQueuedFetchAllIfActive, 1000);
+                const scheduledFetchAllWatcherIntervalId = window.setInterval(resumeQueuedFetchAllIfActive, 15000);
+                window.__bulkSintaLecturerImportCleanup = () => {
+                    stopFetchAllPolling();
+                    stopImportAllPolling();
+                    window.clearInterval(scheduledFetchAllWatcherIntervalId);
+                    document.removeEventListener('click', clickHandler);
+                };
+"""
+          if old_init in text:
+              text = text.replace(old_init, new_init, 1)
+          elif "scheduledFetchAllWatcherIntervalId" not in text:
+              raise SystemExit('init cleanup block not found')
+
+          path.write_text(text)
+          PY
+      - name: Commit patch and cleanup
+        run: |
+          rm -f .github/workflows/patch-sinta-fetch-watcher.yml .github/trigger-sinta-fetch-watcher.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/Filament/Resources/SintaLecturer/Pages/ImportSintaLecturers.php .github/workflows/patch-sinta-fetch-watcher.yml .github/trigger-sinta-fetch-watcher.txt
+          git commit -m "fix(sinta-lecturer): watch scheduled fetch all in browser" || exit 0
+          git push
