@@ -49,6 +49,7 @@ class SintaLecturerResource extends Resource
         return [
             'index' => Pages\ListSintaLecturers::route('/'),
             'import' => Pages\ImportSintaLecturers::route('/import'),
+            'bulk-prodi-settings' => Pages\ManageSintaLecturerStudyProgramSettings::route('/bulk-prodi-settings'),
             'view' => Pages\ViewSintaLecturer::route('/{record}'),
         ];
     }
