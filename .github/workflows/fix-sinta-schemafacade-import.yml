@@ -1,0 +1,51 @@
+name: Fix SINTA SchemaFacade Import
+
+on:
+  push:
+    branches:
+      - refactor/lecturer-filament-resource
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/lecturer-filament-resource
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Restore SchemaFacade import
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          target = Path('app/Filament/Resources/SintaLecturer/Pages/ImportSintaLecturers.php')
+          text = target.read_text()
+          import_line = 'use Illuminate\\Support\\Facades\\Schema as SchemaFacade;\n'
+
+          if import_line not in text:
+              anchor = 'use Illuminate\\Support\\Facades\\Log;\n'
+              if anchor not in text:
+                  raise SystemExit('Import anchor not found')
+              text = text.replace(anchor, anchor + import_line, 1)
+              target.write_text(text)
+
+          workflow = Path('.github/workflows/fix-sinta-schemafacade-import.yml')
+          if workflow.exists():
+              workflow.unlink()
+          PY
+      - name: Commit patch
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/Filament/Resources/SintaLecturer/Pages/ImportSintaLecturers.php .github/workflows/fix-sinta-schemafacade-import.yml
+          git commit -m "fix(sinta-lecturer): restore schema facade import"
+          git push
