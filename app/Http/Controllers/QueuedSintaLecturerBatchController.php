@@ -9,13 +9,18 @@ use App\Models\SintaLecturerFetchBatch;
 use App\Models\SintaLecturerFetchBatchItem;
 use App\Models\SintaLecturerStudyProgramSetting;
 use App\Models\StudyProgram;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class QueuedSintaLecturerBatchController extends Controller
 {
     private const FETCH_PROGRESS_HISTORY_LIMIT = 300;
+
+    private const STALE_FETCH_BATCH_MINUTES = 5;
 
     public function fetchAll(): StreamedResponse
     {
@@ -25,21 +30,35 @@ class QueuedSintaLecturerBatchController extends Controller
                     'output' => "<span class='text-danger-500'>[ERROR]</span> Batch tables are not available. Run php artisan migrate first.\n",
                     'done' => true,
                 ]);
+
                 return;
             }
+
+            $recoveryMessage = $this->recoverStaleFetchBatchIfNeeded();
 
             if ($this->hasActiveFetchBatch()) {
                 $this->stream([
-                    'output' => "<span class='text-warning-500'>[QUEUE]</span> A fetch-all batch is already running or waiting. Do not start another one. Check progress or wait until it finishes.\n",
+                    'output' => "<span class='text-warning-500'>[QUEUE]</span> A fetch-all batch is still active. If it is truly stuck, stop php artisan queue:work, run php artisan cache:clear, then click Fetch All again.\n",
                     'done' => true,
                 ]);
+
                 return;
             }
 
+            $this->releaseFetchAllOverlapLocks();
+
             FetchAllSintaLecturerDetailsJob::dispatch();
 
+            $output = '';
+
+            if ($recoveryMessage) {
+                $output .= "<span class='text-warning-500 font-bold'>[RECOVERY]</span> {$recoveryMessage}\n";
+            }
+
+            $output .= "<span class='text-success-400 font-bold'>[QUEUED]</span> Fetch All is now running in background queue. You may leave or refresh this page. Run <b>php artisan queue:work</b> if no progress appears.\n";
+
             $this->stream([
-                'output' => "<span class='text-success-400 font-bold'>[QUEUED]</span> Fetch All is now running in background queue. You may leave or refresh this page. Run <b>php artisan queue:work</b> if no progress appears.\n",
+                'output' => $output,
                 'done' => true,
             ]);
         });
@@ -53,6 +72,7 @@ class QueuedSintaLecturerBatchController extends Controller
                     'output' => "<span class='text-danger-500'>[ERROR]</span> Batch tables are not available. Run php artisan migrate first.\n",
                     'done' => true,
                 ]);
+
                 return;
             }
 
@@ -63,6 +83,7 @@ class QueuedSintaLecturerBatchController extends Controller
                     'output' => "<span class='text-danger-500'>[ERROR]</span> No fetch batch was found. Run Fetch All first.\n",
                     'done' => true,
                 ]);
+
                 return;
             }
 
@@ -73,6 +94,7 @@ class QueuedSintaLecturerBatchController extends Controller
                     'output' => "<span class='text-danger-500'>[ERROR]</span> Import All is blocked because {$summary['unfetched_count']} SINTA lecturer(s) are not included in the latest fetch batch. Run Fetch All again first.\n",
                     'done' => true,
                 ]);
+
                 return;
             }
 
@@ -81,6 +103,7 @@ class QueuedSintaLecturerBatchController extends Controller
                     'output' => "<span class='text-danger-500'>[ERROR]</span> Import All is blocked because the latest batch still has failed, pending, or processing items. Use Resume or Retry Failed first.\n",
                     'done' => true,
                 ]);
+
                 return;
             }
 
@@ -89,6 +112,7 @@ class QueuedSintaLecturerBatchController extends Controller
                     'output' => "<span class='text-danger-500'>[ERROR]</span> Import All is blocked because {$summary['missing_output_file_count']} merged Excel file(s) are missing from scripts/output. Run Fetch All again first.\n",
                     'done' => true,
                 ]);
+
                 return;
             }
 
@@ -97,6 +121,7 @@ class QueuedSintaLecturerBatchController extends Controller
                     'output' => "<span class='text-danger-500'>[ERROR]</span> Import All is blocked because {$summary['missing_setting_count']} lecturer(s) do not have valid study program settings. Open Setting Prodi Fetch All first and select missing prodi.\n",
                     'done' => true,
                 ]);
+
                 return;
             }
 
@@ -105,6 +130,7 @@ class QueuedSintaLecturerBatchController extends Controller
                     'output' => "<span class='text-warning-500'>[QUEUE]</span> Import All is already queued or running for the latest batch.\n",
                     'done' => true,
                 ]);
+
                 return;
             }
 
@@ -250,6 +276,75 @@ class QueuedSintaLecturerBatchController extends Controller
         ]);
     }
 
+    private function recoverStaleFetchBatchIfNeeded(): ?string
+    {
+        $batch = $this->latestBatch();
+
+        if (! $batch || ! in_array($batch->status, ['queued', 'running'], true)) {
+            return null;
+        }
+
+        if (! $this->isFetchBatchStale($batch)) {
+            return null;
+        }
+
+        $message = "Batch #{$batch->id} was stale or interrupted, so it was cancelled before queueing a fresh Fetch All job.";
+
+        $batch->items()
+            ->whereIn('status', ['pending', 'processing'])
+            ->update([
+                'status' => 'failed',
+                'error_message' => 'Cancelled automatically because the previous Fetch All batch was stale or interrupted.',
+                'finished_at' => now(),
+            ]);
+
+        $batch->update([
+            'status' => 'cancelled',
+            'finished_at' => now(),
+            'current_sinta_id' => null,
+            'error_message' => $message,
+        ]);
+
+        $this->releaseFetchAllOverlapLocks();
+
+        return $message;
+    }
+
+    private function isFetchBatchStale(SintaLecturerFetchBatch $batch): bool
+    {
+        $activeItemUpdatedAt = $batch->items()
+            ->whereIn('status', ['pending', 'processing'])
+            ->max('updated_at');
+
+        $latestActivityAt = $activeItemUpdatedAt ?: $batch->updated_at ?: $batch->started_at;
+
+        if (! $latestActivityAt) {
+            return true;
+        }
+
+        return Carbon::parse($latestActivityAt)->lt(now()->subMinutes(self::STALE_FETCH_BATCH_MINUTES));
+    }
+
+    private function releaseFetchAllOverlapLocks(): void
+    {
+        foreach ($this->fetchAllOverlapLockNames() as $lockName) {
+            try {
+                Cache::lock($lockName)->forceRelease();
+            } catch (Throwable) {
+                // Some cache drivers may not support forceRelease for a missing lock.
+            }
+        }
+    }
+
+    private function fetchAllOverlapLockNames(): array
+    {
+        return [
+            'sinta-lecturer-fetch-all',
+            'laravel-queue-overlap:sinta-lecturer-fetch-all',
+            'laravel-queue-overlap:' . FetchAllSintaLecturerDetailsJob::class . ':sinta-lecturer-fetch-all',
+        ];
+    }
+
     private function hasActiveFetchBatch(): bool
     {
         $batch = $this->latestBatch();
@@ -326,6 +421,8 @@ class QueuedSintaLecturerBatchController extends Controller
 
     private function mergedDetailFileExists(string $sintaId): bool
     {
-        return file_exists($this->mergedDetailFilePath($sintaId));
+        $path = $this->mergedDetailFilePath($sintaId);
+
+        return file_exists($path) && filesize($path) > 0;
     }
 }
