@@ -143,23 +143,26 @@
             const appendAutomaticLogs = async () => {
                 const payload = await getJson(routes.automaticRuns);
                 const logs = Array.isArray(payload?.logs) ? payload.logs : [];
+                const latestLog = logs[0] || null;
 
-                logs.forEach((log) => {
-                    const message = normalizeText(log?.summary_message);
+                if (! latestLog) {
+                    return;
+                }
 
-                    if (! message) {
-                        return;
-                    }
+                const message = normalizeText(latestLog?.summary_message);
 
-                    const key = `${log.id}:${log.status}:${log.phase}:${log.updated_at}:${message}`;
+                if (! message) {
+                    return;
+                }
 
-                    if (state.emittedAutomaticLogKeys.has(key)) {
-                        return;
-                    }
+                const key = `${latestLog.id}:${message}`;
 
-                    state.emittedAutomaticLogKeys.add(key);
-                    appendTerminal('[AUTO] ' + message + '\n');
-                });
+                if (state.emittedAutomaticLogKeys.has(key)) {
+                    return;
+                }
+
+                state.emittedAutomaticLogKeys.add(key);
+                appendTerminal('[AUTO] ' + message + '\n');
             };
 
             const appendImportProgress = async () => {
