@@ -53,6 +53,8 @@ class RunScheduledSintaLecturerFetchAll extends Command
             return self::SUCCESS;
         }
 
+        $this->purgeOldAutomaticRunLogs($now->toDateString());
+
         $activeBatch = $this->activeFetchBatch();
 
         if ($activeBatch && ! $this->isActiveBatchStale($activeBatch, $now)) {
@@ -196,6 +198,20 @@ class RunScheduledSintaLecturerFetchAll extends Command
             'finished_at' => $now,
             'error_message' => $reason,
         ])->save();
+    }
+
+    private function purgeOldAutomaticRunLogs(string $today): void
+    {
+        $deletedCount = SintaLecturerAutomaticRun::query()
+            ->where('run_date', '<', $today)
+            ->delete();
+
+        if ($deletedCount > 0) {
+            Log::info('[SINTA SCHEDULED FETCH ALL] Old automatic run logs were purged before today scheduled fetch.', [
+                'today' => $today,
+                'deleted_count' => $deletedCount,
+            ]);
+        }
     }
 
     private function batchTablesReady(): bool
