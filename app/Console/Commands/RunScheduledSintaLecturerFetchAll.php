@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Filament\Resources\SintaLecturer\Pages\ImportSintaLecturers;
 use App\Jobs\FetchAllSintaLecturerDetailsJob;
+use App\Models\SintaLecturerAutomaticRun;
 use App\Models\SintaLecturerFetchAllScheduleSetting;
 use App\Models\SintaLecturerFetchBatch;
 use Illuminate\Console\Command;
@@ -29,7 +30,7 @@ class RunScheduledSintaLecturerFetchAll extends Command
         $setting = SintaLecturerFetchAllScheduleSetting::current();
 
         if (! $this->batchTablesReady()) {
-            $reason = 'Skipped because SINTA Fetch All batch tables are not ready. Run php artisan migrate.';
+            $reason = 'Skipped because SINTA Fetch All automatic tables are not ready. Run php artisan migrate.';
 
             $setting->forceFill([
                 'last_skip_reason' => $reason,
@@ -62,6 +63,20 @@ class RunScheduledSintaLecturerFetchAll extends Command
                 'last_skip_reason' => $reason,
             ])->save();
 
+            SintaLecturerAutomaticRun::updateOrCreate(
+                [
+                    'run_date' => $now->toDateString(),
+                    'scheduled_time' => $scheduledTime,
+                ],
+                [
+                    'fetch_batch_id' => $activeBatch->id,
+                    'status' => 'failed',
+                    'phase' => 'failed',
+                    'error_message' => $reason,
+                    'summary_message' => "import & fetch automatic {$now->toDateString()} [failed] : {$reason}",
+                ]
+            );
+
             Log::warning('[SINTA SCHEDULED FETCH ALL] ' . $reason);
             $this->warn($reason);
 
@@ -76,7 +91,27 @@ class RunScheduledSintaLecturerFetchAll extends Command
             $this->warn($reason);
         }
 
-        FetchAllSintaLecturerDetailsJob::dispatch();
+        $automaticRun = SintaLecturerAutomaticRun::updateOrCreate(
+            [
+                'run_date' => $now->toDateString(),
+                'scheduled_time' => $scheduledTime,
+            ],
+            [
+                'fetch_batch_id' => null,
+                'status' => 'queued',
+                'phase' => 'fetch',
+                'fetch_started_at' => null,
+                'fetch_finished_at' => null,
+                'import_started_at' => null,
+                'import_finished_at' => null,
+                'failed_sinta_ids' => null,
+                'missing_study_program_sinta_ids' => null,
+                'error_message' => null,
+                'summary_message' => "import & fetch automatic {$now->toDateString()} [queued]",
+            ]
+        );
+
+        FetchAllSintaLecturerDetailsJob::dispatch((int) $automaticRun->id);
 
         $setting->forceFill([
             'last_run_at' => $now,
@@ -84,6 +119,7 @@ class RunScheduledSintaLecturerFetchAll extends Command
         ])->save();
 
         Log::info('[SINTA SCHEDULED FETCH ALL] Fetch All job dispatched by timer.', [
+            'automatic_run_id' => $automaticRun->id,
             'scheduled_time' => $scheduledTime,
             'scheduled_at' => $scheduledAt->toDateTimeString(),
             'dispatched_at' => $now->toDateTimeString(),
@@ -165,6 +201,8 @@ class RunScheduledSintaLecturerFetchAll extends Command
     private function batchTablesReady(): bool
     {
         return Schema::hasTable('sinta_lecturer_fetch_batches')
-            && Schema::hasTable('sinta_lecturer_fetch_batch_items');
+            && Schema::hasTable('sinta_lecturer_fetch_batch_items')
+            && Schema::hasTable('sinta_lecturer_study_program_settings')
+            && Schema::hasTable('sinta_lecturer_automatic_runs');
     }
 }
