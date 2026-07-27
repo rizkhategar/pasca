@@ -281,11 +281,19 @@ trait HasBulkProdiSettingAction
 
     protected function bulkProdiMountedActionData(): array
     {
-        return data_get($this, 'mountedActionsData.0', []);
+        if (! property_exists($this, 'mountedActionsData')) {
+            return [];
+        }
+
+        return $this->mountedActionsData[0] ?? [];
     }
 
     protected function setBulkProdiMountedActionData(array $data): void
     {
+        if (! property_exists($this, 'mountedActionsData')) {
+            return;
+        }
+
         $this->mountedActionsData[0] = $data;
     }
 
