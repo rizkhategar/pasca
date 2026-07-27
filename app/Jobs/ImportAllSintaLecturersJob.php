@@ -60,12 +60,14 @@ class ImportAllSintaLecturersJob implements ShouldQueue, ShouldBeUnique
             return;
         }
 
-        $automaticRun?->forceFill([
-            'status' => 'importing',
-            'phase' => 'import',
-            'import_started_at' => $automaticRun->import_started_at ?: now(),
-            'summary_message' => 'import & fetch automatic ' . $this->automaticRunDate($automaticRun) . ' [import running]',
-        ])->save();
+        if ($automaticRun) {
+            $automaticRun->forceFill([
+                'status' => 'importing',
+                'phase' => 'import',
+                'import_started_at' => $automaticRun->import_started_at ?: now(),
+                'summary_message' => 'import & fetch automatic ' . $this->automaticRunDate($automaticRun) . ' [import running]',
+            ])->save();
+        }
 
         Log::info('[SINTA IMPORT ALL] Background import all job started.', [
             'batch_id' => $this->batchId,
