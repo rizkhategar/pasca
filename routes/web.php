@@ -11,8 +11,8 @@ use App\Http\Controllers\OrganizationStructureController;
 use App\Http\Controllers\QueuedSintaLecturerBatchController;
 use App\Http\Controllers\RisetController;
 use App\Http\Controllers\ScrapController;
+use App\Http\Controllers\SintaLecturerAutomaticRunController;
 use App\Http\Controllers\SmartBulkSintaLecturerController;
-use App\Http\Controllers\VisionMissionController;
 use App\Models\AboutPostgraduate;
 use App\Models\OrganizationalStructure;
 use App\Models\Slider;
@@ -122,6 +122,7 @@ Route::get('/scrap/sinta-fetch-batches/retry-failed', [SmartBulkSintaLecturerCon
 Route::get('/scrap/sinta-fetch-batches/reset', [SmartBulkSintaLecturerController::class, 'reset'])->name('scrap.sintaFetchBatches.reset');
 Route::get('/scrap/sinta-fetch-batches/import-all', [QueuedSintaLecturerBatchController::class, 'importAll'])->name('scrap.sintaFetchBatches.importAll');
 Route::get('/scrap/sinta-fetch-batches/status', [QueuedSintaLecturerBatchController::class, 'status'])->name('scrap.sintaFetchBatches.status');
+Route::get('/scrap/sinta-fetch-batches/automatic-runs/latest', [SintaLecturerAutomaticRunController::class, 'latest'])->name('scrap.sintaFetchBatches.automaticRuns.latest');
 Route::get('/scrap/sinta-fetch-batches/study-program-settings', [SmartBulkSintaLecturerController::class, 'studyProgramSettings'])->name('scrap.sintaFetchBatches.studyProgramSettings');
 Route::post('/scrap/sinta-fetch-batches/study-program-settings', [SmartBulkSintaLecturerController::class, 'saveStudyProgramSettings'])->name('scrap.sintaFetchBatches.saveStudyProgramSettings');
 Route::get('/riset-dosen', [RisetController::class, 'listDosen'])->name('riset.dosen');
