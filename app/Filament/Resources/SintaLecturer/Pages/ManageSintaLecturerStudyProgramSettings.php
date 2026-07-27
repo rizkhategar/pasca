@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\SintaLecturer\Pages;
 
 use App\Filament\Resources\SintaLecturer\SintaLecturerResource;
+use App\Models\SintaLecturerFetchBatch;
+use App\Models\SintaLecturerFetchBatchItem;
 use App\Models\SintaLecturerStudyProgramSetting;
 use App\Models\StudyProgram;
 use Filament\Actions\Action;
@@ -31,15 +33,7 @@ class ManageSintaLecturerStudyProgramSettings extends Page implements HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->query(
-                SintaLecturerStudyProgramSetting::query()
-                    ->with(['sintaLecturer', 'studyProgram'])
-                    ->whereIn('sinta_id', function ($query): void {
-                        $query->select('sinta_id')
-                            ->from('sinta_lecturer_fetch_batch_items')
-                            ->whereIn('status', ['success', 'success_with_warning']);
-                    })
-            )
+            ->query($this->settingQueryForLatestBatch())
             ->columns([
                 TextColumn::make('sinta_id')
                     ->label('SINTA ID')
@@ -49,7 +43,6 @@ class ManageSintaLecturerStudyProgramSettings extends Page implements HasTable
                 TextColumn::make('sintaLecturer.name')
                     ->label('Nama Dosen')
                     ->searchable()
-                    ->sortable()
                     ->wrap(),
 
                 TextColumn::make('sintaLecturer.department')
@@ -118,6 +111,21 @@ class ManageSintaLecturerStudyProgramSettings extends Page implements HasTable
                 ->icon('heroicon-o-arrow-left')
                 ->url(SintaLecturerResource::getUrl('import')),
         ];
+    }
+
+    protected function settingQueryForLatestBatch(): Builder
+    {
+        $latestBatchId = SintaLecturerFetchBatch::query()->latest('id')->value('id');
+
+        return SintaLecturerStudyProgramSetting::query()
+            ->with(['sintaLecturer', 'studyProgram'])
+            ->when($latestBatchId, function (Builder $query) use ($latestBatchId): void {
+                $query->whereIn('sinta_id', SintaLecturerFetchBatchItem::query()
+                    ->where('batch_id', $latestBatchId)
+                    ->whereIn('status', ['success', 'success_with_warning'])
+                    ->select('sinta_id'));
+            })
+            ->when(! $latestBatchId, fn (Builder $query): Builder => $query->whereRaw('1 = 0'));
     }
 
     protected function studyProgramOptions(): array
