@@ -8,6 +8,7 @@ use App\Models\SintaLecturer;
 use App\Models\SintaLecturerFetchBatch;
 use App\Models\SintaLecturerFetchBatchItem;
 use App\Models\SintaLecturerStudyProgramSetting;
+use App\Models\StudyProgram;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Schema;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -93,7 +94,7 @@ class QueuedSintaLecturerBatchController extends Controller
 
             if ($summary['missing_setting_count'] > 0) {
                 $this->stream([
-                    'output' => "<span class='text-danger-500'>[ERROR]</span> Import All is blocked because {$summary['missing_setting_count']} lecturer(s) do not have study program settings. Open Setting Prodi Fetch All first.\n",
+                    'output' => "<span class='text-danger-500'>[ERROR]</span> Import All is blocked because {$summary['missing_setting_count']} lecturer(s) do not have valid study program settings. Open Setting Prodi Fetch All first and select missing prodi.\n",
                     'done' => true,
                 ]);
                 return;
@@ -292,6 +293,8 @@ class QueuedSintaLecturerBatchController extends Controller
         $successItems = $batch->items()->whereIn('status', ['success', 'success_with_warning'])->get(['sinta_id']);
         $settingIds = SintaLecturerStudyProgramSetting::query()
             ->whereIn('sinta_id', $successItems->pluck('sinta_id'))
+            ->whereNotNull('study_program_id')
+            ->whereIn('study_program_id', StudyProgram::query()->select('id'))
             ->pluck('sinta_id')
             ->unique();
         $missingOutputFileCount = $successItems
