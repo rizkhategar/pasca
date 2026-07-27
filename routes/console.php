@@ -14,5 +14,5 @@ Artisan::command('inspire', function () {
 Schedule::job(new SyncNewsApiJob)->hourly();
 
 // Jalankan pengecekan timer hardcode Fetch All SINTA setiap menit.
-// Jam eksekusi utama diatur di RunScheduledSintaLecturerFetchAll::HARDCODED_SCHEDULED_TIME.
+// Jam eksekusi utama diatur di ImportSintaLecturers::AUTO_FETCH_ALL_TIME.
 Schedule::command('sinta:run-scheduled-fetch-all')->everyMinute();

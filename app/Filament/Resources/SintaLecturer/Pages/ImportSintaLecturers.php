@@ -6,7 +6,6 @@ use App\Filament\Resources\SintaLecturer\SintaLecturerResource;
 use App\Jobs\WarmSintaLecturerExcelProdiCacheJob;
 use App\Models\SintaLecturer;
 use App\Models\SintaLecturerFetchBatch;
-use App\Models\SintaLecturerFetchAllScheduleSetting;
 use App\Models\SintaLecturerStudyProgramSetting;
 use App\Models\StudyProgram;
 use Filament\Actions;
@@ -14,8 +13,6 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\TimePicker;
-use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
 use Filament\Schemas\Components\Grid;
@@ -27,7 +24,6 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema as SchemaFacade;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Rap2hpoutre\FastExcel\FastExcel;
@@ -41,6 +37,12 @@ class ImportSintaLecturers extends Page implements HasSchemas
 
     private const BULK_PRODI_MODAL_MAX_LIMIT = 100;
 
+    /**
+     * Ubah jam otomatis Fetch All SINTA di sini.
+     * Format: HH:MM, contoh '00:00', '23:30'.
+     */
+    public const AUTO_FETCH_ALL_TIME = '00:00';
+
     protected static string $resource = SintaLecturerResource::class;
 
     protected string $view = 'filament.resources.sinta-lecturer.pages.import-sinta-lecturers';
@@ -53,67 +55,6 @@ class ImportSintaLecturers extends Page implements HasSchemas
     {
         $this->form->fill();
         $this->queueExcelProdiCacheWarmForLatestBatch();
-    }
-
-    public function setTimerFetchAllAction(): Actions\Action
-    {
-        return Actions\Action::make('setTimerFetchAll')
-            ->label('Set Timer Fetch All')
-            ->icon('heroicon-o-clock')
-            ->color('info')
-            ->modalHeading('Set Timer Fetch All')
-            ->modalDescription('Configure automatic Fetch All to run once per day at the selected time. Make sure the Laravel scheduler and queue worker are running.')
-            ->fillForm(function (): array {
-                $setting = SintaLecturerFetchAllScheduleSetting::current();
-
-                return [
-                    'is_enabled' => (bool) $setting->is_enabled,
-                    'scheduled_time' => $setting->formattedTime(),
-                ];
-            })
-            ->form([
-                Toggle::make('is_enabled')
-                    ->label('Enable automatic fetch all')
-                    ->inline(false)
-                    ->live(),
-                TimePicker::make('scheduled_time')
-                    ->label('Fetch All Time')
-                    ->seconds(false)
-                    ->native(false)
-                    ->required(fn ($get): bool => (bool) $get('is_enabled'))
-                    ->helperText('Runs once per day using the application timezone: ' . config('app.timezone')),
-                Placeholder::make('timer_note')
-                    ->hiddenLabel()
-                    ->content(new HtmlString('<div style="padding:0.75rem;border-radius:0.5rem;background-color:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);color:#1d4ed8;font-size:0.875rem;">The timer only dispatches Fetch All to the queue. Keep <b>php artisan schedule:work</b> and <b>php artisan queue:work</b> running for local development.</div>')),
-            ])
-            ->modalSubmitActionLabel('Save Timer')
-            ->action(function (array $data): void {
-                $enabled = (bool) data_get($data, 'is_enabled', false);
-                $time = data_get($data, 'scheduled_time');
-                $time = is_string($time) ? substr(trim($time), 0, 5) : null;
-
-                if ($enabled && blank($time)) {
-                    Notification::make()
-                        ->title('Fetch All timer was not saved')
-                        ->body('Please choose a time before enabling automatic Fetch All.')
-                        ->danger()
-                        ->send();
-
-                    return;
-                }
-
-                SintaLecturerFetchAllScheduleSetting::current()->update([
-                    'is_enabled' => $enabled,
-                    'scheduled_time' => $enabled ? $time : null,
-                    'last_skip_reason' => null,
-                ]);
-
-                Notification::make()
-                    ->title('Fetch All timer saved')
-                    ->body($enabled ? "Automatic Fetch All is enabled at {$time}." : 'Automatic Fetch All is disabled.')
-                    ->success()
-                    ->send();
-            });
     }
 
     public function settingProdiFetchAllAction(): Actions\Action

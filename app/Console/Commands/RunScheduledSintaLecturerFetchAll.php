@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Filament\Resources\SintaLecturer\Pages\ImportSintaLecturers;
 use App\Jobs\FetchAllSintaLecturerDetailsJob;
 use App\Models\SintaLecturerFetchAllScheduleSetting;
 use App\Models\SintaLecturerFetchBatch;
@@ -11,12 +12,6 @@ use Illuminate\Support\Facades\Schema;
 
 class RunScheduledSintaLecturerFetchAll extends Command
 {
-    /**
-     * Ubah jam otomatis Fetch All di sini.
-     * Format: HH:MM, contoh '00:00', '23:30'.
-     */
-    private const HARDCODED_SCHEDULED_TIME = '00:00';
-
     private const STALE_ACTIVE_BATCH_MINUTES = 10;
 
     protected $signature = 'sinta:run-scheduled-fetch-all';
@@ -33,10 +28,6 @@ class RunScheduledSintaLecturerFetchAll extends Command
 
         $setting = SintaLecturerFetchAllScheduleSetting::current();
 
-        if (! $setting->is_enabled) {
-            return self::SUCCESS;
-        }
-
         if (! $this->batchTablesReady()) {
             $reason = 'Skipped because SINTA Fetch All batch tables are not ready. Run php artisan migrate.';
 
@@ -50,7 +41,7 @@ class RunScheduledSintaLecturerFetchAll extends Command
         }
 
         $now = now();
-        $scheduledTime = self::HARDCODED_SCHEDULED_TIME;
+        $scheduledTime = ImportSintaLecturers::AUTO_FETCH_ALL_TIME;
         $scheduledAt = $this->scheduledAtForToday($scheduledTime);
 
         if ($now->lt($scheduledAt)) {
