@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Http\Controllers\BulkSintaLecturerController;
+use App\Models\SintaLecturerAutomaticRun;
 use App\Models\SintaLecturerFetchBatch;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -28,7 +29,7 @@ class ImportAllSintaLecturersJob implements ShouldQueue, ShouldBeUnique
 
     public int $uniqueFor = 86400;
 
-    public function __construct(public int $batchId)
+    public function __construct(public int $batchId, public ?int $automaticRunId = null)
     {
     }
 
@@ -45,9 +46,13 @@ class ImportAllSintaLecturersJob implements ShouldQueue, ShouldBeUnique
     public function handle(): void
     {
         $latestBatchId = SintaLecturerFetchBatch::query()->latest('id')->value('id');
+        $automaticRun = $this->automaticRun();
 
         if ((int) $latestBatchId !== $this->batchId) {
-            Log::warning('[SINTA IMPORT ALL] Import job skipped because another fetch batch became the latest batch.', [
+            $message = 'Import job skipped because another fetch batch became the latest batch.';
+            $this->failAutomaticRun($automaticRun, $message);
+
+            Log::warning('[SINTA IMPORT ALL] ' . $message, [
                 'job_batch_id' => $this->batchId,
                 'latest_batch_id' => $latestBatchId,
             ]);
@@ -55,12 +60,99 @@ class ImportAllSintaLecturersJob implements ShouldQueue, ShouldBeUnique
             return;
         }
 
-        Log::info('[SINTA IMPORT ALL] Background import all job started.', ['batch_id' => $this->batchId]);
+        $automaticRun?->forceFill([
+            'status' => 'importing',
+            'phase' => 'import',
+            'import_started_at' => $automaticRun->import_started_at ?: now(),
+            'summary_message' => 'import & fetch automatic ' . $this->automaticRunDate($automaticRun) . ' [import running]',
+        ])->save();
 
-        app(BulkSintaLecturerController::class)
-            ->importAll()
-            ->sendContent();
+        Log::info('[SINTA IMPORT ALL] Background import all job started.', [
+            'batch_id' => $this->batchId,
+            'automatic_run_id' => $automaticRun?->id,
+        ]);
 
-        Log::info('[SINTA IMPORT ALL] Background import all job finished.', ['batch_id' => $this->batchId]);
+        try {
+            app(BulkSintaLecturerController::class)
+                ->importAll()
+                ->sendContent();
+
+            $this->finishAutomaticRun($automaticRun);
+        } catch (\Throwable $e) {
+            $this->failAutomaticRun($automaticRun, $e->getMessage());
+            throw $e;
+        }
+
+        Log::info('[SINTA IMPORT ALL] Background import all job finished.', [
+            'batch_id' => $this->batchId,
+            'automatic_run_id' => $automaticRun?->id,
+        ]);
+    }
+
+    private function automaticRun(): ?SintaLecturerAutomaticRun
+    {
+        if (! $this->automaticRunId) {
+            return null;
+        }
+
+        return SintaLecturerAutomaticRun::query()->find($this->automaticRunId);
+    }
+
+    private function finishAutomaticRun(?SintaLecturerAutomaticRun $automaticRun): void
+    {
+        if (! $automaticRun) {
+            return;
+        }
+
+        $batch = SintaLecturerFetchBatch::query()->find($this->batchId);
+        $date = $this->automaticRunDate($automaticRun);
+        $failedIds = $batch
+            ? $batch->items()->where('import_status', 'import_failed')->pluck('sinta_id')->filter()->map(fn ($id) => (string) $id)->values()->all()
+            : [];
+
+        if ($failedIds !== []) {
+            $automaticRun->forceFill([
+                'status' => 'failed',
+                'phase' => 'failed',
+                'import_finished_at' => now(),
+                'failed_sinta_ids' => $failedIds,
+                'error_message' => 'Some SINTA lecturers failed during Import All.',
+                'summary_message' => 'import & fetch automatic ' . $date . ' [failed] : ' . implode(', ', $failedIds),
+            ])->save();
+
+            return;
+        }
+
+        $automaticRun->forceFill([
+            'status' => 'done',
+            'phase' => 'done',
+            'import_finished_at' => now(),
+            'failed_sinta_ids' => null,
+            'missing_study_program_sinta_ids' => null,
+            'error_message' => null,
+            'summary_message' => 'import & fetch automatic ' . $date . ' [done]',
+        ])->save();
+    }
+
+    private function failAutomaticRun(?SintaLecturerAutomaticRun $automaticRun, string $message): void
+    {
+        if (! $automaticRun) {
+            return;
+        }
+
+        $date = $this->automaticRunDate($automaticRun);
+
+        $automaticRun->forceFill([
+            'status' => 'failed',
+            'phase' => 'failed',
+            'import_finished_at' => now(),
+            'error_message' => $message,
+            'summary_message' => 'import & fetch automatic ' . $date . ' [failed] : ' . $message,
+        ])->save();
+    }
+
+    private function automaticRunDate(SintaLecturerAutomaticRun $automaticRun): string
+    {
+        return optional($automaticRun->run_date)->toDateString() ?: now()->toDateString();
     }
 }
