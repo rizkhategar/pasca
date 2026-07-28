@@ -168,6 +168,8 @@ class SintaLecturerStudyProgramDetector
         $value = Str::of($value)->lower()->ascii()->toString();
         $value = str_replace(['&', '/', '-', '_'], ' ', $value);
         $value = preg_replace('/[^a-z0-9\s]+/', ' ', $value);
+        $value = preg_replace('/\bopendidikan\b/', ' pendidikan ', $value);
+        $value = $this->normalizeStudyProgramAliases($value);
         $value = preg_replace('/\b(s1|s2|s3|d3|d4|sarjana|magister|doktor|diploma|program|studi)\b/', ' ', $value);
         $value = preg_replace('/\b(pendidikan\s+profesi|pendidikan|profesi)\b/', ' ', $value);
         $value = preg_replace('/\bbidan\b/', ' kebidanan ', $value);
@@ -177,11 +179,33 @@ class SintaLecturerStudyProgramDetector
         return trim($value);
     }
 
+    protected function normalizeStudyProgramAliases(string $value): string
+    {
+        $aliases = [
+            // Excel uses the long wording, while study_programs.nama stores the official abbreviations.
+            '/\bpendidikan\s+guru\s+pendidikan\s+anak\s+usia\s+dini\b/' => ' pendidikan guru paud ',
+            '/\bguru\s+pendidikan\s+anak\s+usia\s+dini\b/' => ' guru paud ',
+            '/\bpendidikan\s+anak\s+usia\s+dini\b/' => ' paud ',
+            '/\banak\s+usia\s+dini\b/' => ' paud ',
+            '/\bpendidikan\s+guru\s+sekolah\s+dasar\b/' => ' pendidikan guru sd ',
+            '/\bguru\s+sekolah\s+dasar\b/' => ' guru sd ',
+            '/\bsekolah\s+dasar\b/' => ' sd ',
+        ];
+
+        foreach ($aliases as $pattern => $replacement) {
+            $value = preg_replace($pattern, $replacement, $value);
+        }
+
+        return $value;
+    }
+
     public function studyProgramTokens(string $value): Collection
     {
+        $shortMeaningfulTokens = ['sd'];
+
         return collect(explode(' ', $value))
             ->map(fn (string $token): string => trim($token))
-            ->filter(fn (string $token): bool => $token !== '' && strlen($token) > 2)
+            ->filter(fn (string $token): bool => $token !== '' && (strlen($token) > 2 || in_array($token, $shortMeaningfulTokens, true)))
             ->unique()
             ->values();
     }
