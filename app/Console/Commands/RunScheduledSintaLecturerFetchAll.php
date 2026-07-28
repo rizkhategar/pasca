@@ -8,13 +8,13 @@ use App\Models\SintaLecturerAutomaticRun;
 use App\Models\SintaLecturerFetchAllScheduleSetting;
 use App\Models\SintaLecturerFetchBatch;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Throwable;
 
 class RunScheduledSintaLecturerFetchAll extends Command
 {
-    private const STALE_ACTIVE_BATCH_MINUTES = 10;
-
     protected $signature = 'sinta:run-scheduled-fetch-all';
 
     protected $description = 'Dispatch automatic Fetch All for SINTA lecturers when the hardcoded timer has been reached.';
@@ -55,42 +55,12 @@ class RunScheduledSintaLecturerFetchAll extends Command
 
         $this->purgeOldAutomaticRunLogs($now->toDateString());
 
-        $activeBatch = $this->activeFetchBatch();
+        $refreshMessage = $this->cancelRefreshableFetchBatches($now);
+        $this->releaseFetchAllOverlapLocks();
 
-        if ($activeBatch && ! $this->isActiveBatchStale($activeBatch, $now)) {
-            $reason = "Skipped because Fetch All batch #{$activeBatch->id} is still {$activeBatch->status}.";
-
-            $setting->forceFill([
-                'last_run_at' => $now,
-                'last_skip_reason' => $reason,
-            ])->save();
-
-            SintaLecturerAutomaticRun::updateOrCreate(
-                [
-                    'run_date' => $now->toDateString(),
-                    'scheduled_time' => $scheduledTime,
-                ],
-                [
-                    'fetch_batch_id' => $activeBatch->id,
-                    'status' => 'failed',
-                    'phase' => 'failed',
-                    'error_message' => $reason,
-                    'summary_message' => "import & fetch automatic {$now->toDateString()} [failed] : {$reason}",
-                ]
-            );
-
-            Log::warning('[SINTA SCHEDULED FETCH ALL] ' . $reason);
-            $this->warn($reason);
-
-            return self::SUCCESS;
-        }
-
-        if ($activeBatch) {
-            $reason = "Fetch All batch #{$activeBatch->id} looked stale for at least " . self::STALE_ACTIVE_BATCH_MINUTES . ' minutes, so the scheduler cancelled it and queued a fresh Fetch All job.';
-            $this->cancelStaleActiveBatch($activeBatch, $reason, $now);
-
-            Log::warning('[SINTA SCHEDULED FETCH ALL] ' . $reason);
-            $this->warn($reason);
+        if ($refreshMessage) {
+            Log::warning('[SINTA SCHEDULED FETCH ALL] ' . $refreshMessage);
+            $this->warn($refreshMessage);
         }
 
         $automaticRun = SintaLecturerAutomaticRun::updateOrCreate(
@@ -127,7 +97,7 @@ class RunScheduledSintaLecturerFetchAll extends Command
             'dispatched_at' => $now->toDateTimeString(),
         ]);
 
-        $this->info('Scheduled SINTA Fetch All job dispatched.');
+        $this->info('Scheduled SINTA Fetch All job dispatched. A fresh batch will be built and existing merged Excel files will be skipped.');
 
         return self::SUCCESS;
     }
@@ -151,53 +121,61 @@ class RunScheduledSintaLecturerFetchAll extends Command
             && $lastRunAt->greaterThanOrEqualTo($scheduledAt);
     }
 
-    private function activeFetchBatch(): ?SintaLecturerFetchBatch
+    private function cancelRefreshableFetchBatches($now): ?string
     {
-        return SintaLecturerFetchBatch::query()
-            ->whereIn('status', ['queued', 'running'])
-            ->whereHas('items', function ($query): void {
-                $query->whereIn('status', ['pending', 'processing']);
-            })
+        $batches = SintaLecturerFetchBatch::query()
+            ->whereIn('status', ['queued', 'running', 'paused', 'failed'])
             ->latest('id')
-            ->first();
-    }
+            ->get();
 
-    private function isActiveBatchStale(SintaLecturerFetchBatch $batch, $now): bool
-    {
-        $processingItem = $batch->items()
-            ->where('status', 'processing')
-            ->orderBy('started_at')
-            ->first(['started_at']);
-
-        $referenceAt = $processingItem?->started_at ?? $batch->started_at;
-
-        if (! $referenceAt) {
-            return false;
+        if ($batches->isEmpty()) {
+            return null;
         }
 
-        return $referenceAt->diffInMinutes($now) >= self::STALE_ACTIVE_BATCH_MINUTES;
+        $message = 'Superseded by an automatic fresh Fetch All batch. Existing merged Excel files will be skipped in the new batch.';
+
+        foreach ($batches as $batch) {
+            $batch->items()
+                ->whereIn('status', ['pending', 'processing'])
+                ->update([
+                    'status' => 'failed',
+                    'error_message' => $message,
+                    'finished_at' => $now,
+                ]);
+
+            $batch->forceFill([
+                'status' => 'cancelled',
+                'processed_items' => $batch->items()->whereIn('status', ['success', 'success_with_warning', 'failed'])->count(),
+                'success_items' => $batch->items()->where('status', 'success')->count(),
+                'warning_items' => $batch->items()->where('status', 'success_with_warning')->count(),
+                'failed_items' => $batch->items()->where('status', 'failed')->count(),
+                'current_sinta_id' => null,
+                'finished_at' => $now,
+                'error_message' => $message,
+            ])->save();
+        }
+
+        return $batches->count() . ' previous fetch batch(es) were cancelled before automatic Fetch All queued a fresh batch.';
     }
 
-    private function cancelStaleActiveBatch(SintaLecturerFetchBatch $batch, string $reason, $now): void
+    private function releaseFetchAllOverlapLocks(): void
     {
-        $batch->items()
-            ->whereIn('status', ['pending', 'processing'])
-            ->update([
-                'status' => 'failed',
-                'error_message' => $reason,
-                'finished_at' => $now,
-            ]);
+        foreach ($this->fetchAllOverlapLockNames() as $lockName) {
+            try {
+                Cache::lock($lockName)->forceRelease();
+            } catch (Throwable) {
+                // Some cache drivers may not support forceRelease for a missing lock.
+            }
+        }
+    }
 
-        $batch->forceFill([
-            'status' => 'cancelled',
-            'processed_items' => $batch->items()->whereIn('status', ['success', 'success_with_warning', 'failed'])->count(),
-            'success_items' => $batch->items()->where('status', 'success')->count(),
-            'warning_items' => $batch->items()->where('status', 'success_with_warning')->count(),
-            'failed_items' => $batch->items()->where('status', 'failed')->count(),
-            'current_sinta_id' => null,
-            'finished_at' => $now,
-            'error_message' => $reason,
-        ])->save();
+    private function fetchAllOverlapLockNames(): array
+    {
+        return [
+            'sinta-lecturer-fetch-all',
+            'laravel-queue-overlap:sinta-lecturer-fetch-all',
+            'laravel-queue-overlap:' . FetchAllSintaLecturerDetailsJob::class . ':sinta-lecturer-fetch-all',
+        ];
     }
 
     private function purgeOldAutomaticRunLogs(string $today): void
