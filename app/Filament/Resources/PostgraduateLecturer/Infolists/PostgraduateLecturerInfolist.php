@@ -22,7 +22,7 @@ class PostgraduateLecturerInfolist
         return $schema
             ->components([
                 Section::make('Lecturer Detail')
-                    ->description('Detail data dosen ditampilkan dari postgraduate_lecturers, sinta_lecturers, dan sinta_lecturer_details sesuai sumber datanya.')
+                    ->description('Detail data dosen ditampilkan dari lecturers, sinta_lecturers, dan sinta_lecturer_details sesuai sumber datanya.')
                     ->schema([
                         Grid::make(2)
                             ->schema([
@@ -191,7 +191,6 @@ class PostgraduateLecturerInfolist
 
             if (! filter_var($profilePhoto, FILTER_VALIDATE_URL)) {
                 $normalizedPath = trim(str_replace('\\', '/', $profilePhoto), '/');
-
                 if (Storage::disk('public')->exists($normalizedPath)) {
                     return $normalizedPath;
                 }
@@ -199,13 +198,11 @@ class PostgraduateLecturerInfolist
         }
 
         $officialPath = "sinta-lecturers/{$safeSintaId}_PL.jpg";
-
         if (Storage::disk('public')->exists($officialPath)) {
             return $officialPath;
         }
 
         $defaultPath = "sinta-lecturers/{$safeSintaId}.jpg";
-
         if (Storage::disk('public')->exists($defaultPath)) {
             return $defaultPath;
         }

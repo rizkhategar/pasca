@@ -11,7 +11,7 @@ class PostgraduateLecturer extends Model
 {
     use HasFactory, LogsActivity;
 
-    protected $table = 'postgraduate_lecturers';
+    protected $table = 'lecturers';
 
     protected $fillable = [
         'sinta_id',
@@ -44,7 +44,7 @@ class PostgraduateLecturer extends Model
     {
         return $this->belongsToMany(
             StudyProgram::class,
-            'postgraduate_lecturer_study_programs',
+            'lecturer_study_programs',
             'postgraduate_lecturer_id',
             'study_program_id',
             'id',

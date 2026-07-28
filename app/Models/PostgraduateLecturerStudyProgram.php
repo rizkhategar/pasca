@@ -11,7 +11,7 @@ class PostgraduateLecturerStudyProgram extends Model
 {
     use HasFactory, LogsActivity;
 
-    protected $table = 'postgraduate_lecturer_study_programs';
+    protected $table = 'lecturer_study_programs';
 
     protected $fillable = [
         'postgraduate_lecturer_id',

@@ -42,6 +42,36 @@ class ScrapController extends Controller
         flush();
     }
 
+    /**
+     * Attach a curl progress callback that emits an SSE comment line every few
+     * seconds. libcurl fires this even while the upstream transfer is idle, so
+     * bytes keep trickling during the scraper's silent gaps (e.g. Selenium page
+     * loads). This keeps the connection under Cloudflare's ~100s idle timeout,
+     * which otherwise closes the stream and the browser reports "interrupted".
+     * Comment lines (": ...") are ignored by EventSource, so they are invisible
+     * to the terminal output.
+     */
+    private function keepAlive($ch): void
+    {
+        $lastPing = microtime(true);
+
+        curl_setopt($ch, CURLOPT_NOPROGRESS, false);
+        curl_setopt($ch, CURLOPT_XFERINFOFUNCTION, function () use (&$lastPing) {
+            if (microtime(true) - $lastPing >= 15) {
+                echo ": heartbeat\n\n";
+
+                if (ob_get_level() > 0) {
+                    ob_flush();
+                }
+
+                flush();
+                $lastPing = microtime(true);
+            }
+
+            return 0;
+        });
+    }
+
     private function normalizeRow(array|object $row): array
     {
         return array_change_key_case((array) $row, CASE_LOWER);
@@ -110,8 +140,15 @@ class ScrapController extends Controller
             set_time_limit(0);
             ignore_user_abort(true);
 
-            $baseUrl = env('PYTHON_SCRAPER_URL', 'http://127.0.0.1:8000');
+            $baseUrl = config('services.python_scraper.url');
             $streamUrl = $baseUrl . '/api/scrape-dosen';
+
+            // Flush an initial line immediately so the browser establishes the SSE
+            // stream before the (potentially slow/blocking) upstream curl call.
+            // Without this, an unreachable scraper leaves the response body empty
+            // and EventSource fires onerror ("connection was interrupted").
+            $this->stream(['output' => "[LARAVEL] Connecting to Python scraper: {$streamUrl}\n"]);
+
             $ch = curl_init();
 
             curl_setopt($ch, CURLOPT_URL, $streamUrl);
@@ -120,6 +157,8 @@ class ScrapController extends Controller
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
             curl_setopt($ch, CURLOPT_BUFFERSIZE, 256);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 0);
             curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $chunk) {
                 foreach (explode("\n", $chunk) as $line) {
                     $line = trim($line);
@@ -133,11 +172,14 @@ class ScrapController extends Controller
 
                 return strlen($chunk);
             });
+            $this->keepAlive($ch);
 
             $success = curl_exec($ch);
 
             if (! $success) {
-                $this->stream(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> Failed to connect to the Docker Python scraper. URL: {$streamUrl}. Error: " . curl_error($ch) . "\n"]);
+                $curlError = curl_error($ch);
+                Log::error("perbaruiDosen: failed to reach Python scraper. URL: {$streamUrl}. curl error: {$curlError}");
+                $this->stream(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> Failed to connect to the Docker Python scraper. URL: {$streamUrl}. Error: " . $curlError . "\n"]);
             }
 
             curl_close($ch);
@@ -313,8 +355,14 @@ class ScrapController extends Controller
         return new StreamedResponse(function () use ($sintaId) {
             set_time_limit(0);
             ignore_user_abort(true);
-            $baseUrl = env('PYTHON_SCRAPER_URL', 'http://127.0.0.1:8000');
+            $baseUrl = config('services.python_scraper.url');
             $streamUrl = $baseUrl . "/api/scrape-detail/{$sintaId}";
+
+            // Flush an initial line before the blocking curl call so the browser
+            // establishes the SSE stream and does not fire onerror when the
+            // upstream scraper is slow or unreachable.
+            $this->stream(['output' => "[LARAVEL] Connecting to Python scraper: {$streamUrl}\n"]);
+
             $ch = curl_init();
 
             curl_setopt($ch, CURLOPT_URL, $streamUrl);
@@ -323,6 +371,8 @@ class ScrapController extends Controller
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
             curl_setopt($ch, CURLOPT_BUFFERSIZE, 256);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 0);
             curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $chunk) {
                 foreach (explode("\n", $chunk) as $line) {
                     $line = trim($line);
@@ -336,11 +386,14 @@ class ScrapController extends Controller
 
                 return strlen($chunk);
             });
+            $this->keepAlive($ch);
 
             $success = curl_exec($ch);
 
             if (! $success) {
-                $this->stream(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> Failed to connect to the Docker Python scraper. URL: {$streamUrl}. Error: " . curl_error($ch) . "\n"]);
+                $curlError = curl_error($ch);
+                Log::error("ambilDetail: failed to reach Python scraper. URL: {$streamUrl}. curl error: {$curlError}");
+                $this->stream(['output' => "<span class='text-danger-500 font-bold'>[ERROR]</span> Failed to connect to the Docker Python scraper. URL: {$streamUrl}. Error: " . $curlError . "\n"]);
             }
 
             curl_close($ch);
