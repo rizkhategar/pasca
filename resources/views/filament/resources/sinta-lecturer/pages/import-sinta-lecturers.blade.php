@@ -27,6 +27,7 @@
                 emittedAutomaticLogKeys: new Set(),
                 emittedManualFetchDoneKeys: new Set(),
                 emittedBatchMessageKeys: new Set(),
+                emittedStudyProgramSettingKeys: new Set(),
             };
 
             const normalizeText = (value) => String(value || '').trim();
@@ -43,6 +44,27 @@
                 }
 
                 outputBox.appendChild(document.createTextNode(text));
+                terminalContainer.scrollTop = terminalContainer.scrollHeight;
+            };
+
+            const appendTerminalHighlight = (text) => {
+                const outputBox = output();
+                const terminalContainer = terminal();
+
+                if (! outputBox || ! terminalContainer) {
+                    return;
+                }
+
+                const line = document.createElement('span');
+                line.textContent = text;
+                line.style.backgroundColor = '#4ade80';
+                line.style.color = '#000000';
+                line.style.padding = '0 0.25rem';
+                line.style.borderRadius = '0.25rem';
+                line.style.fontWeight = '700';
+
+                outputBox.appendChild(line);
+                outputBox.appendChild(document.createTextNode('\n'));
                 terminalContainer.scrollTop = terminalContainer.scrollHeight;
             };
 
@@ -197,6 +219,77 @@
                 }
             };
 
+            const isStudyProgramSyncFinished = (payload) => {
+                const batch = payload?.batch || {};
+                const message = normalizeText(batch.error_message).toLowerCase();
+
+                return normalizeText(batch.status) === 'completed'
+                    && message.includes('study program settings synced');
+            };
+
+            const formatStudyProgramLabel = (program) => {
+                if (! program) {
+                    return '';
+                }
+
+                const level = normalizeText(program.jenjang_nama_singkat || program.jenjang);
+                const name = normalizeText(program.nama || program.display_name);
+
+                return normalizeText([level, name].filter(Boolean).join(' '));
+            };
+
+            const appendStudyProgramRegistrationLogs = async (statusPayload) => {
+                const batch = statusPayload?.batch || {};
+
+                if (! batch.id || ! isStudyProgramSyncFinished(statusPayload)) {
+                    return;
+                }
+
+                const payload = await getJson(routes.studyProgramSettings);
+                const items = Array.isArray(payload?.items) ? payload.items : [];
+                const programs = Array.isArray(payload?.programs) ? payload.programs : [];
+                const programsById = new Map(programs.map((program) => [Number(program.id), program]));
+
+                items.forEach((item) => {
+                    const sintaId = normalizeText(item.sinta_id);
+                    const name = normalizeText(item.lecturer_name) || '-';
+                    const fetchStatus = normalizeText(item.fetch_status);
+
+                    if (! sintaId || ! ['success', 'success_with_warning'].includes(fetchStatus)) {
+                        return;
+                    }
+
+                    const selectedIds = Array.isArray(item.study_program_ids)
+                        ? item.study_program_ids.map((id) => Number(id)).filter((id) => id > 0)
+                        : [];
+                    const detectedStudyProgram = normalizeText(item.detected_study_program);
+                    const key = `${batch.id}:study-program-setting:${sintaId}:${selectedIds.join(',')}:${detectedStudyProgram || 'null'}`;
+
+                    if (state.emittedStudyProgramSettingKeys.has(key)) {
+                        return;
+                    }
+
+                    state.emittedStudyProgramSettingKeys.add(key);
+
+                    if (selectedIds.length > 0) {
+                        const labels = selectedIds
+                            .map((id) => formatStudyProgramLabel(programsById.get(id)))
+                            .filter(Boolean)
+                            .join(', ');
+
+                        appendTerminal('[DONE] ' + sintaId + ', ' + name + ', di daftarkan ke prodi [' + (labels || '-') + ']\n');
+                        return;
+                    }
+
+                    if (! detectedStudyProgram) {
+                        appendTerminalHighlight('[WARNING] ' + sintaId + ', ' + name + ', di daftarkan ke prodi [null] karena kolom program studi di Excel kosong.');
+                        return;
+                    }
+
+                    appendTerminalHighlight('[WARNING] ' + sintaId + ', ' + name + ', di daftarkan ke prodi [null] karena prodi Excel "' + detectedStudyProgram + '" belum cocok dengan study_programs.');
+                });
+            };
+
             const appendAutomaticLogs = async () => {
                 const payload = await getJson(routes.automaticRuns);
                 const logs = Array.isArray(payload?.logs) ? payload.logs : [];
@@ -286,9 +379,11 @@
                         toggleButton('#btn-fetch-all-details', false, 'Fetch All / Lanjutkan Otomatis');
                         appendManualFetchProdiStart(statusPayload);
                         appendBatchStatusMessage(statusPayload);
+                        await appendStudyProgramRegistrationLogs(statusPayload);
                         appendTerminal('[DONE] Fetch All watcher selesai memantau batch. Manual Fetch All berhenti setelah pendaftaran study program dosen, tidak lanjut Import All.\n');
                     } else {
                         appendManualFetchProdiStart(statusPayload);
+                        await appendStudyProgramRegistrationLogs(statusPayload);
                     }
 
                     if (importActive) {
