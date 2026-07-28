@@ -73,11 +73,13 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
         ])->save();
 
         $this->processBatchItems($batch);
-        $this->syncStudyProgramSettingsFromMergedFiles($batch->fresh());
-        $this->handleAutomaticRunAfterFetch($automaticRun, $batch->fresh());
+
+        $batch = $batch->fresh();
+        $this->syncStudyProgramSettingsFromMergedFiles($batch);
+        $this->handleAutomaticRunAfterFetch($automaticRun, $batch);
 
         Log::info('[SINTA FETCH ALL] Background fetch all job finished.', [
-            'batch_id' => $batch->id,
+            'batch_id' => $batch?->id,
             'automatic_run_id' => $automaticRun?->id,
         ]);
     }
@@ -93,13 +95,7 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
         }
 
         return DB::transaction(function () use ($lecturers): SintaLecturerFetchBatch {
-            SintaLecturerFetchBatch::query()
-                ->whereIn('status', ['pending', 'queued', 'running', 'paused', 'failed'])
-                ->update([
-                    'status' => 'cancelled',
-                    'finished_at' => now(),
-                    'error_message' => 'Superseded by a queued fetch-all batch.',
-                ]);
+            $this->cancelRefreshableBatches('Superseded by a fresh queued Fetch All batch.');
 
             $batch = SintaLecturerFetchBatch::create([
                 'status' => 'running',
@@ -132,22 +128,36 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
         });
     }
 
+    private function cancelRefreshableBatches(string $message): void
+    {
+        $batches = SintaLecturerFetchBatch::query()
+            ->whereIn('status', ['queued', 'running', 'paused', 'failed'])
+            ->get();
+
+        foreach ($batches as $batch) {
+            $batch->items()
+                ->whereIn('status', ['pending', 'processing'])
+                ->update([
+                    'status' => 'failed',
+                    'error_message' => $message,
+                    'finished_at' => now(),
+                ]);
+
+            $batch->forceFill([
+                'status' => 'cancelled',
+                'processed_items' => $batch->items()->whereIn('status', ['success', 'success_with_warning', 'failed'])->count(),
+                'success_items' => $batch->items()->where('status', 'success')->count(),
+                'warning_items' => $batch->items()->where('status', 'success_with_warning')->count(),
+                'failed_items' => $batch->items()->where('status', 'failed')->count(),
+                'finished_at' => now(),
+                'current_sinta_id' => null,
+                'error_message' => $message,
+            ])->save();
+        }
+    }
+
     private function processBatchItems(SintaLecturerFetchBatch $batch): void
     {
-        $baseUrl = rtrim((string) config('services.python_scraper.url'), '/');
-
-        if ($baseUrl === '') {
-            $batch->update([
-                'status' => 'failed',
-                'finished_at' => now(),
-                'error_message' => 'PYTHON_SCRAPER_URL is empty. Set PYTHON_SCRAPER_URL in .env.',
-            ]);
-
-            Log::error('[SINTA FETCH ALL] PYTHON_SCRAPER_URL is empty.');
-
-            return;
-        }
-
         $items = $batch->items()
             ->where('status', 'pending')
             ->orderBy('id')
@@ -165,7 +175,37 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
             return;
         }
 
+        $baseUrl = rtrim((string) config('services.python_scraper.url'), '/');
+
+        if ($baseUrl === '') {
+            $batch->update([
+                'status' => 'failed',
+                'finished_at' => now(),
+                'error_message' => 'PYTHON_SCRAPER_URL is empty. Set PYTHON_SCRAPER_URL in .env.',
+            ]);
+
+            Log::error('[SINTA FETCH ALL] PYTHON_SCRAPER_URL is empty.');
+
+            return;
+        }
+
         foreach ($items as $item) {
+            $batch->refresh();
+
+            if ($batch->status === 'cancelled') {
+                Log::warning('[SINTA FETCH ALL] Current batch was cancelled before processing the next item.', [
+                    'batch_id' => $batch->id,
+                ]);
+
+                return;
+            }
+
+            $item = $item->fresh();
+
+            if (! $item || $item->status !== 'pending') {
+                continue;
+            }
+
             $sintaId = (string) $item->sinta_id;
 
             if ($this->mergedDetailFileExists($sintaId)) {
@@ -204,6 +244,20 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
             ]);
 
             $result = $this->fetchOneLecturerDetail($baseUrl, $sintaId);
+
+            $batch->refresh();
+            $item = $item->fresh();
+
+            if (! $item || $batch->status === 'cancelled' || $item->status !== 'processing') {
+                Log::warning('[SINTA FETCH ALL] Skipped writing scraper result because the batch or item was refreshed by another Fetch All run.', [
+                    'batch_id' => $batch->id,
+                    'sinta_id' => $sintaId,
+                    'batch_status' => $batch->status,
+                    'item_status' => $item?->status,
+                ]);
+
+                return;
+            }
 
             $item->update([
                 'status' => $result['status'],
@@ -374,7 +428,7 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
 
     private function syncStudyProgramSettingsFromMergedFiles(?SintaLecturerFetchBatch $batch): void
     {
-        if (! $batch) {
+        if (! $batch || $batch->status === 'cancelled') {
             return;
         }
 
@@ -445,9 +499,9 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
         return SintaLecturerAutomaticRun::query()->find($this->automaticRunId);
     }
 
-    private function handleAutomaticRunAfterFetch(?SintaLecturerAutomaticRun $automaticRun, SintaLecturerFetchBatch $batch): void
+    private function handleAutomaticRunAfterFetch(?SintaLecturerAutomaticRun $automaticRun, ?SintaLecturerFetchBatch $batch): void
     {
-        if (! $automaticRun) {
+        if (! $automaticRun || ! $batch) {
             return;
         }
 
