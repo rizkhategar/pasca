@@ -46,6 +46,16 @@ class SintaLecturer extends Model
         return $this->hasOne(PostgraduateLecturer::class, 'sinta_id', 'sinta_id');
     }
 
+    public function fetchBatchItems()
+    {
+        return $this->hasMany(SintaLecturerFetchBatchItem::class, 'sinta_id', 'sinta_id');
+    }
+
+    public function studyProgramSettings()
+    {
+        return $this->hasMany(SintaLecturerStudyProgramSetting::class, 'sinta_id', 'sinta_id');
+    }
+
     public function scopusPublications()
     {
         return $this->hasMany(SintaScopusPublication::class, 'sinta_id', 'sinta_id');

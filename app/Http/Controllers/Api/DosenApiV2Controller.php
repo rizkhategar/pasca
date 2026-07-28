@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\PostgraduateLecturer;
+use App\Models\PostgraduateLecturer as Lecturer;
 use App\Models\SintaLecturer;
 use App\Models\SintaLecturerDetail;
 use Illuminate\Http\JsonResponse;
@@ -33,7 +33,7 @@ class DosenApiV2Controller extends Controller
     /**
      * Show full SINTA detail for one lecturer.
      *
-     * Returns master lecturer data, optional postgraduate registration, SINTA detail, and all available publication/yearly modules.
+     * Returns master lecturer data, optional lecturer registration detail, SINTA detail, and all available publication/yearly modules.
      *
      * Module included in full detail:
      *
@@ -65,8 +65,8 @@ class DosenApiV2Controller extends Controller
 
         return $this->ok('Full SINTA detail for one lecturer.', [
             'sinta_lecturer' => $this->sintaLecturerPayload($lecturer),
-            'postgraduate_membership' => $lecturer->postgraduateLecturer
-                ? $this->postgraduateMembershipPayload($lecturer->postgraduateLecturer)
+            'lecturer_detail' => $lecturer->postgraduateLecturer
+                ? $this->lecturerRegistrationPayload($lecturer->postgraduateLecturer)
                 : null,
             'sinta_lecturer_details' => $detail ? $this->lecturerDetailPayload($detail) : null,
             'garuda' => $detail ? $this->moduleData($detail, 'garuda') : $this->emptyModule(),
@@ -265,7 +265,7 @@ class DosenApiV2Controller extends Controller
         return ['index' => [], 'yearly' => []];
     }
 
-    private function postgraduateMembershipPayload(PostgraduateLecturer $lecturer): array
+    private function lecturerRegistrationPayload(Lecturer $lecturer): array
     {
         return [
             'membership_table' => 'lecturers',
@@ -302,7 +302,7 @@ class DosenApiV2Controller extends Controller
             'profile_photo_url' => $this->photoUrl($lecturer->postgraduateLecturer?->profile_photo),
             'has_sinta_detail' => (bool) $lecturer->detail,
             'registered_as' => [
-                'postgraduate' => (bool) $lecturer->postgraduateLecturer,
+                'lecturer_detail' => (bool) $lecturer->postgraduateLecturer,
             ],
         ];
     }

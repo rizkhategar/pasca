@@ -1,9 +1,9 @@
 <?php
 
+use App\Jobs\SyncNewsApiJob; // Import class Job yang sudah kita buat
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule; // Tambahkan facade Schedule
-use App\Jobs\SyncNewsApiJob; // Import class Job yang sudah kita buat
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -12,3 +12,7 @@ Artisan::command('inspire', function () {
 // Jadwalkan sinkronisasi berita dari API berjalan otomatis
 // Anda bisa mengubahnya menjadi ->everyFifteenMinutes() atau ->everyThirtyMinutes() jika butuh lebih realtime
 Schedule::job(new SyncNewsApiJob)->hourly();
+
+// Jalankan pengecekan timer hardcode Fetch All SINTA setiap menit.
+// Jam eksekusi utama diatur di ImportSintaLecturers::AUTO_FETCH_ALL_TIME.
+Schedule::command('sinta:run-scheduled-fetch-all')->everyMinute();

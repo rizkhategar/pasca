@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\SintaLecturer;
 
-use App\Filament\Resources\PostgraduateLecturer\Infolists\PostgraduateLecturerInfolist;
+use App\Filament\Resources\Lecturer\Infolists\LecturerInfolist;
 use App\Filament\Resources\SintaLecturer\Pages;
 use App\Filament\Resources\SintaLecturer\Schemas\SintaLecturerForm;
 use App\Filament\Resources\SintaLecturer\Tables\SintaLecturerTable;
@@ -36,7 +36,7 @@ class SintaLecturerResource extends Resource
 
     public static function infolist(Schema $schema): Schema
     {
-        return PostgraduateLecturerInfolist::configure($schema);
+        return LecturerInfolist::configure($schema);
     }
 
     public static function table(Table $table): Table
@@ -49,6 +49,7 @@ class SintaLecturerResource extends Resource
         return [
             'index' => Pages\ListSintaLecturers::route('/'),
             'import' => Pages\ImportSintaLecturers::route('/import'),
+            'bulk-prodi-settings' => Pages\ManageSintaLecturerStudyProgramSettings::route('/bulk-prodi-settings'),
             'view' => Pages\ViewSintaLecturer::route('/{record}'),
         ];
     }
