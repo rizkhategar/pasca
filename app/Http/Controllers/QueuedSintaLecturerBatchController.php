@@ -9,7 +9,6 @@ use App\Models\SintaLecturerFetchBatch;
 use App\Models\SintaLecturerFetchBatchItem;
 use App\Models\SintaLecturerStudyProgramSetting;
 use App\Models\StudyProgram;
-use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
@@ -19,8 +18,6 @@ use Throwable;
 class QueuedSintaLecturerBatchController extends Controller
 {
     private const FETCH_PROGRESS_HISTORY_LIMIT = 300;
-
-    private const STALE_FETCH_BATCH_MINUTES = 5;
 
     public function fetchAll(): StreamedResponse
     {
@@ -34,28 +31,18 @@ class QueuedSintaLecturerBatchController extends Controller
                 return;
             }
 
-            $recoveryMessage = $this->recoverStaleFetchBatchIfNeeded();
-
-            if ($this->hasActiveFetchBatch()) {
-                $this->stream([
-                    'output' => "<span class='text-warning-500'>[QUEUE]</span> A fetch-all batch is still active. If it is truly stuck, stop php artisan queue:work, run php artisan cache:clear, then click Fetch All again.\n",
-                    'done' => true,
-                ]);
-
-                return;
-            }
-
+            $refreshMessage = $this->cancelRefreshableFetchBatches();
             $this->releaseFetchAllOverlapLocks();
 
             FetchAllSintaLecturerDetailsJob::dispatch();
 
             $output = '';
 
-            if ($recoveryMessage) {
-                $output .= "<span class='text-warning-500 font-bold'>[RECOVERY]</span> {$recoveryMessage}\n";
+            if ($refreshMessage) {
+                $output .= "<span class='text-warning-500 font-bold'>[REFRESH]</span> {$refreshMessage}\n";
             }
 
-            $output .= "<span class='text-success-400 font-bold'>[QUEUED]</span> Fetch All is now running in background queue. You may leave or refresh this page. Run <b>php artisan queue:work</b> if no progress appears.\n";
+            $output .= "<span class='text-success-400 font-bold'>[QUEUED]</span> Fetch All membuat batch baru di background queue. File merged Excel yang sudah ada akan dilewati, dan scraper hanya menjalankan dosen yang belum memiliki merged_data_{sinta_id}.xlsx. Run <b>php artisan queue:work</b> jika progress tidak muncul.\n";
 
             $this->stream([
                 'output' => $output,
@@ -100,7 +87,7 @@ class QueuedSintaLecturerBatchController extends Controller
 
             if ($summary['failed_count'] > 0 || $summary['pending_count'] > 0 || $summary['processing_count'] > 0) {
                 $this->stream([
-                    'output' => "<span class='text-danger-500'>[ERROR]</span> Import All is blocked because the latest batch still has failed, pending, or processing items. Use Resume or Retry Failed first.\n",
+                    'output' => "<span class='text-danger-500'>[ERROR]</span> Import All is blocked because the latest batch still has failed, pending, or processing items. Run Fetch All again to create a fresh batch.\n",
                     'done' => true,
                 ]);
 
@@ -201,7 +188,7 @@ class QueuedSintaLecturerBatchController extends Controller
             ->values();
 
         $summary = $this->batchReadinessSummary($batch);
-        $isFetchActive = $this->batchHasActiveFetchWork($batch, $fetchCounts);
+        $isFetchActive = $this->batchHasActiveFetchWork($fetchCounts);
 
         return response()->json([
             'batch' => [
@@ -276,53 +263,48 @@ class QueuedSintaLecturerBatchController extends Controller
         ]);
     }
 
-    private function recoverStaleFetchBatchIfNeeded(): ?string
+    private function cancelRefreshableFetchBatches(): ?string
     {
-        $batch = $this->latestBatch();
+        $batches = SintaLecturerFetchBatch::query()
+            ->whereIn('status', ['queued', 'running', 'paused', 'failed'])
+            ->latest('id')
+            ->get();
 
-        if (! $batch || ! in_array($batch->status, ['queued', 'running'], true)) {
+        if ($batches->isEmpty()) {
             return null;
         }
 
-        if (! $this->isFetchBatchStale($batch)) {
-            return null;
+        foreach ($batches as $batch) {
+            $batch->items()
+                ->whereIn('status', ['pending', 'processing'])
+                ->update([
+                    'status' => 'failed',
+                    'error_message' => 'Superseded by a fresh Fetch All batch. Click Fetch All always rebuilds the batch from current SINTA lecturer master data.',
+                    'finished_at' => now(),
+                ]);
+
+            $this->markBatchAsCancelled($batch, 'Superseded by a fresh Fetch All batch. Existing merged Excel files will be skipped in the new batch.');
         }
 
-        $message = "Batch #{$batch->id} was stale or interrupted, so it was cancelled before queueing a fresh Fetch All job.";
+        $count = $batches->count();
 
-        $batch->items()
-            ->whereIn('status', ['pending', 'processing'])
-            ->update([
-                'status' => 'failed',
-                'error_message' => 'Cancelled automatically because the previous Fetch All batch was stale or interrupted.',
-                'finished_at' => now(),
-            ]);
-
-        $batch->update([
-            'status' => 'cancelled',
-            'finished_at' => now(),
-            'current_sinta_id' => null,
-            'error_message' => $message,
-        ]);
-
-        $this->releaseFetchAllOverlapLocks();
-
-        return $message;
+        return "{$count} previous fetch batch(es) were cancelled before queueing a fresh batch.";
     }
 
-    private function isFetchBatchStale(SintaLecturerFetchBatch $batch): bool
+    private function markBatchAsCancelled(SintaLecturerFetchBatch $batch, string $message): void
     {
-        $activeItemUpdatedAt = $batch->items()
-            ->whereIn('status', ['pending', 'processing'])
-            ->max('updated_at');
+        $batch->refresh();
 
-        $latestActivityAt = $activeItemUpdatedAt ?: $batch->updated_at ?: $batch->started_at;
-
-        if (! $latestActivityAt) {
-            return true;
-        }
-
-        return Carbon::parse($latestActivityAt)->lt(now()->subMinutes(self::STALE_FETCH_BATCH_MINUTES));
+        $batch->forceFill([
+            'status' => 'cancelled',
+            'processed_items' => $batch->items()->whereIn('status', ['success', 'success_with_warning', 'failed'])->count(),
+            'success_items' => $batch->items()->where('status', 'success')->count(),
+            'warning_items' => $batch->items()->where('status', 'success_with_warning')->count(),
+            'failed_items' => $batch->items()->where('status', 'failed')->count(),
+            'current_sinta_id' => null,
+            'finished_at' => now(),
+            'error_message' => $message,
+        ])->save();
     }
 
     private function releaseFetchAllOverlapLocks(): void
@@ -345,28 +327,10 @@ class QueuedSintaLecturerBatchController extends Controller
         ];
     }
 
-    private function hasActiveFetchBatch(): bool
+    private function batchHasActiveFetchWork(array $fetchCounts): bool
     {
-        $batch = $this->latestBatch();
-
-        if (! $batch || ! in_array($batch->status, ['queued', 'running'], true)) {
-            return false;
-        }
-
-        return $batch->items()
-            ->whereIn('status', ['pending', 'processing'])
-            ->exists();
-    }
-
-    private function batchHasActiveFetchWork(SintaLecturerFetchBatch $batch, array $fetchCounts): bool
-    {
-        if (in_array($batch->status, ['completed', 'paused', 'failed', 'cancelled'], true)) {
-            return false;
-        }
-
         return ((int) ($fetchCounts['pending'] ?? 0) > 0)
-            || ((int) ($fetchCounts['processing'] ?? 0) > 0)
-            || in_array($batch->status, ['queued', 'running'], true);
+            || ((int) ($fetchCounts['processing'] ?? 0) > 0);
     }
 
     private function hasActiveImportBatch(SintaLecturerFetchBatch $batch): bool
