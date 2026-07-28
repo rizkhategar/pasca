@@ -281,6 +281,7 @@
                         toggleButton('#btn-fetch-all-details', true, 'Fetch All / Lanjutkan Otomatis');
                         appendFetchProgress(statusPayload);
                     } else if (state.fetchActive) {
+                        appendFetchProgress(statusPayload);
                         state.fetchActive = false;
                         toggleButton('#btn-fetch-all-details', false, 'Fetch All / Lanjutkan Otomatis');
                         appendManualFetchProdiStart(statusPayload);
