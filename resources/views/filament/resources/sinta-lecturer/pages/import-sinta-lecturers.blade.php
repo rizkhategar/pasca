@@ -25,6 +25,8 @@
                 emittedImportRunKeys: new Set(),
                 emittedImportDoneKeys: new Set(),
                 emittedAutomaticLogKeys: new Set(),
+                emittedManualFetchDoneKeys: new Set(),
+                emittedBatchMessageKeys: new Set(),
             };
 
             const normalizeText = (value) => String(value || '').trim();
@@ -140,6 +142,61 @@
                 appendFetchRunLine(payload?.current_fetch_item);
             };
 
+            const appendManualFetchProdiStart = (payload) => {
+                const batch = payload?.batch || {};
+                const status = normalizeText(batch.status);
+
+                if (! batch.id || status !== 'completed') {
+                    return;
+                }
+
+                const key = `${batch.id}:fetch-done-prodi-sync-started`;
+
+                if (state.emittedManualFetchDoneKeys.has(key)) {
+                    return;
+                }
+
+                state.emittedManualFetchDoneKeys.add(key);
+                appendTerminal('[DONE] Fetch All selesai. Menjalankan pendaftaran study program dosen dari merged Excel ke sinta_lecturer_study_program_settings...\n');
+            };
+
+            const appendBatchStatusMessage = (payload) => {
+                const batch = payload?.batch || {};
+                const message = normalizeText(batch.error_message);
+
+                if (! batch.id || ! message) {
+                    return;
+                }
+
+                if (message === 'Queued fetch-all job is running in background.') {
+                    return;
+                }
+
+                const key = `${batch.id}:${message}`;
+
+                if (state.emittedBatchMessageKeys.has(key)) {
+                    return;
+                }
+
+                state.emittedBatchMessageKeys.add(key);
+
+                const lowerMessage = message.toLowerCase();
+
+                if (lowerMessage.includes('study program settings synced') || lowerMessage.includes('pendaftaran study program')) {
+                    appendTerminal('[DONE] Pendaftaran study program dosen selesai. ' + message + '\n');
+                    return;
+                }
+
+                if (lowerMessage.includes('registering') || lowerMessage.includes('study program') || lowerMessage.includes('sync')) {
+                    appendTerminal('[RUN] ' + message + '\n');
+                    return;
+                }
+
+                if (['completed', 'paused', 'failed', 'cancelled'].includes(normalizeText(batch.status))) {
+                    appendTerminal('[INFO] ' + message + '\n');
+                }
+            };
+
             const appendAutomaticLogs = async () => {
                 const payload = await getJson(routes.automaticRuns);
                 const logs = Array.isArray(payload?.logs) ? payload.logs : [];
@@ -213,6 +270,7 @@
                     const importActive = Number(importCounts.queued || 0) > 0 || Number(importCounts.importing || 0) > 0;
 
                     await appendAutomaticLogs();
+                    appendBatchStatusMessage(statusPayload);
 
                     if (fetchActive) {
                         if (! state.fetchActive) {
@@ -225,7 +283,11 @@
                     } else if (state.fetchActive) {
                         state.fetchActive = false;
                         toggleButton('#btn-fetch-all-details', false, 'Fetch All / Lanjutkan Otomatis');
-                        appendTerminal('[DONE] Fetch All watcher selesai memantau batch.\n');
+                        appendManualFetchProdiStart(statusPayload);
+                        appendBatchStatusMessage(statusPayload);
+                        appendTerminal('[DONE] Fetch All watcher selesai memantau batch. Manual Fetch All berhenti setelah pendaftaran study program dosen, tidak lanjut Import All.\n');
+                    } else {
+                        appendManualFetchProdiStart(statusPayload);
                     }
 
                     if (importActive) {
@@ -248,7 +310,7 @@
             };
 
             window.setTimeout(tick, 1500);
-            window.setInterval(tick, 15000);
+            window.setInterval(tick, 5000);
         })();
     </script>
 </x-filament-panels::page>
