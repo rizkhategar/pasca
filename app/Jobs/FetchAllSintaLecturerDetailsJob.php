@@ -75,12 +75,27 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
         $this->processBatchItems($batch);
 
         $batch = $batch->fresh();
-        $this->syncStudyProgramSettingsFromMergedFiles($batch);
+        $syncSummary = null;
+
+        if ($batch?->status === 'completed') {
+            $syncSummary = $this->syncStudyProgramSettingsFromMergedFiles($batch);
+            $batch->refresh();
+            $batch->forceFill([
+                'error_message' => $this->completedBatchMessage($syncSummary),
+            ])->save();
+        } else {
+            Log::info('[SINTA FETCH ALL] Study program setting sync was skipped because the batch was not completed.', [
+                'batch_id' => $batch?->id,
+                'batch_status' => $batch?->status,
+            ]);
+        }
+
         $this->handleAutomaticRunAfterFetch($automaticRun, $batch);
 
         Log::info('[SINTA FETCH ALL] Background fetch all job finished.', [
             'batch_id' => $batch?->id,
             'automatic_run_id' => $automaticRun?->id,
+            'study_program_sync' => $syncSummary,
         ]);
     }
 
@@ -426,10 +441,16 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
         ];
     }
 
-    private function syncStudyProgramSettingsFromMergedFiles(?SintaLecturerFetchBatch $batch): void
+    private function syncStudyProgramSettingsFromMergedFiles(SintaLecturerFetchBatch $batch): array
     {
-        if (! $batch || $batch->status === 'cancelled') {
-            return;
+        if ($batch->status !== 'completed') {
+            return [
+                'matched' => 0,
+                'empty' => 0,
+                'unmatched' => 0,
+                'failed' => 0,
+                'skipped' => 0,
+            ];
         }
 
         $syncer = app(SintaLecturerMergedStudyProgramSyncer::class);
@@ -442,12 +463,14 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
         $empty = 0;
         $unmatched = 0;
         $failed = 0;
+        $skipped = 0;
 
         foreach ($items as $item) {
             $sintaId = (string) $item->sinta_id;
             $filePath = $this->mergedDetailFilePath($sintaId);
 
             if (! $this->mergedDetailFileExists($sintaId)) {
+                $skipped++;
                 continue;
             }
 
@@ -470,13 +493,28 @@ class FetchAllSintaLecturerDetailsJob implements ShouldQueue
             }
         }
 
-        Log::info('[SINTA FETCH ALL] Study program setting sync finished.', [
+        $summary = compact('matched', 'empty', 'unmatched', 'failed', 'skipped');
+
+        Log::info('[SINTA FETCH ALL] Study program setting sync finished for completed Fetch All batch.', [
             'batch_id' => $batch->id,
-            'matched' => $matched,
-            'empty' => $empty,
-            'unmatched' => $unmatched,
-            'failed' => $failed,
-        ]);
+        ] + $summary);
+
+        return $summary;
+    }
+
+    private function completedBatchMessage(?array $syncSummary): string
+    {
+        if (! $syncSummary) {
+            return 'Fetch All completed. Study program setting sync did not run.';
+        }
+
+        return 'Fetch All completed. Study program settings synced from merged Excel. Matched: '
+            . ($syncSummary['matched'] ?? 0)
+            . ', empty: ' . ($syncSummary['empty'] ?? 0)
+            . ', unmatched: ' . ($syncSummary['unmatched'] ?? 0)
+            . ', failed: ' . ($syncSummary['failed'] ?? 0)
+            . ', skipped missing file: ' . ($syncSummary['skipped'] ?? 0)
+            . '.';
     }
 
     private function refreshBatchCounters(SintaLecturerFetchBatch $batch): void
