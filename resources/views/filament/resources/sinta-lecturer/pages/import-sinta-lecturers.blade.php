@@ -26,6 +26,7 @@
                 emittedImportDoneKeys: new Set(),
                 emittedAutomaticLogKeys: new Set(),
                 emittedManualFetchDoneKeys: new Set(),
+                emittedManualFetchStopKeys: new Set(),
                 emittedBatchMessageKeys: new Set(),
                 emittedStudyProgramSettingKeys: new Set(),
             };
@@ -164,11 +165,14 @@
                 appendFetchRunLine(payload?.current_fetch_item);
             };
 
+            const isCompletedFetchBatch = (payload) => {
+                return normalizeText(payload?.batch?.status) === 'completed';
+            };
+
             const appendManualFetchProdiStart = (payload) => {
                 const batch = payload?.batch || {};
-                const status = normalizeText(batch.status);
 
-                if (! batch.id || status !== 'completed') {
+                if (! batch.id || ! isCompletedFetchBatch(payload)) {
                     return;
                 }
 
@@ -180,6 +184,23 @@
 
                 state.emittedManualFetchDoneKeys.add(key);
                 appendTerminal('[DONE] Fetch All selesai. Menjalankan pendaftaran study program dosen dari merged Excel ke sinta_lecturer_study_program_settings...\n');
+            };
+
+            const appendManualFetchStopLine = (payload) => {
+                const batch = payload?.batch || {};
+
+                if (! batch.id || ! isCompletedFetchBatch(payload)) {
+                    return;
+                }
+
+                const key = `${batch.id}:manual-fetch-stop-after-prodi-sync`;
+
+                if (state.emittedManualFetchStopKeys.has(key)) {
+                    return;
+                }
+
+                state.emittedManualFetchStopKeys.add(key);
+                appendTerminal('[DONE] Fetch All watcher selesai memantau batch. Manual Fetch All berhenti setelah pendaftaran study program dosen, tidak lanjut Import All.\n');
             };
 
             const appendBatchStatusMessage = (payload) => {
@@ -219,14 +240,6 @@
                 }
             };
 
-            const isStudyProgramSyncFinished = (payload) => {
-                const batch = payload?.batch || {};
-                const message = normalizeText(batch.error_message).toLowerCase();
-
-                return normalizeText(batch.status) === 'completed'
-                    && message.includes('study program settings synced');
-            };
-
             const formatStudyProgramLabel = (program) => {
                 if (! program) {
                     return '';
@@ -241,21 +254,29 @@
             const appendStudyProgramRegistrationLogs = async (statusPayload) => {
                 const batch = statusPayload?.batch || {};
 
-                if (! batch.id || ! isStudyProgramSyncFinished(statusPayload)) {
-                    return;
+                if (! batch.id || ! isCompletedFetchBatch(statusPayload)) {
+                    return 0;
                 }
 
                 const payload = await getJson(routes.studyProgramSettings);
                 const items = Array.isArray(payload?.items) ? payload.items : [];
                 const programs = Array.isArray(payload?.programs) ? payload.programs : [];
                 const programsById = new Map(programs.map((program) => [Number(program.id), program]));
+                let emittedCount = 0;
 
                 items.forEach((item) => {
                     const sintaId = normalizeText(item.sinta_id);
                     const name = normalizeText(item.lecturer_name) || '-';
                     const fetchStatus = normalizeText(item.fetch_status);
+                    const settingStatus = normalizeText(item.setting_status);
 
                     if (! sintaId || ! ['success', 'success_with_warning'].includes(fetchStatus)) {
+                        return;
+                    }
+
+                    // Detail log ini hanya muncul setelah data benar-benar tersimpan sebagai setting,
+                    // bukan ketika masih auto_suggested dari UI.
+                    if (settingStatus !== 'complete') {
                         return;
                     }
 
@@ -263,13 +284,14 @@
                         ? item.study_program_ids.map((id) => Number(id)).filter((id) => id > 0)
                         : [];
                     const detectedStudyProgram = normalizeText(item.detected_study_program);
-                    const key = `${batch.id}:study-program-setting:${sintaId}:${selectedIds.join(',')}:${detectedStudyProgram || 'null'}`;
+                    const key = `${batch.id}:study-program-setting:${sintaId}:${selectedIds.join(',') || 'null'}:${detectedStudyProgram || 'empty'}`;
 
                     if (state.emittedStudyProgramSettingKeys.has(key)) {
                         return;
                     }
 
                     state.emittedStudyProgramSettingKeys.add(key);
+                    emittedCount++;
 
                     if (selectedIds.length > 0) {
                         const labels = selectedIds
@@ -288,6 +310,8 @@
 
                     appendTerminalHighlight('[WARNING] ' + sintaId + ', ' + name + ', di daftarkan ke prodi [null] karena prodi Excel "' + detectedStudyProgram + '" belum cocok dengan study_programs.');
                 });
+
+                return emittedCount;
             };
 
             const appendAutomaticLogs = async () => {
@@ -379,11 +403,16 @@
                         toggleButton('#btn-fetch-all-details', false, 'Fetch All / Lanjutkan Otomatis');
                         appendManualFetchProdiStart(statusPayload);
                         appendBatchStatusMessage(statusPayload);
-                        await appendStudyProgramRegistrationLogs(statusPayload);
-                        appendTerminal('[DONE] Fetch All watcher selesai memantau batch. Manual Fetch All berhenti setelah pendaftaran study program dosen, tidak lanjut Import All.\n');
+                        const emittedStudyProgramLogs = await appendStudyProgramRegistrationLogs(statusPayload);
+                        if (emittedStudyProgramLogs > 0) {
+                            appendManualFetchStopLine(statusPayload);
+                        }
                     } else {
                         appendManualFetchProdiStart(statusPayload);
-                        await appendStudyProgramRegistrationLogs(statusPayload);
+                        const emittedStudyProgramLogs = await appendStudyProgramRegistrationLogs(statusPayload);
+                        if (emittedStudyProgramLogs > 0) {
+                            appendManualFetchStopLine(statusPayload);
+                        }
                     }
 
                     if (importActive) {
