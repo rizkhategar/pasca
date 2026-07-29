@@ -20,6 +20,7 @@
             const state = {
                 fetchActive: false,
                 importActive: false,
+                observedFetchBatchId: null,
                 lastFetchRunningKey: null,
                 emittedFetchDoneKeys: new Set(),
                 emittedImportRunKeys: new Set(),
@@ -169,10 +170,24 @@
                 return normalizeText(payload?.batch?.status) === 'completed';
             };
 
+            const isObservedFetchBatch = (payload) => {
+                const batchId = Number(payload?.batch?.id || 0);
+
+                return batchId > 0 && Number(state.observedFetchBatchId || 0) === batchId;
+            };
+
+            const isStudyProgramSyncFinished = (payload) => {
+                const message = normalizeText(payload?.batch?.error_message).toLowerCase();
+
+                return isCompletedFetchBatch(payload)
+                    && isObservedFetchBatch(payload)
+                    && message.includes('study program settings synced');
+            };
+
             const appendManualFetchProdiStart = (payload) => {
                 const batch = payload?.batch || {};
 
-                if (! batch.id || ! isCompletedFetchBatch(payload)) {
+                if (! batch.id || ! isCompletedFetchBatch(payload) || ! isObservedFetchBatch(payload)) {
                     return;
                 }
 
@@ -189,7 +204,7 @@
             const appendManualFetchStopLine = (payload) => {
                 const batch = payload?.batch || {};
 
-                if (! batch.id || ! isCompletedFetchBatch(payload)) {
+                if (! batch.id || ! isStudyProgramSyncFinished(payload)) {
                     return;
                 }
 
@@ -207,7 +222,7 @@
                 const batch = payload?.batch || {};
                 const message = normalizeText(batch.error_message);
 
-                if (! batch.id || ! message) {
+                if (! batch.id || ! message || ! isObservedFetchBatch(payload)) {
                     return;
                 }
 
@@ -254,7 +269,7 @@
             const appendStudyProgramRegistrationLogs = async (statusPayload) => {
                 const batch = statusPayload?.batch || {};
 
-                if (! batch.id || ! isCompletedFetchBatch(statusPayload)) {
+                if (! batch.id || ! isStudyProgramSyncFinished(statusPayload)) {
                     return 0;
                 }
 
@@ -384,20 +399,25 @@
                 try {
                     const statusPayload = await getJson(routes.status);
                     const fetchActive = isFetchActive(statusPayload);
+                    const batchId = Number(statusPayload?.batch?.id || 0);
                     const importCounts = statusPayload?.import_counts || {};
                     const importActive = Number(importCounts.queued || 0) > 0 || Number(importCounts.importing || 0) > 0;
 
                     await appendAutomaticLogs();
-                    appendBatchStatusMessage(statusPayload);
 
                     if (fetchActive) {
                         if (! state.fetchActive) {
                             appendTerminal('[WATCHER] Auto watcher mendeteksi Fetch All sedang berjalan. Menampilkan progress mulai sekarang.\n');
                         }
 
+                        if (batchId > 0) {
+                            state.observedFetchBatchId = batchId;
+                        }
+
                         state.fetchActive = true;
                         toggleButton('#btn-fetch-all-details', true, 'Fetch All / Lanjutkan Otomatis');
                         appendFetchProgress(statusPayload);
+                        appendBatchStatusMessage(statusPayload);
                     } else if (state.fetchActive) {
                         appendFetchProgress(statusPayload);
                         state.fetchActive = false;
@@ -408,8 +428,9 @@
                         if (emittedStudyProgramLogs > 0) {
                             appendManualFetchStopLine(statusPayload);
                         }
-                    } else {
+                    } else if (isObservedFetchBatch(statusPayload)) {
                         appendManualFetchProdiStart(statusPayload);
+                        appendBatchStatusMessage(statusPayload);
                         const emittedStudyProgramLogs = await appendStudyProgramRegistrationLogs(statusPayload);
                         if (emittedStudyProgramLogs > 0) {
                             appendManualFetchStopLine(statusPayload);
