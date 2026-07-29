@@ -18,23 +18,24 @@
             };
 
             const state = {
-                fetchActive: false,
+                activeBatchId: null,
+                awaitingManualBatch: false,
+                manualRequestedAt: 0,
+                fetchWasActive: false,
                 importActive: false,
-                watcherStartedAt: Date.now(),
-                observedFetchBatchId: null,
-                lastFetchRunningKey: null,
-                emittedFetchDoneKeys: new Set(),
-                emittedImportRunKeys: new Set(),
-                emittedImportDoneKeys: new Set(),
-                emittedAutomaticLogKeys: new Set(),
-                emittedManualFetchDoneKeys: new Set(),
-                emittedManualFetchStopKeys: new Set(),
-                emittedBatchMessageKeys: new Set(),
-                emittedStudyProgramSettingKeys: new Set(),
+                fetchWatcherStartedKeys: new Set(),
+                fetchRunKeys: new Set(),
+                fetchDoneKeys: new Set(),
+                prodiStartKeys: new Set(),
+                prodiSummaryKeys: new Set(),
+                prodiDetailKeys: new Set(),
+                fetchStopKeys: new Set(),
+                importRunKeys: new Set(),
+                importDoneKeys: new Set(),
+                automaticLogKeys: new Set(),
             };
 
             const normalizeText = (value) => String(value || '').trim();
-
             const terminal = () => document.getElementById('terminal-container');
             const output = () => document.getElementById('output-box');
 
@@ -46,7 +47,7 @@
                     return;
                 }
 
-                outputBox.appendChild(document.createTextNode(text));
+                outputBox.appendChild(document.createTextNode(String(text || '')));
                 terminalContainer.scrollTop = terminalContainer.scrollHeight;
             };
 
@@ -59,7 +60,7 @@
                 }
 
                 const line = document.createElement('span');
-                line.textContent = text;
+                line.textContent = String(text || '');
                 line.style.backgroundColor = '#4ade80';
                 line.style.color = '#000000';
                 line.style.padding = '0 0.25rem';
@@ -100,35 +101,24 @@
 
             const batchIdOf = (payload) => Number(payload?.batch?.id || 0);
 
-            const parseBatchStartedAt = (payload) => {
-                const startedAt = normalizeText(payload?.batch?.started_at);
+            const parseDateTime = (value) => {
+                const text = normalizeText(value);
 
-                if (! startedAt) {
+                if (! text) {
                     return 0;
                 }
 
-                const parsed = Date.parse(startedAt.replace(' ', 'T'));
+                const parsed = Date.parse(text.includes('T') ? text : text.replace(' ', 'T'));
 
                 return Number.isFinite(parsed) ? parsed : 0;
             };
 
-            const isBatchCreatedAfterWatcherStarted = (payload) => {
-                const startedAt = parseBatchStartedAt(payload);
-
-                if (! startedAt) {
-                    return false;
-                }
-
-                // Toleransi 60 detik supaya batch yang dibuat persis sebelum watcher pertama kali polling tetap terbaca.
-                return startedAt >= state.watcherStartedAt - 60000;
-            };
-
             const isFetchActive = (payload) => {
                 const batch = payload?.batch || {};
-                const fetchCounts = payload?.fetch_counts || {};
+                const counts = payload?.fetch_counts || {};
                 const status = normalizeText(batch.status);
-                const pending = Number(fetchCounts.pending || 0);
-                const processing = Number(fetchCounts.processing || 0);
+                const pending = Number(counts.pending || 0);
+                const processing = Number(counts.processing || 0);
 
                 if (payload?.is_fetch_active || batch?.is_fetch_active) {
                     return true;
@@ -141,36 +131,52 @@
                 return pending > 0 || processing > 0 || ['queued', 'running'].includes(status);
             };
 
-            const observeFetchBatch = (payload, fetchActive) => {
+            const isCompleted = (payload) => normalizeText(payload?.batch?.status) === 'completed';
+
+            const isProdiSyncFinished = (payload) => {
+                const message = normalizeText(payload?.batch?.error_message).toLowerCase();
+
+                return isCompleted(payload) && message.includes('study program settings synced');
+            };
+
+            const bindBatchWhenReady = (payload, fetchActive) => {
                 const batchId = batchIdOf(payload);
 
                 if (batchId <= 0) {
-                    return;
+                    return false;
                 }
 
-                if (! fetchActive && ! isBatchCreatedAfterWatcherStarted(payload)) {
-                    return;
+                if (state.activeBatchId === batchId) {
+                    return true;
                 }
 
-                if (! state.observedFetchBatchId || batchId >= Number(state.observedFetchBatchId)) {
-                    state.observedFetchBatchId = batchId;
+                if (fetchActive) {
+                    state.activeBatchId = batchId;
+                    state.awaitingManualBatch = false;
+                    return true;
                 }
+
+                if (! state.awaitingManualBatch) {
+                    return false;
+                }
+
+                const startedAt = parseDateTime(payload?.batch?.started_at);
+
+                // Batch yang sangat cepat dapat selesai sebelum polling pertama. Tetap ikat
+                // jika dibuat setelah tombol Fetch All manual diklik.
+                if (startedAt > 0 && startedAt >= state.manualRequestedAt - 60000) {
+                    state.activeBatchId = batchId;
+                    state.awaitingManualBatch = false;
+                    return true;
+                }
+
+                return false;
             };
 
-            const isCompletedFetchBatch = (payload) => normalizeText(payload?.batch?.status) === 'completed';
-
-            const isObservedFetchBatch = (payload) => {
+            const isBoundBatch = (payload) => {
                 const batchId = batchIdOf(payload);
 
-                return batchId > 0 && Number(state.observedFetchBatchId || 0) === batchId;
-            };
-
-            const isStudyProgramSyncFinished = (payload) => {
-                const message = normalizeText(payload?.batch?.error_message).toLowerCase();
-
-                return isCompletedFetchBatch(payload)
-                    && isObservedFetchBatch(payload)
-                    && message.includes('study program settings synced');
+                return batchId > 0 && Number(state.activeBatchId || 0) === batchId;
             };
 
             const appendFetchRunLine = (item) => {
@@ -180,11 +186,11 @@
 
                 const key = `${item.id}:${item.sinta_id}:${item.started_at || ''}`;
 
-                if (state.lastFetchRunningKey === key) {
+                if (state.fetchRunKeys.has(key)) {
                     return;
                 }
 
-                state.lastFetchRunningKey = key;
+                state.fetchRunKeys.add(key);
                 appendTerminal('[RUN] SINTA ID ' + item.sinta_id + ' - ' + (normalizeText(item.lecturer_name) || '-') + ' run\n');
             };
 
@@ -195,11 +201,11 @@
 
                 const key = `${item.id}:${item.sinta_id}:${item.status}:${item.finished_at || ''}`;
 
-                if (state.emittedFetchDoneKeys.has(key)) {
+                if (state.fetchDoneKeys.has(key)) {
                     return;
                 }
 
-                state.emittedFetchDoneKeys.add(key);
+                state.fetchDoneKeys.add(key);
                 const name = normalizeText(item.lecturer_name) || '-';
 
                 if (item.status === 'failed') {
@@ -224,75 +230,49 @@
                 appendFetchRunLine(payload?.current_fetch_item);
             };
 
-            const appendManualFetchProdiStart = (payload) => {
-                const batch = payload?.batch || {};
+            const appendFetchWatcherStart = (payload) => {
+                const batchId = batchIdOf(payload);
+                const key = `${batchId}:fetch-watcher-start`;
 
-                if (! batch.id || ! isCompletedFetchBatch(payload) || ! isObservedFetchBatch(payload)) {
+                if (state.fetchWatcherStartedKeys.has(key)) {
                     return;
                 }
 
-                const key = `${batch.id}:fetch-done-prodi-sync-started`;
+                state.fetchWatcherStartedKeys.add(key);
+                appendTerminal('[WATCHER] Fetch All sedang berjalan. Menampilkan progress scraping sampai selesai.\n');
+            };
 
-                if (state.emittedManualFetchDoneKeys.has(key)) {
+            const appendProdiStart = (payload) => {
+                if (! isCompleted(payload) || ! isBoundBatch(payload)) {
                     return;
                 }
 
-                state.emittedManualFetchDoneKeys.add(key);
+                const batchId = batchIdOf(payload);
+                const key = `${batchId}:prodi-start`;
+
+                if (state.prodiStartKeys.has(key)) {
+                    return;
+                }
+
+                state.prodiStartKeys.add(key);
                 appendTerminal('[DONE] Fetch All selesai. Menjalankan pendaftaran study program dosen dari merged Excel ke sinta_lecturer_study_program_settings...\n');
             };
 
-            const appendManualFetchStopLine = (payload) => {
-                const batch = payload?.batch || {};
-
-                if (! batch.id || ! isStudyProgramSyncFinished(payload)) {
+            const appendProdiSummary = (payload) => {
+                if (! isProdiSyncFinished(payload) || ! isBoundBatch(payload)) {
                     return;
                 }
 
-                const key = `${batch.id}:manual-fetch-stop-after-prodi-sync`;
+                const batchId = batchIdOf(payload);
+                const message = normalizeText(payload?.batch?.error_message);
+                const key = `${batchId}:${message}`;
 
-                if (state.emittedManualFetchStopKeys.has(key)) {
+                if (state.prodiSummaryKeys.has(key)) {
                     return;
                 }
 
-                state.emittedManualFetchStopKeys.add(key);
-                appendTerminal('[DONE] Fetch All watcher selesai memantau batch. Manual Fetch All berhenti setelah pendaftaran study program dosen, tidak lanjut Import All.\n');
-            };
-
-            const appendBatchStatusMessage = (payload) => {
-                const batch = payload?.batch || {};
-                const message = normalizeText(batch.error_message);
-
-                if (! batch.id || ! message || ! isObservedFetchBatch(payload)) {
-                    return;
-                }
-
-                if (message === 'Queued fetch-all job is running in background.') {
-                    return;
-                }
-
-                const key = `${batch.id}:${message}`;
-
-                if (state.emittedBatchMessageKeys.has(key)) {
-                    return;
-                }
-
-                state.emittedBatchMessageKeys.add(key);
-
-                const lowerMessage = message.toLowerCase();
-
-                if (lowerMessage.includes('study program settings synced') || lowerMessage.includes('pendaftaran study program')) {
-                    appendTerminal('[DONE] Pendaftaran study program dosen selesai. ' + message + '\n');
-                    return;
-                }
-
-                if (lowerMessage.includes('registering') || lowerMessage.includes('study program') || lowerMessage.includes('sync')) {
-                    appendTerminal('[RUN] ' + message + '\n');
-                    return;
-                }
-
-                if (['completed', 'paused', 'failed', 'cancelled'].includes(normalizeText(batch.status))) {
-                    appendTerminal('[INFO] ' + message + '\n');
-                }
+                state.prodiSummaryKeys.add(key);
+                appendTerminal('[DONE] Pendaftaran study program dosen selesai. ' + message + '\n');
             };
 
             const formatStudyProgramLabel = (program) => {
@@ -306,24 +286,22 @@
                 return normalizeText([level, name].filter(Boolean).join(' '));
             };
 
-            const appendStudyProgramRegistrationLogs = async (statusPayload) => {
-                const batch = statusPayload?.batch || {};
-
-                if (! batch.id || ! isStudyProgramSyncFinished(statusPayload)) {
+            const appendProdiDetailLogs = async (statusPayload) => {
+                if (! isProdiSyncFinished(statusPayload) || ! isBoundBatch(statusPayload)) {
                     return 0;
                 }
 
+                const batchId = batchIdOf(statusPayload);
                 const payload = await getJson(routes.studyProgramSettings);
                 const items = Array.isArray(payload?.items) ? payload.items : [];
                 const programs = Array.isArray(payload?.programs) ? payload.programs : [];
                 const programsById = new Map(programs.map((program) => [Number(program.id), program]));
-                let emittedCount = 0;
+                let emitted = 0;
 
                 items.forEach((item) => {
                     const sintaId = normalizeText(item.sinta_id);
                     const name = normalizeText(item.lecturer_name) || '-';
                     const fetchStatus = normalizeText(item.fetch_status);
-                    const settingStatus = normalizeText(item.setting_status);
 
                     if (! sintaId || ! ['success', 'success_with_warning'].includes(fetchStatus)) {
                         return;
@@ -333,20 +311,16 @@
                         ? item.study_program_ids.map((id) => Number(id)).filter((id) => id > 0)
                         : [];
                     const detectedStudyProgram = normalizeText(item.detected_study_program);
-                    const key = `${batch.id}:study-program-setting:${sintaId}:${selectedIds.join(',') || 'null'}:${detectedStudyProgram || 'empty'}:${settingStatus || 'unknown'}`;
+                    const key = `${batchId}:${sintaId}:${selectedIds.join(',') || 'null'}:${detectedStudyProgram || 'empty'}`;
 
-                    if (state.emittedStudyProgramSettingKeys.has(key)) {
+                    if (state.prodiDetailKeys.has(key)) {
                         return;
                     }
 
+                    state.prodiDetailKeys.add(key);
+                    emitted++;
+
                     if (selectedIds.length > 0) {
-                        if (settingStatus !== 'complete') {
-                            return;
-                        }
-
-                        state.emittedStudyProgramSettingKeys.add(key);
-                        emittedCount++;
-
                         const labels = selectedIds
                             .map((id) => formatStudyProgramLabel(programsById.get(id)))
                             .filter(Boolean)
@@ -356,9 +330,6 @@
                         return;
                     }
 
-                    state.emittedStudyProgramSettingKeys.add(key);
-                    emittedCount++;
-
                     if (! detectedStudyProgram) {
                         appendTerminalHighlight('[WARNING] ' + sintaId + ', ' + name + ', di daftarkan ke prodi [null] karena kolom program studi di Excel kosong.');
                         return;
@@ -367,31 +338,42 @@
                     appendTerminalHighlight('[WARNING] ' + sintaId + ', ' + name + ', di daftarkan ke prodi [null] karena prodi Excel "' + detectedStudyProgram + '" belum cocok dengan study_programs.');
                 });
 
-                return emittedCount;
+                return emitted;
+            };
+
+            const appendFetchStop = (payload) => {
+                if (! isProdiSyncFinished(payload) || ! isBoundBatch(payload)) {
+                    return;
+                }
+
+                const batchId = batchIdOf(payload);
+                const key = `${batchId}:fetch-stop`;
+
+                if (state.fetchStopKeys.has(key)) {
+                    return;
+                }
+
+                state.fetchStopKeys.add(key);
+                appendTerminal('[DONE] Manual Fetch All selesai sampai pendaftaran study program dosen dan tidak lanjut Import All.\n');
             };
 
             const appendAutomaticLogs = async () => {
                 const payload = await getJson(routes.automaticRuns);
                 const logs = Array.isArray(payload?.logs) ? payload.logs : [];
                 const latestLog = logs[0] || null;
-
-                if (! latestLog) {
-                    return;
-                }
-
                 const message = normalizeText(latestLog?.summary_message);
 
-                if (! message) {
+                if (! latestLog || ! message) {
                     return;
                 }
 
                 const key = `${latestLog.id}:${message}`;
 
-                if (state.emittedAutomaticLogKeys.has(key)) {
+                if (state.automaticLogKeys.has(key)) {
                     return;
                 }
 
-                state.emittedAutomaticLogKeys.add(key);
+                state.automaticLogKeys.add(key);
                 appendTerminal('[AUTO] ' + message + '\n');
             };
 
@@ -405,8 +387,8 @@
                     const name = normalizeText(item.lecturer_name) || '-';
 
                     if (['queued', 'importing', 'processing', 'running'].includes(status)) {
-                        if (! state.emittedImportRunKeys.has(keyBase)) {
-                            state.emittedImportRunKeys.add(keyBase);
+                        if (! state.importRunKeys.has(keyBase)) {
+                            state.importRunKeys.add(keyBase);
                             appendTerminal('[RUN] Import SINTA ID ' + normalizeText(item.sinta_id) + ' - ' + name + ' run\n');
                         }
 
@@ -416,8 +398,8 @@
                     if (['imported', 'success'].includes(status)) {
                         const key = keyBase + ':' + status;
 
-                        if (! state.emittedImportDoneKeys.has(key)) {
-                            state.emittedImportDoneKeys.add(key);
+                        if (! state.importDoneKeys.has(key)) {
+                            state.importDoneKeys.add(key);
                             appendTerminal('[DONE] Import SINTA ID ' + normalizeText(item.sinta_id) + ' - ' + name + ' imported to database\n');
                         }
 
@@ -427,54 +409,71 @@
                     if (['import_failed', 'failed', 'error'].includes(status)) {
                         const key = keyBase + ':' + status;
 
-                        if (! state.emittedImportDoneKeys.has(key)) {
-                            state.emittedImportDoneKeys.add(key);
+                        if (! state.importDoneKeys.has(key)) {
+                            state.importDoneKeys.add(key);
                             appendTerminal('[FAILED] Import SINTA ID ' + normalizeText(item.sinta_id) + ' - ' + name + '. ' + normalizeText(item.import_error || item.error_message) + '\n');
                         }
                     }
                 });
             };
 
+            document.addEventListener('click', (event) => {
+                if (! event.target.closest('#btn-fetch-all-details')) {
+                    return;
+                }
+
+                state.awaitingManualBatch = true;
+                state.manualRequestedAt = Date.now();
+                state.activeBatchId = null;
+                state.fetchWasActive = false;
+            }, true);
+
             const tick = async () => {
                 try {
                     const statusPayload = await getJson(routes.status);
                     const fetchActive = isFetchActive(statusPayload);
                     const importCounts = statusPayload?.import_counts || {};
-                    const importActive = Number(importCounts.queued || 0) > 0 || Number(importCounts.importing || 0) > 0;
+                    const importActive = Number(importCounts.queued || 0) > 0
+                        || Number(importCounts.importing || 0) > 0;
 
                     await appendAutomaticLogs();
-                    observeFetchBatch(statusPayload, fetchActive);
 
-                    if (fetchActive) {
-                        if (! state.fetchActive) {
-                            appendTerminal('[WATCHER] Auto watcher mendeteksi Fetch All sedang berjalan. Menampilkan progress mulai sekarang.\n');
-                        }
+                    const batchBound = bindBatchWhenReady(statusPayload, fetchActive);
 
-                        state.fetchActive = true;
-                        toggleButton('#btn-fetch-all-details', true, 'Fetch All / Lanjutkan Otomatis');
-                        appendFetchProgress(statusPayload);
-                        appendBatchStatusMessage(statusPayload);
-                    } else if (state.fetchActive || isObservedFetchBatch(statusPayload)) {
-                        appendFetchProgress(statusPayload);
+                    if (batchBound && isBoundBatch(statusPayload)) {
+                        if (fetchActive) {
+                            appendFetchWatcherStart(statusPayload);
+                            state.fetchWasActive = true;
+                            toggleButton('#btn-fetch-all-details', true, 'Fetch All / Lanjutkan Otomatis');
+                            appendFetchProgress(statusPayload);
+                        } else {
+                            // Selalu baca status final item scraping lebih dulu agar [DONE] file
+                            // terakhir tidak terlewat sebelum masuk tahap prodi.
+                            appendFetchProgress(statusPayload);
 
-                        if (state.fetchActive) {
-                            state.fetchActive = false;
-                            toggleButton('#btn-fetch-all-details', false, 'Fetch All / Lanjutkan Otomatis');
-                        }
+                            if (state.fetchWasActive) {
+                                state.fetchWasActive = false;
+                                toggleButton('#btn-fetch-all-details', false, 'Fetch All / Lanjutkan Otomatis');
+                            }
 
-                        appendManualFetchProdiStart(statusPayload);
-                        appendBatchStatusMessage(statusPayload);
+                            if (isCompleted(statusPayload)) {
+                                appendProdiStart(statusPayload);
 
-                        const emittedStudyProgramLogs = await appendStudyProgramRegistrationLogs(statusPayload);
+                                if (isProdiSyncFinished(statusPayload)) {
+                                    appendProdiSummary(statusPayload);
+                                    const emitted = await appendProdiDetailLogs(statusPayload);
 
-                        if (emittedStudyProgramLogs > 0) {
-                            appendManualFetchStopLine(statusPayload);
+                                    if (emitted > 0) {
+                                        appendFetchStop(statusPayload);
+                                    }
+                                }
+                            }
                         }
                     }
 
                     if (importActive) {
                         if (! state.importActive) {
-                            appendTerminal('[WATCHER] Auto watcher mendeteksi Import All sedang berjalan.\n');
+                            appendTerminal('[WATCHER] Import All sedang berjalan.\n');
                         }
 
                         state.importActive = true;
@@ -487,12 +486,12 @@
                         appendTerminal('[DONE] Import All watcher selesai memantau batch.\n');
                     }
                 } catch (error) {
-                    // Jangan ganggu halaman utama jika watcher gagal sementara.
+                    // Polling berikutnya akan mencoba kembali tanpa mengganggu halaman utama.
                 }
             };
 
-            window.setTimeout(tick, 1500);
-            window.setInterval(tick, 5000);
+            window.setTimeout(tick, 1000);
+            window.setInterval(tick, 3000);
         })();
     </script>
 </x-filament-panels::page>
