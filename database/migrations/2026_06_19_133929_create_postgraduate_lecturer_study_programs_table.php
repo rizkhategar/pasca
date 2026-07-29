@@ -8,32 +8,32 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('postgraduate_lecturer_study_programs', function (Blueprint $table) {
+        Schema::create('lecturer_study_programs', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('postgraduate_lecturer_id');
             $table->unsignedBigInteger('study_program_id');
             $table->timestamps();
 
-            $table->foreign('postgraduate_lecturer_id', 'plsp_lecturer_fk')
+            $table->foreign('postgraduate_lecturer_id', 'lecturer_study_programs_lecturer_fk')
                 ->references('id')
-                ->on('postgraduate_lecturers')
+                ->on('lecturers')
                 ->cascadeOnDelete();
 
-            $table->foreign('study_program_id', 'plsp_study_program_fk')
+            $table->foreign('study_program_id', 'lecturer_study_programs_study_program_fk')
                 ->references('id')
                 ->on('study_programs')
                 ->cascadeOnDelete();
 
             $table->unique(
                 ['postgraduate_lecturer_id', 'study_program_id'],
-                'plsp_lecturer_program_unique'
+                'lecturer_study_programs_lecturer_program_unique'
             );
-            $table->index('study_program_id', 'plsp_study_program_idx');
+            $table->index('study_program_id', 'lecturer_study_programs_study_program_idx');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('postgraduate_lecturer_study_programs');
+        Schema::dropIfExists('lecturer_study_programs');
     }
 };
