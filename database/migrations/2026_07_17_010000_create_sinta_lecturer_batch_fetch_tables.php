@@ -46,7 +46,7 @@ return new class extends Migration
         Schema::create('sinta_lecturer_study_program_settings', function (Blueprint $table) {
             $table->id();
             $table->string('sinta_id')->index();
-            $table->foreignId('study_program_id')->constrained('study_programs')->cascadeOnDelete();
+            $table->foreignId('study_program_id')->nullable()->constrained('study_programs')->cascadeOnDelete();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('last_used_at')->nullable();
