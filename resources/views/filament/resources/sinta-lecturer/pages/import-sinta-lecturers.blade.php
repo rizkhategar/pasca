@@ -20,6 +20,7 @@
             const state = {
                 fetchActive: false,
                 importActive: false,
+                watcherStartedAt: Date.now(),
                 observedFetchBatchId: null,
                 lastFetchRunningKey: null,
                 emittedFetchDoneKeys: new Set(),
@@ -97,6 +98,31 @@
                 return response.json();
             };
 
+            const batchIdOf = (payload) => Number(payload?.batch?.id || 0);
+
+            const parseBatchStartedAt = (payload) => {
+                const startedAt = normalizeText(payload?.batch?.started_at);
+
+                if (! startedAt) {
+                    return 0;
+                }
+
+                const parsed = Date.parse(startedAt.replace(' ', 'T'));
+
+                return Number.isFinite(parsed) ? parsed : 0;
+            };
+
+            const isBatchCreatedAfterWatcherStarted = (payload) => {
+                const startedAt = parseBatchStartedAt(payload);
+
+                if (! startedAt) {
+                    return false;
+                }
+
+                // Toleransi 60 detik supaya batch yang dibuat persis sebelum watcher pertama kali polling tetap terbaca.
+                return startedAt >= state.watcherStartedAt - 60000;
+            };
+
             const isFetchActive = (payload) => {
                 const batch = payload?.batch || {};
                 const fetchCounts = payload?.fetch_counts || {};
@@ -113,6 +139,38 @@
                 }
 
                 return pending > 0 || processing > 0 || ['queued', 'running'].includes(status);
+            };
+
+            const observeFetchBatch = (payload, fetchActive) => {
+                const batchId = batchIdOf(payload);
+
+                if (batchId <= 0) {
+                    return;
+                }
+
+                if (! fetchActive && ! isBatchCreatedAfterWatcherStarted(payload)) {
+                    return;
+                }
+
+                if (! state.observedFetchBatchId || batchId >= Number(state.observedFetchBatchId)) {
+                    state.observedFetchBatchId = batchId;
+                }
+            };
+
+            const isCompletedFetchBatch = (payload) => normalizeText(payload?.batch?.status) === 'completed';
+
+            const isObservedFetchBatch = (payload) => {
+                const batchId = batchIdOf(payload);
+
+                return batchId > 0 && Number(state.observedFetchBatchId || 0) === batchId;
+            };
+
+            const isStudyProgramSyncFinished = (payload) => {
+                const message = normalizeText(payload?.batch?.error_message).toLowerCase();
+
+                return isCompletedFetchBatch(payload)
+                    && isObservedFetchBatch(payload)
+                    && message.includes('study program settings synced');
             };
 
             const appendFetchRunLine = (item) => {
@@ -164,24 +222,6 @@
                 }
 
                 appendFetchRunLine(payload?.current_fetch_item);
-            };
-
-            const isCompletedFetchBatch = (payload) => {
-                return normalizeText(payload?.batch?.status) === 'completed';
-            };
-
-            const isObservedFetchBatch = (payload) => {
-                const batchId = Number(payload?.batch?.id || 0);
-
-                return batchId > 0 && Number(state.observedFetchBatchId || 0) === batchId;
-            };
-
-            const isStudyProgramSyncFinished = (payload) => {
-                const message = normalizeText(payload?.batch?.error_message).toLowerCase();
-
-                return isCompletedFetchBatch(payload)
-                    && isObservedFetchBatch(payload)
-                    && message.includes('study program settings synced');
             };
 
             const appendManualFetchProdiStart = (payload) => {
@@ -399,39 +439,34 @@
                 try {
                     const statusPayload = await getJson(routes.status);
                     const fetchActive = isFetchActive(statusPayload);
-                    const batchId = Number(statusPayload?.batch?.id || 0);
                     const importCounts = statusPayload?.import_counts || {};
                     const importActive = Number(importCounts.queued || 0) > 0 || Number(importCounts.importing || 0) > 0;
 
                     await appendAutomaticLogs();
+                    observeFetchBatch(statusPayload, fetchActive);
 
                     if (fetchActive) {
                         if (! state.fetchActive) {
                             appendTerminal('[WATCHER] Auto watcher mendeteksi Fetch All sedang berjalan. Menampilkan progress mulai sekarang.\n');
                         }
 
-                        if (batchId > 0) {
-                            state.observedFetchBatchId = batchId;
-                        }
-
                         state.fetchActive = true;
                         toggleButton('#btn-fetch-all-details', true, 'Fetch All / Lanjutkan Otomatis');
                         appendFetchProgress(statusPayload);
                         appendBatchStatusMessage(statusPayload);
-                    } else if (state.fetchActive) {
+                    } else if (state.fetchActive || isObservedFetchBatch(statusPayload)) {
                         appendFetchProgress(statusPayload);
-                        state.fetchActive = false;
-                        toggleButton('#btn-fetch-all-details', false, 'Fetch All / Lanjutkan Otomatis');
-                        appendManualFetchProdiStart(statusPayload);
-                        appendBatchStatusMessage(statusPayload);
-                        const emittedStudyProgramLogs = await appendStudyProgramRegistrationLogs(statusPayload);
-                        if (emittedStudyProgramLogs > 0) {
-                            appendManualFetchStopLine(statusPayload);
+
+                        if (state.fetchActive) {
+                            state.fetchActive = false;
+                            toggleButton('#btn-fetch-all-details', false, 'Fetch All / Lanjutkan Otomatis');
                         }
-                    } else if (isObservedFetchBatch(statusPayload)) {
+
                         appendManualFetchProdiStart(statusPayload);
                         appendBatchStatusMessage(statusPayload);
+
                         const emittedStudyProgramLogs = await appendStudyProgramRegistrationLogs(statusPayload);
+
                         if (emittedStudyProgramLogs > 0) {
                             appendManualFetchStopLine(statusPayload);
                         }
