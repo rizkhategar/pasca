@@ -30,10 +30,13 @@ class SintaLecturerMergedStudyProgramSyncer
         $programIds = collect();
 
         if (! $isEmpty) {
-            $programIds = $this->detector->suggestStudyProgramIds(
-                $rawStudyProgram,
-                $this->studyProgramModels(),
-            );
+            $strictTeacherEducationIds = $this->strictTeacherEducationStudyProgramIds($rawStudyProgram);
+            $programIds = $strictTeacherEducationIds->isNotEmpty()
+                ? $strictTeacherEducationIds
+                : $this->detector->suggestStudyProgramIds(
+                    $rawStudyProgram,
+                    $this->studyProgramModels(),
+                );
         }
 
         DB::transaction(function () use ($sintaId, $programIds, $userId): void {
@@ -103,6 +106,7 @@ class SintaLecturerMergedStudyProgramSyncer
             $value = $row['program studi']
                 ?? $row['program_studi']
                 ?? $row['study_program']
+                ?? $row['program study']
                 ?? data_get(array_values((array) $firstRow), 2);
             $value = is_string($value) ? trim($value) : null;
 
@@ -115,6 +119,59 @@ class SintaLecturerMergedStudyProgramSyncer
 
             return null;
         }
+    }
+
+    protected function strictTeacherEducationStudyProgramIds(string $rawStudyProgram): Collection
+    {
+        $probe = $this->normalizeProbeText($rawStudyProgram);
+        $target = match (true) {
+            str_contains($probe, 'pendidikan guru pendidikan anak usia dini')
+                || str_contains($probe, 'guru pendidikan anak usia dini')
+                || str_contains($probe, 'pendidikan anak usia dini')
+                || str_contains($probe, 'anak usia dini') => 'paud',
+            str_contains($probe, 'pendidikan guru sekolah dasar')
+                || str_contains($probe, 'guru sekolah dasar')
+                || str_contains($probe, 'sekolah dasar') => 'sd',
+            default => null,
+        };
+
+        if (! $target) {
+            return collect();
+        }
+
+        return $this->studyProgramModels()
+            ->filter(function (StudyProgram $program) use ($target): bool {
+                $programProbe = $this->normalizeProbeText(
+                    trim((string) $program->nama . ' ' . (string) $program->display_name)
+                );
+
+                return match ($target) {
+                    'paud' => str_contains($programProbe, 'guru')
+                        && preg_match('/\bpaud\b/', $programProbe) === 1
+                        && preg_match('/\bsd\b/', $programProbe) !== 1,
+                    'sd' => str_contains($programProbe, 'guru')
+                        && preg_match('/\bsd\b/', $programProbe) === 1
+                        && preg_match('/\bpaud\b/', $programProbe) !== 1,
+                    default => false,
+                };
+            })
+            ->pluck('id')
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->take(1)
+            ->values();
+    }
+
+    protected function normalizeProbeText(string $value): string
+    {
+        $value = Str::of($value)->lower()->ascii()->toString();
+        $value = str_replace(['&', '/', '-', '_'], ' ', $value);
+        $value = preg_replace('/[^a-z0-9\s]+/', ' ', $value);
+        $value = preg_replace('/\bopendidikan\b/', ' pendidikan ', $value);
+        $value = preg_replace('/\b(s1|s2|s3|d3|d4|sarjana|magister|doktor|diploma|program|studi)\b/', ' ', $value);
+        $value = preg_replace('/\s+/', ' ', $value);
+
+        return trim($value);
     }
 
     protected function studyProgramModels(): Collection
