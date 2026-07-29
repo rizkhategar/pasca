@@ -23,7 +23,7 @@ class SintaLecturerMergedStudyProgramSyncer
         return $this->syncFromRawStudyProgram($sintaId, $rawStudyProgram, $userId);
     }
 
-    public function syncFromRawStudyProgram(string $sintaId, ?string $rawStudyProgram, ?int $userId = null): array
+    public function resolveFromRawStudyProgram(?string $rawStudyProgram): array
     {
         $rawStudyProgram = is_string($rawStudyProgram) ? trim($rawStudyProgram) : null;
         $isEmpty = ! $rawStudyProgram || $this->detector->isUnknownDepartment($rawStudyProgram);
@@ -34,9 +34,7 @@ class SintaLecturerMergedStudyProgramSyncer
             $strictTarget = $this->strictTeacherEducationTarget($rawStudyProgram);
 
             if ($strictTarget !== null) {
-                // PGPAUD/PGSD tidak boleh kembali ke scoring umum. Jika target khusus
-                // dikenali, hasilnya wajib hanya satu ID target atau null bila prodi target
-                // tidak ditemukan di study_programs.
+                // Kasus PGPAUD/PGSD bersifat eksklusif dan tidak boleh kembali ke scoring umum.
                 $programIds = $this->strictTeacherEducationStudyProgramIds($strictTarget);
             } else {
                 $programIds = $this->detector->suggestStudyProgramIds(
@@ -52,6 +50,19 @@ class SintaLecturerMergedStudyProgramSyncer
             ->unique()
             ->when($strictTarget !== null, fn (Collection $ids): Collection => $ids->take(1))
             ->values();
+
+        return [
+            'raw_study_program' => $rawStudyProgram,
+            'study_program_ids' => $programIds->all(),
+            'strict_target' => $strictTarget,
+            'status' => $programIds->isNotEmpty() ? 'matched' : ($isEmpty ? 'empty' : 'unmatched'),
+        ];
+    }
+
+    public function syncFromRawStudyProgram(string $sintaId, ?string $rawStudyProgram, ?int $userId = null): array
+    {
+        $resolved = $this->resolveFromRawStudyProgram($rawStudyProgram);
+        $programIds = collect($resolved['study_program_ids']);
 
         DB::transaction(function () use ($sintaId, $programIds, $userId): void {
             SintaLecturerStudyProgramSetting::query()
@@ -72,7 +83,7 @@ class SintaLecturerMergedStudyProgramSyncer
             foreach ($programIds as $studyProgramId) {
                 SintaLecturerStudyProgramSetting::query()->create([
                     'sinta_id' => $sintaId,
-                    'study_program_id' => $studyProgramId,
+                    'study_program_id' => (int) $studyProgramId,
                     'created_by' => $userId,
                     'updated_by' => $userId,
                 ]);
@@ -81,10 +92,7 @@ class SintaLecturerMergedStudyProgramSyncer
 
         return [
             'sinta_id' => $sintaId,
-            'raw_study_program' => $rawStudyProgram,
-            'study_program_ids' => $programIds->all(),
-            'strict_target' => $strictTarget,
-            'status' => $programIds->isNotEmpty() ? 'matched' : ($isEmpty ? 'empty' : 'unmatched'),
+            ...$resolved,
         ];
     }
 
@@ -96,36 +104,41 @@ class SintaLecturerMergedStudyProgramSyncer
             }
 
             $sheets = (new FastExcel())->importSheets($filePath);
-            $rows = null;
+            $candidateRows = collect();
 
             foreach ($sheets as $sheetName => $sheetRows) {
-                $normalizedSheetName = Str::of((string) $sheetName)
-                    ->lower()
-                    ->replace([' ', '-'], '_')
-                    ->toString();
+                $normalizedSheetName = $this->normalizeHeader((string) $sheetName);
 
-                if (str_contains($normalizedSheetName, 'data_dosen')) {
-                    $rows = collect($sheetRows);
-                    break;
+                if (str_contains($normalizedSheetName, 'data dosen')) {
+                    $candidateRows->prepend(collect($sheetRows));
+                } else {
+                    $candidateRows->push(collect($sheetRows));
                 }
             }
 
-            $rows ??= collect($sheets[0] ?? reset($sheets) ?: []);
-            $firstRow = $rows->first();
+            foreach ($candidateRows as $rows) {
+                $firstRow = $rows->first();
 
-            if (! $firstRow) {
-                return null;
+                if (! $firstRow) {
+                    continue;
+                }
+
+                $normalizedRow = collect((array) $firstRow)
+                    ->mapWithKeys(fn ($value, $key): array => [$this->normalizeHeader((string) $key) => $value]);
+
+                foreach (['program studi', 'program study', 'study program', 'program studi dosen', 'departement', 'department'] as $header) {
+                    if (! $normalizedRow->has($header)) {
+                        continue;
+                    }
+
+                    $value = $normalizedRow->get($header);
+                    $value = is_string($value) ? trim($value) : null;
+
+                    return $value !== '' ? $value : null;
+                }
             }
 
-            $row = array_change_key_case((array) $firstRow, CASE_LOWER);
-            $value = $row['program studi']
-                ?? $row['program_studi']
-                ?? $row['study_program']
-                ?? $row['program study']
-                ?? data_get(array_values((array) $firstRow), 2);
-            $value = is_string($value) ? trim($value) : null;
-
-            return $value !== '' ? $value : null;
+            return null;
         } catch (\Throwable $exception) {
             Log::warning('Failed to read study program from merged SINTA Excel.', [
                 'file_path' => $filePath,
@@ -176,6 +189,15 @@ class SintaLecturerMergedStudyProgramSyncer
             ->unique()
             ->take(1)
             ->values();
+    }
+
+    protected function normalizeHeader(string $value): string
+    {
+        $value = Str::of($value)->lower()->ascii()->toString();
+        $value = preg_replace('/[^a-z0-9]+/', ' ', $value);
+        $value = preg_replace('/\s+/', ' ', $value);
+
+        return trim($value);
     }
 
     protected function normalizeProbeText(string $value): string
