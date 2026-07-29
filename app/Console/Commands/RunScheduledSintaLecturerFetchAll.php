@@ -3,18 +3,19 @@
 namespace App\Console\Commands;
 
 use App\Filament\Resources\SintaLecturer\Pages\ImportSintaLecturers;
-use App\Jobs\FetchAllSintaLecturerDetailsJob;
+use App\Jobs\ScheduledFetchAllSintaLecturerDetailsJob;
 use App\Models\SintaLecturerAutomaticRun;
 use App\Models\SintaLecturerFetchAllScheduleSetting;
 use App\Models\SintaLecturerFetchBatch;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Throwable;
 
 class RunScheduledSintaLecturerFetchAll extends Command
 {
-    private const STALE_ACTIVE_BATCH_MINUTES = 10;
-
     protected $signature = 'sinta:run-scheduled-fetch-all';
 
     protected $description = 'Dispatch automatic Fetch All for SINTA lecturers when the hardcoded timer has been reached.';
@@ -49,87 +50,105 @@ class RunScheduledSintaLecturerFetchAll extends Command
             return self::SUCCESS;
         }
 
-        if ($this->hasAlreadyRunForCurrentSchedule($setting, $scheduledAt, $now)) {
+        $lockName = 'sinta-scheduled-fetch-all-dispatch:'
+            . $now->toDateString()
+            . ':'
+            . str_replace(':', '-', $scheduledTime);
+        $dispatchLock = Cache::lock($lockName, 300);
+
+        if (! $dispatchLock->get()) {
+            $this->line('Scheduled SINTA Fetch All dispatch is already being claimed by another scheduler process.');
+
             return self::SUCCESS;
         }
 
-        $this->purgeOldAutomaticRunLogs($now->toDateString());
+        try {
+            if (! $this->claimCurrentSchedule((int) $setting->id, $scheduledAt, $now)) {
+                return self::SUCCESS;
+            }
 
-        $activeBatch = $this->activeFetchBatch();
+            $this->purgeOldAutomaticRunLogs($now->toDateString());
 
-        if ($activeBatch && ! $this->isActiveBatchStale($activeBatch, $now)) {
-            $reason = "Skipped because Fetch All batch #{$activeBatch->id} is still {$activeBatch->status}.";
+            $refreshMessage = $this->cancelRefreshableFetchBatches($now);
 
-            $setting->forceFill([
-                'last_run_at' => $now,
-                'last_skip_reason' => $reason,
-            ])->save();
+            if ($refreshMessage) {
+                Log::warning('[SINTA SCHEDULED FETCH ALL] ' . $refreshMessage);
+                $this->warn($refreshMessage);
+            }
 
-            SintaLecturerAutomaticRun::updateOrCreate(
+            $automaticRun = SintaLecturerAutomaticRun::updateOrCreate(
                 [
                     'run_date' => $now->toDateString(),
                     'scheduled_time' => $scheduledTime,
                 ],
                 [
-                    'fetch_batch_id' => $activeBatch->id,
-                    'status' => 'failed',
-                    'phase' => 'failed',
-                    'error_message' => $reason,
-                    'summary_message' => "import & fetch automatic {$now->toDateString()} [failed] : {$reason}",
+                    'fetch_batch_id' => null,
+                    'status' => 'queued',
+                    'phase' => 'fetch',
+                    'fetch_started_at' => null,
+                    'fetch_finished_at' => null,
+                    'import_started_at' => null,
+                    'import_finished_at' => null,
+                    'failed_sinta_ids' => null,
+                    'missing_study_program_sinta_ids' => null,
+                    'error_message' => null,
+                    'summary_message' => "import & fetch automatic {$now->toDateString()} [queued]",
                 ]
             );
 
-            Log::warning('[SINTA SCHEDULED FETCH ALL] ' . $reason);
-            $this->warn($reason);
+            ScheduledFetchAllSintaLecturerDetailsJob::dispatch((int) $automaticRun->id);
+
+            Log::info('[SINTA SCHEDULED FETCH ALL] Fetch All job dispatched by timer.', [
+                'automatic_run_id' => $automaticRun->id,
+                'scheduled_time' => $scheduledTime,
+                'scheduled_at' => $scheduledAt->toDateTimeString(),
+                'dispatched_at' => $now->toDateTimeString(),
+            ]);
+
+            $this->info('Scheduled SINTA Fetch All job dispatched once. A fresh batch will be built and existing merged Excel files will be skipped.');
 
             return self::SUCCESS;
-        }
+        } catch (Throwable $exception) {
+            SintaLecturerFetchAllScheduleSetting::query()
+                ->whereKey($setting->id)
+                ->update([
+                    'last_run_at' => null,
+                    'last_skip_reason' => 'Automatic Fetch All dispatch failed: ' . $exception->getMessage(),
+                ]);
 
-        if ($activeBatch) {
-            $reason = "Fetch All batch #{$activeBatch->id} looked stale for at least " . self::STALE_ACTIVE_BATCH_MINUTES . ' minutes, so the scheduler cancelled it and queued a fresh Fetch All job.';
-            $this->cancelStaleActiveBatch($activeBatch, $reason, $now);
-
-            Log::warning('[SINTA SCHEDULED FETCH ALL] ' . $reason);
-            $this->warn($reason);
-        }
-
-        $automaticRun = SintaLecturerAutomaticRun::updateOrCreate(
-            [
-                'run_date' => $now->toDateString(),
+            Log::error('[SINTA SCHEDULED FETCH ALL] Failed to dispatch Fetch All job.', [
                 'scheduled_time' => $scheduledTime,
-            ],
-            [
-                'fetch_batch_id' => null,
-                'status' => 'queued',
-                'phase' => 'fetch',
-                'fetch_started_at' => null,
-                'fetch_finished_at' => null,
-                'import_started_at' => null,
-                'import_finished_at' => null,
-                'failed_sinta_ids' => null,
-                'missing_study_program_sinta_ids' => null,
-                'error_message' => null,
-                'summary_message' => "import & fetch automatic {$now->toDateString()} [queued]",
-            ]
-        );
+                'message' => $exception->getMessage(),
+            ]);
 
-        FetchAllSintaLecturerDetailsJob::dispatch((int) $automaticRun->id);
+            $this->error('Scheduled SINTA Fetch All could not be dispatched: ' . $exception->getMessage());
 
-        $setting->forceFill([
-            'last_run_at' => $now,
-            'last_skip_reason' => null,
-        ])->save();
+            return self::FAILURE;
+        } finally {
+            $dispatchLock->release();
+        }
+    }
 
-        Log::info('[SINTA SCHEDULED FETCH ALL] Fetch All job dispatched by timer.', [
-            'automatic_run_id' => $automaticRun->id,
-            'scheduled_time' => $scheduledTime,
-            'scheduled_at' => $scheduledAt->toDateTimeString(),
-            'dispatched_at' => $now->toDateTimeString(),
-        ]);
+    private function claimCurrentSchedule(int $settingId, $scheduledAt, $now): bool
+    {
+        return DB::transaction(function () use ($settingId, $scheduledAt, $now): bool {
+            $setting = SintaLecturerFetchAllScheduleSetting::query()
+                ->lockForUpdate()
+                ->find($settingId);
 
-        $this->info('Scheduled SINTA Fetch All job dispatched.');
+            if (! $setting || $this->hasAlreadyRunForCurrentSchedule($setting, $scheduledAt, $now)) {
+                return false;
+            }
 
-        return self::SUCCESS;
+            // Simpan klaim sebelum dispatch. Scheduler lain yang berjalan pada menit yang sama
+            // akan menunggu lock database lalu melihat jadwal hari ini sudah diklaim.
+            $setting->forceFill([
+                'last_run_at' => $now,
+                'last_skip_reason' => null,
+            ])->save();
+
+            return true;
+        });
     }
 
     private function scheduledAtForToday(string $scheduledTime)
@@ -151,53 +170,41 @@ class RunScheduledSintaLecturerFetchAll extends Command
             && $lastRunAt->greaterThanOrEqualTo($scheduledAt);
     }
 
-    private function activeFetchBatch(): ?SintaLecturerFetchBatch
+    private function cancelRefreshableFetchBatches($now): ?string
     {
-        return SintaLecturerFetchBatch::query()
-            ->whereIn('status', ['queued', 'running'])
-            ->whereHas('items', function ($query): void {
-                $query->whereIn('status', ['pending', 'processing']);
-            })
+        $batches = SintaLecturerFetchBatch::query()
+            ->whereIn('status', ['queued', 'running', 'paused', 'failed'])
             ->latest('id')
-            ->first();
-    }
+            ->get();
 
-    private function isActiveBatchStale(SintaLecturerFetchBatch $batch, $now): bool
-    {
-        $processingItem = $batch->items()
-            ->where('status', 'processing')
-            ->orderBy('started_at')
-            ->first(['started_at']);
-
-        $referenceAt = $processingItem?->started_at ?? $batch->started_at;
-
-        if (! $referenceAt) {
-            return false;
+        if ($batches->isEmpty()) {
+            return null;
         }
 
-        return $referenceAt->diffInMinutes($now) >= self::STALE_ACTIVE_BATCH_MINUTES;
-    }
+        $message = 'Superseded by an automatic fresh Fetch All batch. Existing merged Excel files will be skipped in the new batch.';
 
-    private function cancelStaleActiveBatch(SintaLecturerFetchBatch $batch, string $reason, $now): void
-    {
-        $batch->items()
-            ->whereIn('status', ['pending', 'processing'])
-            ->update([
-                'status' => 'failed',
-                'error_message' => $reason,
+        foreach ($batches as $batch) {
+            $batch->items()
+                ->whereIn('status', ['pending', 'processing'])
+                ->update([
+                    'status' => 'failed',
+                    'error_message' => $message,
+                    'finished_at' => $now,
+                ]);
+
+            $batch->forceFill([
+                'status' => 'cancelled',
+                'processed_items' => $batch->items()->whereIn('status', ['success', 'success_with_warning', 'failed'])->count(),
+                'success_items' => $batch->items()->where('status', 'success')->count(),
+                'warning_items' => $batch->items()->where('status', 'success_with_warning')->count(),
+                'failed_items' => $batch->items()->where('status', 'failed')->count(),
+                'current_sinta_id' => null,
                 'finished_at' => $now,
-            ]);
+                'error_message' => $message,
+            ])->save();
+        }
 
-        $batch->forceFill([
-            'status' => 'cancelled',
-            'processed_items' => $batch->items()->whereIn('status', ['success', 'success_with_warning', 'failed'])->count(),
-            'success_items' => $batch->items()->where('status', 'success')->count(),
-            'warning_items' => $batch->items()->where('status', 'success_with_warning')->count(),
-            'failed_items' => $batch->items()->where('status', 'failed')->count(),
-            'current_sinta_id' => null,
-            'finished_at' => $now,
-            'error_message' => $reason,
-        ])->save();
+        return $batches->count() . ' previous fetch batch(es) were cancelled before automatic Fetch All queued a fresh batch.';
     }
 
     private function purgeOldAutomaticRunLogs(string $today): void

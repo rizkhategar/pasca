@@ -15,4 +15,9 @@ Schedule::job(new SyncNewsApiJob)->hourly();
 
 // Jalankan pengecekan timer hardcode Fetch All SINTA setiap menit.
 // Jam eksekusi utama diatur di ImportSintaLecturers::AUTO_FETCH_ALL_TIME.
-Schedule::command('sinta:run-scheduled-fetch-all')->everyMinute();
+// onOneServer + withoutOverlapping mencegah dua scheduler mengeksekusi trigger
+// pada menit yang sama. Command juga mempunyai lock dan klaim database sendiri.
+Schedule::command('sinta:run-scheduled-fetch-all')
+    ->everyMinute()
+    ->onOneServer()
+    ->withoutOverlapping(10);

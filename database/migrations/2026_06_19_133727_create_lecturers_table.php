@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('postgraduate_lecturers', function (Blueprint $table) {
+        Schema::create('lecturers', function (Blueprint $table) {
             $table->id();
             $table->string('sinta_id')->unique();
             $table->string('name')->nullable();
@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('profile_photo')->nullable();
             $table->timestamps();
 
-            $table->foreign('sinta_id', 'postgraduate_lecturers_sinta_id_fk')
+            $table->foreign('sinta_id', 'lecturers_sinta_id_fk')
                 ->references('sinta_id')
                 ->on('sinta_lecturers')
                 ->cascadeOnDelete();
@@ -25,6 +25,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('postgraduate_lecturers');
+        Schema::dropIfExists('lecturers');
     }
 };

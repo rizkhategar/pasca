@@ -34,7 +34,7 @@ class SintaLecturerStudyProgramDetector
 
     /**
      * Cocokkan department SINTA dengan tabel study_programs.
-     * Return ID program studi terbaik, maksimal 2 jika score terbaik sama.
+     * Untuk alias PGSD dan PGPAUD, return tepat 1 ID agar tidak tersimpan dua prodi karena sama-sama mengandung "Pendidikan Guru".
      */
     public function suggestStudyProgramIdsFromDepartment(string $sintaId, ?Collection $programs = null): Collection
     {
@@ -63,6 +63,12 @@ class SintaLecturerStudyProgramDetector
 
         $parsed = $this->parseExternalStudyProgram($rawStudyProgram);
         $externalLevel = $this->canonicalLevel($parsed['level']);
+        $exactAliasIds = $this->specificEducationTeacherStudyProgramIds($parsed['name'], $programs, $externalLevel);
+
+        if ($exactAliasIds->isNotEmpty()) {
+            return $exactAliasIds;
+        }
+
         $externalName = $this->normalizeStudyProgramText($parsed['name']);
         $externalTokens = $this->studyProgramTokens($externalName);
 
@@ -168,6 +174,8 @@ class SintaLecturerStudyProgramDetector
         $value = Str::of($value)->lower()->ascii()->toString();
         $value = str_replace(['&', '/', '-', '_'], ' ', $value);
         $value = preg_replace('/[^a-z0-9\s]+/', ' ', $value);
+        $value = preg_replace('/\bopendidikan\b/', ' pendidikan ', $value);
+        $value = $this->normalizeStudyProgramAliases($value);
         $value = preg_replace('/\b(s1|s2|s3|d3|d4|sarjana|magister|doktor|diploma|program|studi)\b/', ' ', $value);
         $value = preg_replace('/\b(pendidikan\s+profesi|pendidikan|profesi)\b/', ' ', $value);
         $value = preg_replace('/\bbidan\b/', ' kebidanan ', $value);
@@ -177,11 +185,111 @@ class SintaLecturerStudyProgramDetector
         return trim($value);
     }
 
+    protected function normalizeStudyProgramAliases(string $value): string
+    {
+        $aliases = [
+            // Excel uses the long wording, while study_programs.nama stores the official abbreviations.
+            '/\bpendidikan\s+guru\s+pendidikan\s+anak\s+usia\s+dini\b/' => ' pendidikan guru paud ',
+            '/\bguru\s+pendidikan\s+anak\s+usia\s+dini\b/' => ' guru paud ',
+            '/\bpendidikan\s+anak\s+usia\s+dini\b/' => ' paud ',
+            '/\banak\s+usia\s+dini\b/' => ' paud ',
+            '/\bpendidikan\s+guru\s+sekolah\s+dasar\b/' => ' pendidikan guru sd ',
+            '/\bguru\s+sekolah\s+dasar\b/' => ' guru sd ',
+            '/\bsekolah\s+dasar\b/' => ' sd ',
+        ];
+
+        foreach ($aliases as $pattern => $replacement) {
+            $value = preg_replace($pattern, $replacement, $value);
+        }
+
+        return $value;
+    }
+
+    protected function specificEducationTeacherStudyProgramIds(string $rawName, Collection $programs, ?string $externalLevel = null): Collection
+    {
+        $rawProbe = $this->normalizeAliasProbeText($rawName);
+        $target = match (true) {
+            $this->isExternalPendidikanGuruPaud($rawProbe) => 'paud',
+            $this->isExternalPendidikanGuruSd($rawProbe) => 'sd',
+            default => null,
+        };
+
+        if (! $target) {
+            return collect();
+        }
+
+        return $programs
+            ->filter(function (StudyProgram $program) use ($target, $externalLevel): bool {
+                $programLevel = $this->canonicalLevel($program->jenjang_nama_singkat ?: $program->jenjang);
+
+                if ($externalLevel && $programLevel && $externalLevel !== $programLevel) {
+                    return false;
+                }
+
+                $programProbe = $this->normalizeAliasProbeText(
+                    trim((string) $program->nama . ' ' . (string) $program->display_name)
+                );
+
+                return match ($target) {
+                    'paud' => $this->isDatabasePendidikanGuruPaud($programProbe),
+                    'sd' => $this->isDatabasePendidikanGuruSd($programProbe),
+                    default => false,
+                };
+            })
+            ->pluck('id')
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->take(1)
+            ->values();
+    }
+
+    protected function normalizeAliasProbeText(string $value): string
+    {
+        $value = Str::of($value)->lower()->ascii()->toString();
+        $value = str_replace(['&', '/', '-', '_'], ' ', $value);
+        $value = preg_replace('/[^a-z0-9\s]+/', ' ', $value);
+        $value = preg_replace('/\bopendidikan\b/', ' pendidikan ', $value);
+        $value = preg_replace('/\b(s1|s2|s3|d3|d4|sarjana|magister|doktor|program|studi)\b/', ' ', $value);
+        $value = preg_replace('/\s+/', ' ', $value);
+
+        return trim($value);
+    }
+
+    protected function isExternalPendidikanGuruPaud(string $value): bool
+    {
+        return str_contains($value, 'pendidikan guru pendidikan anak usia dini')
+            || str_contains($value, 'guru pendidikan anak usia dini')
+            || str_contains($value, 'pendidikan anak usia dini');
+    }
+
+    protected function isExternalPendidikanGuruSd(string $value): bool
+    {
+        return str_contains($value, 'pendidikan guru sekolah dasar')
+            || str_contains($value, 'guru sekolah dasar')
+            || str_contains($value, 'sekolah dasar');
+    }
+
+    protected function isDatabasePendidikanGuruPaud(string $value): bool
+    {
+        return str_contains($value, 'guru')
+            && preg_match('/\bpaud\b/', $value) === 1
+            && preg_match('/\bsd\b/', $value) !== 1;
+    }
+
+    protected function isDatabasePendidikanGuruSd(string $value): bool
+    {
+        return str_contains($value, 'guru')
+            && preg_match('/\bsd\b/', $value) === 1
+            && preg_match('/\bpaud\b/', $value) !== 1;
+    }
+
     public function studyProgramTokens(string $value): Collection
     {
+        $shortMeaningfulTokens = ['sd'];
+
         return collect(explode(' ', $value))
             ->map(fn (string $token): string => trim($token))
-            ->filter(fn (string $token): bool => $token !== '' && strlen($token) > 2)
+            ->filter(fn (string $token): bool => $token !== '' && (strlen($token) > 2 || in_array($token, $shortMeaningfulTokens, true)))
             ->unique()
             ->values();
     }
