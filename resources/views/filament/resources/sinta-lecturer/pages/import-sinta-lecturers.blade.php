@@ -18,10 +18,12 @@
             };
 
             const state = {
-                activeBatchId: null,
+                fetchMonitoring: false,
+                activeFetchBatchId: null,
                 awaitingManualBatch: false,
                 manualRequestedAt: 0,
                 fetchWasActive: false,
+                importRequested: false,
                 importActive: false,
                 fetchWatcherStartedKeys: new Set(),
                 fetchRunKeys: new Set(),
@@ -134,24 +136,27 @@
             const isCompleted = (payload) => normalizeText(payload?.batch?.status) === 'completed';
 
             const isProdiSyncFinished = (payload) => {
+                const explicit = payload?.study_program_sync_finished
+                    || payload?.batch?.study_program_sync_finished;
                 const message = normalizeText(payload?.batch?.error_message).toLowerCase();
 
-                return isCompleted(payload) && message.includes('study program settings synced');
+                return isCompleted(payload)
+                    && (Boolean(explicit) || message.includes('study program settings synced'));
             };
 
-            const bindBatchWhenReady = (payload, fetchActive) => {
+            const bindFetchBatch = (payload, fetchActive) => {
                 const batchId = batchIdOf(payload);
 
-                if (batchId <= 0) {
+                if (! state.fetchMonitoring || batchId <= 0) {
                     return false;
                 }
 
-                if (state.activeBatchId === batchId) {
+                if (Number(state.activeFetchBatchId || 0) === batchId) {
                     return true;
                 }
 
                 if (fetchActive) {
-                    state.activeBatchId = batchId;
+                    state.activeFetchBatchId = batchId;
                     state.awaitingManualBatch = false;
                     return true;
                 }
@@ -162,9 +167,8 @@
 
                 const startedAt = parseDateTime(payload?.batch?.started_at);
 
-                // Batch sangat cepat dapat selesai sebelum polling pertama.
                 if (startedAt > 0 && startedAt >= state.manualRequestedAt - 60000) {
-                    state.activeBatchId = batchId;
+                    state.activeFetchBatchId = batchId;
                     state.awaitingManualBatch = false;
                     return true;
                 }
@@ -172,10 +176,12 @@
                 return false;
             };
 
-            const isBoundBatch = (payload) => {
+            const isBoundFetchBatch = (payload) => {
                 const batchId = batchIdOf(payload);
 
-                return batchId > 0 && Number(state.activeBatchId || 0) === batchId;
+                return state.fetchMonitoring
+                    && batchId > 0
+                    && Number(state.activeFetchBatchId || 0) === batchId;
             };
 
             const appendFetchRunLine = (item) => {
@@ -242,7 +248,7 @@
             };
 
             const appendProdiStart = (payload) => {
-                if (! isCompleted(payload) || ! isBoundBatch(payload)) {
+                if (! isCompleted(payload) || ! isBoundFetchBatch(payload)) {
                     return;
                 }
 
@@ -258,7 +264,7 @@
             };
 
             const appendProdiSummary = (payload) => {
-                if (! isProdiSyncFinished(payload) || ! isBoundBatch(payload)) {
+                if (! isProdiSyncFinished(payload) || ! isBoundFetchBatch(payload)) {
                     return;
                 }
 
@@ -285,16 +291,18 @@
             };
 
             const appendProdiDetailLogs = async (statusPayload) => {
-                if (! isProdiSyncFinished(statusPayload) || ! isBoundBatch(statusPayload)) {
-                    return 0;
+                if (! isProdiSyncFinished(statusPayload) || ! isBoundFetchBatch(statusPayload)) {
+                    return false;
                 }
 
                 const batchId = batchIdOf(statusPayload);
-                const payload = await getJson(routes.studyProgramSettings);
+                const separator = routes.studyProgramSettings.includes('?') ? '&' : '?';
+                const payload = await getJson(
+                    routes.studyProgramSettings + separator + 'batch_id=' + encodeURIComponent(batchId)
+                );
                 const items = Array.isArray(payload?.items) ? payload.items : [];
                 const programs = Array.isArray(payload?.programs) ? payload.programs : [];
                 const programsById = new Map(programs.map((program) => [Number(program.id), program]));
-                let emitted = 0;
 
                 items.forEach((item) => {
                     const sintaId = normalizeText(item.sinta_id);
@@ -316,7 +324,6 @@
                     }
 
                     state.prodiDetailKeys.add(key);
-                    emitted++;
 
                     if (selectedIds.length > 0) {
                         const labels = selectedIds
@@ -336,23 +343,27 @@
                     appendTerminalHighlight('[WARNING] ' + sintaId + ', ' + name + ', di daftarkan ke prodi [null] karena prodi Excel "' + detectedStudyProgram + '" belum cocok dengan study_programs.');
                 });
 
-                return emitted;
+                return true;
             };
 
-            const appendFetchStop = (payload) => {
-                if (! isProdiSyncFinished(payload) || ! isBoundBatch(payload)) {
+            const finishFetchMonitoring = (payload) => {
+                if (! isProdiSyncFinished(payload) || ! isBoundFetchBatch(payload)) {
                     return;
                 }
 
                 const batchId = batchIdOf(payload);
                 const key = `${batchId}:fetch-stop`;
 
-                if (state.fetchStopKeys.has(key)) {
-                    return;
+                if (! state.fetchStopKeys.has(key)) {
+                    state.fetchStopKeys.add(key);
+                    appendTerminal('[DONE] Fetch All watcher selesai memantau batch...\n');
                 }
 
-                state.fetchStopKeys.add(key);
-                appendTerminal('[DONE] Fetch All watcher selesai memantau batch...\n');
+                state.fetchMonitoring = false;
+                state.activeFetchBatchId = null;
+                state.awaitingManualBatch = false;
+                state.fetchWasActive = false;
+                toggleButton('#btn-fetch-all-details', false, 'Fetch All / Lanjutkan Otomatis');
             };
 
             const appendAutomaticLogs = async () => {
@@ -416,17 +427,41 @@
             };
 
             document.addEventListener('click', (event) => {
-                if (! event.target.closest('#btn-fetch-all-details')) {
+                if (event.target.closest('#btn-fetch-all-details')) {
+                    state.fetchMonitoring = true;
+                    state.awaitingManualBatch = true;
+                    state.manualRequestedAt = Date.now();
+                    state.activeFetchBatchId = null;
+                    state.fetchWasActive = false;
+                    state.importRequested = false;
+                    state.importActive = false;
                     return;
                 }
 
-                state.awaitingManualBatch = true;
-                state.manualRequestedAt = Date.now();
-                state.activeBatchId = null;
-                state.fetchWasActive = false;
+                if (event.target.closest('#btn-import-all')) {
+                    // Import memiliki watcher sendiri. Fetch watcher harus sudah ditutup agar
+                    // kedua fase tidak membaca dan mengubah state batch pada waktu yang sama.
+                    state.fetchMonitoring = false;
+                    state.activeFetchBatchId = null;
+                    state.awaitingManualBatch = false;
+                    state.fetchWasActive = false;
+                    state.importRequested = true;
+                    state.importActive = false;
+                    state.importRunKeys.clear();
+                    state.importDoneKeys.clear();
+                    toggleButton('#btn-fetch-all-details', false, 'Fetch All / Lanjutkan Otomatis');
+                }
             }, true);
 
+            let tickRunning = false;
+
             const tick = async () => {
+                if (tickRunning) {
+                    return;
+                }
+
+                tickRunning = true;
+
                 try {
                     const statusPayload = await getJson(routes.status);
                     const fetchActive = isFetchActive(statusPayload);
@@ -436,54 +471,76 @@
 
                     await appendAutomaticLogs();
 
-                    const batchBound = bindBatchWhenReady(statusPayload, fetchActive);
-
-                    if (batchBound && isBoundBatch(statusPayload)) {
-                        if (fetchActive) {
-                            appendFetchWatcherStart(statusPayload);
-                            state.fetchWasActive = true;
-                            toggleButton('#btn-fetch-all-details', true, 'Fetch All / Lanjutkan Otomatis');
-                            appendFetchProgress(statusPayload);
-                        } else {
-                            // Selalu baca status final scraping terlebih dahulu.
-                            appendFetchProgress(statusPayload);
-
-                            if (state.fetchWasActive) {
-                                state.fetchWasActive = false;
-                                toggleButton('#btn-fetch-all-details', false, 'Fetch All / Lanjutkan Otomatis');
+                    // Import selalu mendapat prioritas. Saat import berlangsung, cabang Fetch All
+                    // tidak dijalankan sehingga tidak ada watcher overlap.
+                    if (importActive || state.importRequested || state.importActive) {
+                        if (importActive) {
+                            if (! state.importActive) {
+                                appendTerminal('[WATCHER] Import All sedang berjalan.\n');
                             }
 
-                            if (isCompleted(statusPayload)) {
-                                appendProdiStart(statusPayload);
-
-                                if (isProdiSyncFinished(statusPayload)) {
-                                    appendProdiSummary(statusPayload);
-                                    const emitted = await appendProdiDetailLogs(statusPayload);
-
-                                    if (emitted > 0) {
-                                        appendFetchStop(statusPayload);
-                                    }
-                                }
-                            }
+                            state.importRequested = false;
+                            state.importActive = true;
+                            toggleButton('#btn-import-all', true, 'Import All to Database');
+                            await appendImportProgress();
+                        } else if (state.importActive) {
+                            state.importActive = false;
+                            state.importRequested = false;
+                            toggleButton('#btn-import-all', false, 'Import All to Database');
+                            await appendImportProgress();
+                            appendTerminal('[DONE] Import All watcher selesai memantau batch.\n');
                         }
+
+                        return;
                     }
 
-                    if (importActive) {
-                        if (! state.importActive) {
-                            appendTerminal('[WATCHER] Import All sedang berjalan.\n');
-                        }
+                    if (! state.fetchMonitoring && fetchActive) {
+                        // Tetap dapat mengikuti Fetch All otomatis, tetapi hanya selama fetch aktif.
+                        state.fetchMonitoring = true;
+                    }
 
-                        state.importActive = true;
-                        toggleButton('#btn-import-all', true, 'Import All to Database');
-                        await appendImportProgress();
-                    } else if (state.importActive) {
-                        state.importActive = false;
-                        toggleButton('#btn-import-all', false, 'Import All to Database');
-                        await appendImportProgress();
-                        appendTerminal('[DONE] Import All watcher selesai memantau batch.\n');
+                    const batchBound = bindFetchBatch(statusPayload, fetchActive);
+
+                    if (! batchBound || ! isBoundFetchBatch(statusPayload)) {
+                        return;
+                    }
+
+                    if (fetchActive) {
+                        appendFetchWatcherStart(statusPayload);
+                        state.fetchWasActive = true;
+                        toggleButton('#btn-fetch-all-details', true, 'Fetch All / Lanjutkan Otomatis');
+                        appendFetchProgress(statusPayload);
+                        return;
+                    }
+
+                    // Baca status final scraping terlebih dahulu agar [DONE] file terakhir tidak hilang.
+                    appendFetchProgress(statusPayload);
+
+                    if (state.fetchWasActive) {
+                        state.fetchWasActive = false;
+                        toggleButton('#btn-fetch-all-details', false, 'Fetch All / Lanjutkan Otomatis');
+                    }
+
+                    if (! isCompleted(statusPayload)) {
+                        return;
+                    }
+
+                    appendProdiStart(statusPayload);
+
+                    if (! isProdiSyncFinished(statusPayload)) {
+                        return;
+                    }
+
+                    appendProdiSummary(statusPayload);
+                    const detailLoaded = await appendProdiDetailLogs(statusPayload);
+
+                    if (detailLoaded) {
+                        finishFetchMonitoring(statusPayload);
                     }
                 } catch (error) {
                     // Polling berikutnya akan mencoba kembali tanpa mengganggu halaman utama.
+                } finally {
+                    tickRunning = false;
                 }
             };
 
