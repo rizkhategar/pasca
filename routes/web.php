@@ -86,20 +86,20 @@ Route::get('/storage/{path}', function (string $path) {
 })->where('path', '.*')->name('public-storage.file');
 
 Route::get('/organization-structures/{organizationStructure}/image', function (OrganizationalStructure $organizationStructure) {
-    $path = OrganizationalStructure::normalizeImagePath($organizationStructure->image_path);
+    $path = normalizePublicStoragePath($organizationStructure->image_path);
 
     abort_unless($path && Storage::disk('public')->exists($path), 404);
     return response()->file(Storage::disk('public')->path($path), ['Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0', 'Pragma' => 'no-cache', 'Expires' => '0']);
 })->name('organization-structures.image');
 
 Route::get('/about-pascasarjanas/{aboutPascasarjana}/director-image', function (AboutPostgraduate $aboutPascasarjana) {
-    $path = AboutPostgraduate::normalizeImagePath($aboutPascasarjana->direktur_image);
+    $path = normalizePublicStoragePath($aboutPascasarjana->direktur_image);
     abort_unless($path && Storage::disk('public')->exists($path), 404);
     return response()->file(Storage::disk('public')->path($path), ['Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0', 'Pragma' => 'no-cache', 'Expires' => '0']);
 })->name('about-pascasarjanas.director-image');
 
 Route::get('/about-pascasarjanas/{aboutPascasarjana}/point-icons/{index}', function (AboutPostgraduate $aboutPascasarjana, int $index) {
-    $path = AboutPostgraduate::normalizeImagePath(data_get($aboutPascasarjana->points ?? [], $index . '.icon'));
+    $path = normalizePublicStoragePath(data_get($aboutPascasarjana->points ?? [], $index . '.icon'));
     abort_unless($path && Storage::disk('public')->exists($path), 404);
     return response()->file(Storage::disk('public')->path($path), ['Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0', 'Pragma' => 'no-cache', 'Expires' => '0']);
 })->name('about-pascasarjanas.point-icon');
