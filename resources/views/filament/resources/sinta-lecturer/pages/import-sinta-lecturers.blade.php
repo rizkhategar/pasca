@@ -162,8 +162,7 @@
 
                 const startedAt = parseDateTime(payload?.batch?.started_at);
 
-                // Batch yang sangat cepat dapat selesai sebelum polling pertama. Tetap ikat
-                // jika dibuat setelah tombol Fetch All manual diklik.
+                // Batch sangat cepat dapat selesai sebelum polling pertama.
                 if (startedAt > 0 && startedAt >= state.manualRequestedAt - 60000) {
                     state.activeBatchId = batchId;
                     state.awaitingManualBatch = false;
@@ -255,7 +254,7 @@
                 }
 
                 state.prodiStartKeys.add(key);
-                appendTerminal('[DONE] Fetch All selesai. Menjalankan pendaftaran study program dosen dari merged Excel ke sinta_lecturer_study_program_settings...\n');
+                appendTerminal('[DONE] Fetch All selesai. Menjalankan pendaftaran study program dosen...\n');
             };
 
             const appendProdiSummary = (payload) => {
@@ -264,15 +263,14 @@
                 }
 
                 const batchId = batchIdOf(payload);
-                const message = normalizeText(payload?.batch?.error_message);
-                const key = `${batchId}:${message}`;
+                const key = `${batchId}:prodi-summary`;
 
                 if (state.prodiSummaryKeys.has(key)) {
                     return;
                 }
 
                 state.prodiSummaryKeys.add(key);
-                appendTerminal('[DONE] Pendaftaran study program dosen selesai. ' + message + '\n');
+                appendTerminal('[DONE] Pendaftaran study program dosen selesai...\n');
             };
 
             const formatStudyProgramLabel = (program) => {
@@ -354,7 +352,7 @@
                 }
 
                 state.fetchStopKeys.add(key);
-                appendTerminal('[DONE] Manual Fetch All selesai sampai pendaftaran study program dosen dan tidak lanjut Import All.\n');
+                appendTerminal('[DONE] Fetch All watcher selesai memantau batch...\n');
             };
 
             const appendAutomaticLogs = async () => {
@@ -447,8 +445,7 @@
                             toggleButton('#btn-fetch-all-details', true, 'Fetch All / Lanjutkan Otomatis');
                             appendFetchProgress(statusPayload);
                         } else {
-                            // Selalu baca status final item scraping lebih dulu agar [DONE] file
-                            // terakhir tidak terlewat sebelum masuk tahap prodi.
+                            // Selalu baca status final scraping terlebih dahulu.
                             appendFetchProgress(statusPayload);
 
                             if (state.fetchWasActive) {
