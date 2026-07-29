@@ -274,26 +274,24 @@
                         return;
                     }
 
-                    // Detail log ini hanya muncul setelah data benar-benar tersimpan sebagai setting,
-                    // bukan ketika masih auto_suggested dari UI.
-                    if (settingStatus !== 'complete') {
-                        return;
-                    }
-
                     const selectedIds = Array.isArray(item.study_program_ids)
                         ? item.study_program_ids.map((id) => Number(id)).filter((id) => id > 0)
                         : [];
                     const detectedStudyProgram = normalizeText(item.detected_study_program);
-                    const key = `${batch.id}:study-program-setting:${sintaId}:${selectedIds.join(',') || 'null'}:${detectedStudyProgram || 'empty'}`;
+                    const key = `${batch.id}:study-program-setting:${sintaId}:${selectedIds.join(',') || 'null'}:${detectedStudyProgram || 'empty'}:${settingStatus || 'unknown'}`;
 
                     if (state.emittedStudyProgramSettingKeys.has(key)) {
                         return;
                     }
 
-                    state.emittedStudyProgramSettingKeys.add(key);
-                    emittedCount++;
-
                     if (selectedIds.length > 0) {
+                        if (settingStatus !== 'complete') {
+                            return;
+                        }
+
+                        state.emittedStudyProgramSettingKeys.add(key);
+                        emittedCount++;
+
                         const labels = selectedIds
                             .map((id) => formatStudyProgramLabel(programsById.get(id)))
                             .filter(Boolean)
@@ -302,6 +300,9 @@
                         appendTerminal('[DONE] ' + sintaId + ', ' + name + ', di daftarkan ke prodi [' + (labels || '-') + ']\n');
                         return;
                     }
+
+                    state.emittedStudyProgramSettingKeys.add(key);
+                    emittedCount++;
 
                     if (! detectedStudyProgram) {
                         appendTerminalHighlight('[WARNING] ' + sintaId + ', ' + name + ', di daftarkan ke prodi [null] karena kolom program studi di Excel kosong.');
