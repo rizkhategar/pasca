@@ -28,16 +28,30 @@ class SintaLecturerMergedStudyProgramSyncer
         $rawStudyProgram = is_string($rawStudyProgram) ? trim($rawStudyProgram) : null;
         $isEmpty = ! $rawStudyProgram || $this->detector->isUnknownDepartment($rawStudyProgram);
         $programIds = collect();
+        $strictTarget = null;
 
         if (! $isEmpty) {
-            $strictTeacherEducationIds = $this->strictTeacherEducationStudyProgramIds($rawStudyProgram);
-            $programIds = $strictTeacherEducationIds->isNotEmpty()
-                ? $strictTeacherEducationIds
-                : $this->detector->suggestStudyProgramIds(
+            $strictTarget = $this->strictTeacherEducationTarget($rawStudyProgram);
+
+            if ($strictTarget !== null) {
+                // PGPAUD/PGSD tidak boleh kembali ke scoring umum. Jika target khusus
+                // dikenali, hasilnya wajib hanya satu ID target atau null bila prodi target
+                // tidak ditemukan di study_programs.
+                $programIds = $this->strictTeacherEducationStudyProgramIds($strictTarget);
+            } else {
+                $programIds = $this->detector->suggestStudyProgramIds(
                     $rawStudyProgram,
                     $this->studyProgramModels(),
                 );
+            }
         }
+
+        $programIds = $programIds
+            ->map(fn ($id): int => (int) $id)
+            ->filter()
+            ->unique()
+            ->when($strictTarget !== null, fn (Collection $ids): Collection => $ids->take(1))
+            ->values();
 
         DB::transaction(function () use ($sintaId, $programIds, $userId): void {
             SintaLecturerStudyProgramSetting::query()
@@ -58,7 +72,7 @@ class SintaLecturerMergedStudyProgramSyncer
             foreach ($programIds as $studyProgramId) {
                 SintaLecturerStudyProgramSetting::query()->create([
                     'sinta_id' => $sintaId,
-                    'study_program_id' => (int) $studyProgramId,
+                    'study_program_id' => $studyProgramId,
                     'created_by' => $userId,
                     'updated_by' => $userId,
                 ]);
@@ -68,7 +82,8 @@ class SintaLecturerMergedStudyProgramSyncer
         return [
             'sinta_id' => $sintaId,
             'raw_study_program' => $rawStudyProgram,
-            'study_program_ids' => $programIds->map(fn ($id) => (int) $id)->values()->all(),
+            'study_program_ids' => $programIds->all(),
+            'strict_target' => $strictTarget,
             'status' => $programIds->isNotEmpty() ? 'matched' : ($isEmpty ? 'empty' : 'unmatched'),
         ];
     }
@@ -121,24 +136,24 @@ class SintaLecturerMergedStudyProgramSyncer
         }
     }
 
-    protected function strictTeacherEducationStudyProgramIds(string $rawStudyProgram): Collection
+    protected function strictTeacherEducationTarget(string $rawStudyProgram): ?string
     {
         $probe = $this->normalizeProbeText($rawStudyProgram);
-        $target = match (true) {
-            str_contains($probe, 'pendidikan guru pendidikan anak usia dini')
-                || str_contains($probe, 'guru pendidikan anak usia dini')
-                || str_contains($probe, 'pendidikan anak usia dini')
-                || str_contains($probe, 'anak usia dini') => 'paud',
-            str_contains($probe, 'pendidikan guru sekolah dasar')
-                || str_contains($probe, 'guru sekolah dasar')
-                || str_contains($probe, 'sekolah dasar') => 'sd',
+
+        return match (true) {
+            str_contains($probe, 'pendidikan guru pendidikan anak usia dini'),
+            str_contains($probe, 'pendidikan anak usia dini'),
+            str_contains($probe, 'anak usia dini') => 'paud',
+
+            str_contains($probe, 'pendidikan guru sekolah dasar'),
+            str_contains($probe, 'sekolah dasar') => 'sd',
+
             default => null,
         };
+    }
 
-        if (! $target) {
-            return collect();
-        }
-
+    protected function strictTeacherEducationStudyProgramIds(string $target): Collection
+    {
         return $this->studyProgramModels()
             ->filter(function (StudyProgram $program) use ($target): bool {
                 $programProbe = $this->normalizeProbeText(
@@ -157,6 +172,7 @@ class SintaLecturerMergedStudyProgramSyncer
             })
             ->pluck('id')
             ->map(fn ($id): int => (int) $id)
+            ->filter()
             ->unique()
             ->take(1)
             ->values();
